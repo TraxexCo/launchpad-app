@@ -1,7 +1,8 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/constants.dart';
 import '../../widgets/app_background.dart';
 import '../../widgets/app_button.dart';
@@ -24,7 +25,6 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
   final Set<String> _selectedSkills = {};
   String _selectedType = 'Mobile App';
   bool _loading = false;
-  bool _uploaded = false;
 
   static const _types = ['Mobile App', 'Web App', 'Desktop App', 'API / Backend', 'UI/UX Design', 'Other'];
 
@@ -40,10 +40,45 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
-    await Future.delayed(const Duration(seconds: 2));
-    if (!mounted) return;
-    setState(() => _loading = false);
-    context.go('/student');
+    int? createdId;
+    try {
+      final client = Supabase.instance.client;
+      final userId = client.auth.currentUser?.id;
+      if (userId == null) throw StateError('Sign in to add a project');
+      final row = await client.from('portfolio_projects').insert({
+        'student_id': userId,
+        'title': _titleCtrl.text.trim(),
+        'description': _descCtrl.text.trim(),
+        'project_type': _selectedType,
+        'repository_url': _githubCtrl.text.trim().isEmpty ? null : _githubCtrl.text.trim(),
+        'demo_url': _liveCtrl.text.trim().isEmpty ? null : _liveCtrl.text.trim(),
+      }).select('id').single();
+      createdId = row['id'] as int;
+      if (_selectedSkills.isNotEmpty) {
+        final skills = await client.from('skills').select('id,name')
+            .inFilter('name', _selectedSkills.toList());
+        await client.from('portfolio_project_skills').insert([
+          for (final skill in skills)
+            {'project_id': row['id'], 'skill_id': skill['id']},
+        ]);
+      }
+      if (!mounted) return;
+      context.go('/student/portfolio/${row['id']}');
+    } catch (error) {
+      if (createdId != null) {
+        try {
+          await Supabase.instance.client.from('portfolio_projects')
+              .delete().eq('id', createdId);
+        } catch (_) {}
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not save project: $error')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override
@@ -144,6 +179,14 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
                           accentColor: AppColors.studentPrimary,
                           prefixIcon: const Icon(Icons.code_rounded, color: AppColors.textMuted, size: 18),
                           textInputAction: TextInputAction.next,
+                          validator: (v) {
+                            if (v == null || v.trim().isEmpty) return null;
+                            final uri = Uri.tryParse(v.trim());
+                            if (uri == null || !uri.hasScheme || uri.scheme != 'https') {
+                              return 'Please enter a valid https:// URL';
+                            }
+                            return null;
+                          },
                         ),
                         const SizedBox(height: AppSpacing.md),
                         AppTextField(
@@ -154,6 +197,14 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
                           accentColor: AppColors.studentPrimary,
                           prefixIcon: const Icon(Icons.open_in_new_rounded, color: AppColors.textMuted, size: 18),
                           textInputAction: TextInputAction.done,
+                          validator: (v) {
+                            if (v == null || v.trim().isEmpty) return null;
+                            final uri = Uri.tryParse(v.trim());
+                            if (uri == null || !uri.hasScheme || uri.scheme != 'https') {
+                              return 'Please enter a valid https:// URL';
+                            }
+                            return null;
+                          },
                         ),
                         const SizedBox(height: AppSpacing.xxl),
                       ],
@@ -184,7 +235,7 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
       child: Row(
         children: [
           GestureDetector(
-            onTap: () => context.go('/student'),
+            onTap: () => context.canPop() ? context.pop() : context.go('/student'),
             child: Container(
               width: 40, height: 40,
               decoration: BoxDecoration(
@@ -212,35 +263,15 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
   }
 
   Widget _buildCoverUpload() {
-    return GestureDetector(
-      onTap: () => setState(() => _uploaded = !_uploaded),
-      child: AnimatedContainer(
-        duration: AppDurations.normal,
+    return Container(
         height: 160,
         decoration: BoxDecoration(
-          color: _uploaded ? AppColors.studentPrimary.withValues(alpha: 0.08) : AppColors.surfaceHigh,
+          color: AppColors.surfaceHigh,
           borderRadius: BorderRadius.circular(AppRadius.xl),
-          border: Border.all(
-            color: _uploaded ? AppColors.studentPrimary.withValues(alpha: 0.5) : AppColors.border,
-            width: _uploaded ? 1.5 : 1,
-          ),
+          border: Border.all(color: AppColors.border),
         ),
         child: Center(
-          child: _uploaded
-              ? Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.check_circle_rounded,
-                        color: AppColors.studentPrimary, size: 32),
-                    const SizedBox(height: AppSpacing.sm),
-                    Text('Cover image added',
-                        style: GoogleFonts.inter(
-                            fontSize: 13, color: AppColors.studentPrimary, fontWeight: FontWeight.w600)),
-                    Text('Tap to change',
-                        style: GoogleFonts.inter(fontSize: 11, color: AppColors.textMuted)),
-                  ],
-                )
-              : Column(
+          child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Container(
@@ -249,20 +280,19 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
                         color: AppColors.studentPrimary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(AppRadius.md),
                       ),
-                      child: const Icon(Icons.add_photo_alternate_outlined,
+                      child: const Icon(Icons.folder_outlined,
                           color: AppColors.studentPrimary, size: 24),
                     ),
                     const SizedBox(height: AppSpacing.sm),
-                    Text('Upload cover image',
+                    Text('Project cover image',
                         style: GoogleFonts.plusJakartaSans(
                             fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-                    Text('PNG, JPG, or GIF · max 5MB',
+                    Text('Image uploads will be available later.',
                         style: GoogleFonts.inter(fontSize: 11, color: AppColors.textMuted)),
                   ],
                 ),
         ),
-      ).animate().fadeIn(duration: 500.ms, delay: 80.ms),
-    );
+      ).animate().fadeIn(duration: 500.ms, delay: 80.ms);
   }
 
   Widget _buildSectionLabel(String label) {

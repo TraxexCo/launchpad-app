@@ -6,12 +6,14 @@ import '../../core/constants.dart';
 import '../../widgets/app_background.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_card.dart';
-import '../../widgets/skill_chip.dart';
 import '../../widgets/report_modal.dart';
+import '../../models/proposal.dart';
+import '../../services/proposal_service.dart';
 
 class ProposalDetailScreen extends StatefulWidget {
   final String proposalId;
-  const ProposalDetailScreen({super.key, required this.proposalId});
+  final Proposal? proposal;
+  const ProposalDetailScreen({super.key, required this.proposalId, this.proposal});
 
   @override
   State<ProposalDetailScreen> createState() => _ProposalDetailScreenState();
@@ -22,33 +24,46 @@ class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
   bool _rejecting = false;
   String _decision = ''; // '' | 'accepted' | 'rejected'
 
-  static const _proposal = {
-    'id': 'p1', 'name': 'Juan dela Cruz', 'school': 'Polytechnic University of the Philippines',
-    'year': '3rd Year · BSIT', 'rate': '₱11,500', 'timeline': '3 weeks',
-    'rating': 4.9, 'jobs': 3, 'github': 'github.com/juandc', 'isVerified': true,
-    'skills': ['Flutter', 'Firebase', 'Dart', 'PHP'],
-    'cover': 'Hi! I am a 3rd year BSIT student at PUP Manila specializing in Flutter development. I have built 3 complete mobile apps, including a POS system for a local restaurant that has been in active use for 6 months.\n\nFor this project, I plan to build a clean Flutter app with a menu browser, cart, GCash integration via a PHP backend, and real-time order status notifications using Firebase Cloud Messaging.\n\nI can start immediately and will provide weekly progress updates. I am also open to meeting on-site at your café to understand the workflow better.',
-    'attachedProject': 'Café POS System',
-    'jobTitle': 'Online Ordering App',
-  };
-
   Future<void> _accept() async {
     setState(() => _accepting = true);
-    await Future.delayed(const Duration(seconds: 2));
-    if (!mounted) return;
-    setState(() { _accepting = false; _decision = 'accepted'; });
+    try {
+      if (widget.proposal != null) {
+        await ProposalService().updateProposalStatus(widget.proposal!.id, 'accepted');
+      }
+      if (!mounted) return;
+      setState(() { _accepting = false; _decision = 'accepted'; });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _accepting = false);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: AppColors.error));
+    }
   }
 
   Future<void> _reject() async {
     setState(() => _rejecting = true);
-    await Future.delayed(const Duration(seconds: 1));
-    if (!mounted) return;
-    setState(() { _rejecting = false; _decision = 'rejected'; });
+    try {
+      if (widget.proposal != null) {
+        await ProposalService().updateProposalStatus(widget.proposal!.id, 'rejected');
+      }
+      if (!mounted) return;
+      setState(() { _rejecting = false; _decision = 'rejected'; });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _rejecting = false);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e'), backgroundColor: AppColors.error));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_decision.isNotEmpty) return _buildDecisionState(context);
+    if (widget.proposal == null) {
+      return const Scaffold(body: Center(child: Text('Proposal not found')));
+    }
+
+    if (_decision.isNotEmpty || widget.proposal!.status != 'pending') {
+      return _buildDecisionState(context);
+    }
+    
     return Scaffold(
       backgroundColor: AppColors.background,
       body: AppBackground(
@@ -62,8 +77,8 @@ class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
                   SliverToBoxAdapter(child: _buildStudentCard(context)),
                   SliverToBoxAdapter(child: _buildRateTimeline(context)),
                   SliverToBoxAdapter(child: _buildCoverLetter(context)),
-                  SliverToBoxAdapter(child: _buildSkills(context)),
-                  SliverToBoxAdapter(child: _buildAttachedProject(context)),
+                  if (widget.proposal!.attachedProjectId != null)
+                    SliverToBoxAdapter(child: _buildAttachedProject(context)),
                   const SliverToBoxAdapter(child: SizedBox(height: 120)),
                 ],
               ),
@@ -76,7 +91,8 @@ class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
   }
 
   Widget _buildDecisionState(BuildContext context) {
-    final accepted = _decision == 'accepted';
+    final status = _decision.isNotEmpty ? _decision : widget.proposal!.status;
+    final accepted = status == 'accepted';
     return Scaffold(
       backgroundColor: AppColors.background,
       body: AppBackground(
@@ -107,8 +123,8 @@ class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
                 const SizedBox(height: AppSpacing.sm),
                 Text(
                   accepted
-                      ? 'You accepted ${_proposal['name']}. A chat has been opened — say hello!'
-                      : '${_proposal['name']} has been notified.',
+                      ? 'You accepted ${widget.proposal!.studentName ?? "Student"}. A chat has been opened — say hello!'
+                      : 'This proposal has been rejected.',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyMedium,
                 ).animate().fadeIn(delay: 500.ms),
@@ -117,13 +133,13 @@ class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
                   AppButton(
                     label: 'Open Chat',
                     icon: Icons.chat_bubble_outline_rounded,
-                    onPressed: () => context.go('/chat/p1?name=${_proposal['name']}'),
+                    onPressed: () => context.go('/chat/${widget.proposal!.id}?name=${widget.proposal!.studentName ?? "Student"}'),
                   ).animate().fadeIn(delay: 650.ms)
                 else
                   AppButton(
                     label: 'Back to Proposals',
                     icon: Icons.arrow_back_rounded,
-                    onPressed: () => context.go('/business/jobs/1/proposals'),
+                    onPressed: () => context.canPop() ? context.pop() : context.go('/business'),
                   ).animate().fadeIn(delay: 650.ms),
               ],
             ),
@@ -137,7 +153,7 @@ class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
     return SliverAppBar(
       backgroundColor: Colors.transparent, elevation: 0, pinned: true,
       leading: GestureDetector(
-        onTap: () => context.go('/business/jobs/1/proposals'),
+        onTap: () => context.canPop() ? context.pop() : context.go('/business'),
         child: Container(
           margin: const EdgeInsets.all(8),
           decoration: BoxDecoration(
@@ -152,7 +168,7 @@ class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
         IconButton(
           icon: const Icon(Icons.outlined_flag_rounded, color: AppColors.textSecondary),
           tooltip: 'Report Proposal',
-          onPressed: () => ReportModal.show(context, targetName: _proposal['name'] as String, targetType: 'proposal'),
+          onPressed: () => ReportModal.show(context, targetName: widget.proposal!.studentName ?? "Student", targetType: 'proposal'),
         ),
       ],
     );
@@ -176,7 +192,7 @@ class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
               ),
               child: Center(
                 child: Text(
-                  (_proposal['name'] as String).split(' ').map((w) => w[0]).take(2).join(),
+                  (widget.proposal!.studentName != null && widget.proposal!.studentName!.isNotEmpty) ? widget.proposal!.studentName![0] : 'S',
                   style: GoogleFonts.plusJakartaSans(fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
                 ),
               ),
@@ -189,37 +205,30 @@ class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
                   Row(
                     children: [
                       Flexible(
-                        child: Text(_proposal['name'] as String,
+                        child: Text(widget.proposal!.studentName ?? "Student",
                             style: GoogleFonts.plusJakartaSans(
                                 fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
                             maxLines: 1, overflow: TextOverflow.ellipsis),
                       ),
-                      if (_proposal['isVerified'] == true) ...[
-                        const SizedBox(width: 4),
-                        const Icon(Icons.verified_rounded, color: AppColors.studentPrimary, size: 14),
-                      ],
                     ],
                   ),
-                  Text(_proposal['year'] as String,
+                  Text('Student Profile',
                       style: GoogleFonts.inter(fontSize: 12, color: AppColors.textMuted)),
                   const SizedBox(height: 4),
                   Row(
                     children: [
                       const Icon(Icons.star_rounded, color: AppColors.warning, size: 13),
                       const SizedBox(width: 3),
-                      Text('${_proposal['rating']}',
+                      Text('5.0',
                           style: GoogleFonts.plusJakartaSans(
                               fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.warning)),
-                      const SizedBox(width: AppSpacing.sm),
-                      Text('· ${_proposal['jobs']} jobs',
-                          style: GoogleFonts.inter(fontSize: 11, color: AppColors.textMuted)),
                     ],
                   ),
                 ],
               ),
             ),
             GestureDetector(
-              onTap: () => context.go('/student/profile/s1'),
+              onTap: () => context.go('/student/profile/${widget.proposal!.studentProfileId}'),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
                 decoration: BoxDecoration(
@@ -244,10 +253,10 @@ class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
       child: Row(
         children: [
           _MetaTile(icon: Icons.payments_outlined, label: 'Proposed Rate',
-              value: _proposal['rate'] as String, accent: AppColors.businessPrimary, mono: true),
+              value: '₱${widget.proposal!.proposedBudget}', accent: AppColors.businessPrimary, mono: true),
           const SizedBox(width: AppSpacing.sm),
           _MetaTile(icon: Icons.timer_outlined, label: 'Timeline',
-              value: _proposal['timeline'] as String, accent: AppColors.businessAccent),
+              value: '${widget.proposal!.estimatedTimelineWeeks} weeks', accent: AppColors.businessAccent),
         ],
       ).animate().fadeIn(duration: 500.ms, delay: 100.ms),
     );
@@ -259,34 +268,15 @@ class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _SectionLabel(label: 'Cover Letter'),
+          const _SectionLabel(label: 'Cover Letter'),
           const SizedBox(height: AppSpacing.md),
-          Text(_proposal['cover'] as String,
+          Text(widget.proposal!.pitchText,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.75)),
         ],
       ).animate().fadeIn(duration: 500.ms, delay: 180.ms),
     );
   }
 
-  Widget _buildSkills(BuildContext context) {
-    final skills = _proposal['skills'] as List;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _SectionLabel(label: 'Skills'),
-          const SizedBox(height: AppSpacing.md),
-          Wrap(
-            spacing: AppSpacing.sm, runSpacing: AppSpacing.sm,
-            children: skills.map((s) => SkillChip(
-              label: s as String, selected: true, accentColor: AppColors.studentPrimary,
-            )).toList(),
-          ),
-        ],
-      ).animate().fadeIn(duration: 500.ms, delay: 260.ms),
-    );
-  }
 
   Widget _buildAttachedProject(BuildContext context) {
     return Padding(
@@ -294,10 +284,10 @@ class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _SectionLabel(label: 'Attached Portfolio Project'),
+          const _SectionLabel(label: 'Attached Portfolio Project'),
           const SizedBox(height: AppSpacing.md),
           AppCard(
-            onTap: () => context.go('/student/portfolio/0'),
+            onTap: () => context.go('/student/portfolio/${widget.proposal!.attachedProjectId}'),
             child: Row(
               children: [
                 Container(
@@ -306,18 +296,16 @@ class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
                     color: AppColors.studentPrimary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(AppRadius.md),
                   ),
-                  child: const Icon(Icons.folder_outlined, color: AppColors.studentPrimary, size: 22),
+                  child: const Icon(Icons.person_rounded, color: AppColors.studentPrimary, size: 22),
                 ),
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(_proposal['attachedProject'] as String,
+                      Text('View attached project',
                           style: GoogleFonts.plusJakartaSans(
                               fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-                      Text('Tap to view full project',
-                          style: GoogleFonts.inter(fontSize: 11, color: AppColors.textMuted)),
                     ],
                   ),
                 ),

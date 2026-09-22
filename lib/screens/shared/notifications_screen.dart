@@ -1,32 +1,70 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/constants.dart';
 import '../../widgets/app_background.dart';
 import '../../widgets/app_card.dart';
+import '../../services/notification_service.dart';
 
-class NotificationsScreen extends StatelessWidget {
+class NotificationsScreen extends StatefulWidget {
   final UserRole role;
   const NotificationsScreen({super.key, required this.role});
 
-  bool get _isStudent => role == UserRole.student;
+  @override
+  State<NotificationsScreen> createState() => _NotificationsScreenState();
+}
+
+class _NotificationsScreenState extends State<NotificationsScreen> {
+  bool get _isStudent => widget.role == UserRole.student;
   Color get _primary => _isStudent ? AppColors.studentPrimary : AppColors.businessPrimary;
 
-  static final _notifications = [
-    _Notif(id: '1', icon: Icons.handshake_rounded, color: AppColors.success,
-        title: 'Proposal Accepted', body: 'Mang Juan\'s Hardware accepted your pitch for Inventory System.', time: '2m ago', unread: true),
-    _Notif(id: '2', icon: Icons.work_outline_rounded, color: AppColors.studentPrimary,
-        title: 'New Job Near You', body: 'BAMBOU Greenhouse Café posted a new job: Online Ordering App.', time: '1h ago', unread: true),
-    _Notif(id: '3', icon: Icons.chat_bubble_outline_rounded, color: AppColors.info,
-        title: 'New Message', body: 'Mang Juan\'s Hardware: "When can you start on the project?"', time: '3h ago', unread: true),
-    _Notif(id: '4', icon: Icons.cancel_outlined, color: AppColors.error,
-        title: 'Proposal Declined', body: 'Ate Rose\'s Ukay-Ukay declined your pitch for E-Commerce Website.', time: '1d ago', unread: false),
-    _Notif(id: '5', icon: Icons.star_rounded, color: AppColors.warning,
-        title: 'New Review', body: 'You received a 5-star review from Mang Juan\'s Hardware!', time: '3d ago', unread: false),
-    _Notif(id: '6', icon: Icons.notifications_rounded, color: AppColors.textMuted,
-        title: 'Reminder', body: 'Your project with Mang Juan\'s Hardware has a deadline in 3 days.', time: '5d ago', unread: false),
-  ];
+  late final Stream<List<Map<String, dynamic>>> _notifsStream;
+
+  @override
+  void initState() {
+    super.initState();
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId != null) {
+      _notifsStream = Supabase.instance.client
+          .from('notifications')
+          .stream(primaryKey: ['id'])
+          .eq('user_id', userId)
+          .order('created_at', ascending: false);
+    } else {
+      _notifsStream = Stream.value([]);
+    }
+  }
+
+  IconData _getIcon(String title) {
+    final t = title.toLowerCase();
+    if (t.contains('accepted') || t.contains('contract')) return Icons.handshake_rounded;
+    if (t.contains('job') || t.contains('hired')) return Icons.work_outline_rounded;
+    if (t.contains('message') || t.contains('chat')) return Icons.chat_bubble_outline_rounded;
+    if (t.contains('declined') || t.contains('rejected')) return Icons.cancel_outlined;
+    if (t.contains('review') || t.contains('rating')) return Icons.star_rounded;
+    if (t.contains('proposal')) return Icons.description_outlined;
+    return Icons.notifications_rounded;
+  }
+
+  Color _getColor(String title) {
+    final t = title.toLowerCase();
+    if (t.contains('accepted') || t.contains('success')) return AppColors.success;
+    if (t.contains('job') || t.contains('proposal')) return AppColors.studentPrimary;
+    if (t.contains('message') || t.contains('chat')) return AppColors.info;
+    if (t.contains('declined') || t.contains('rejected')) return AppColors.error;
+    if (t.contains('review') || t.contains('rating')) return AppColors.warning;
+    return AppColors.textSecondary;
+  }
+
+  String _timeAgo(String isoTime) {
+    final time = DateTime.parse(isoTime).toLocal();
+    final diff = DateTime.now().difference(time);
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    return '${diff.inDays}d ago';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,115 +73,142 @@ class NotificationsScreen extends StatelessWidget {
       body: AppBackground(
         tintColor: _primary.withValues(alpha: 0.04),
         child: SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.md),
-                child: Row(
-                  children: [
-                    GestureDetector(
-                      onTap: () => context.go(_isStudent ? '/student' : '/business'),
-                      child: Container(
-                        width: 40, height: 40,
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceHigh,
-                          borderRadius: BorderRadius.circular(AppRadius.md),
-                          border: Border.all(color: AppColors.border),
-                        ),
-                        child: const Icon(Icons.arrow_back_ios_new_rounded,
-                            color: AppColors.textSecondary, size: 14),
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.md),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+          child: StreamBuilder<List<Map<String, dynamic>>>(
+            stream: _notifsStream,
+            builder: (context, snapshot) {
+              final notifications = snapshot.data ?? [];
+              final unreadCount = notifications.where((n) => !(n['is_read'] as bool)).length;
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.md),
+                    child: Row(
                       children: [
-                        Text('Notifications', style: Theme.of(context).textTheme.headlineSmall),
-                        Text('// ${_notifications.where((n) => n.unread).length} unread',
-                            style: GoogleFonts.jetBrainsMono(fontSize: 10, color: _primary)),
-                      ],
-                    ),
-                  ],
-                ).animate().fadeIn(duration: 400.ms),
-              ),
-              Expanded(
-                child: ListView.separated(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-                  itemCount: _notifications.length,
-                  separatorBuilder: (context, idx) => const SizedBox(height: AppSpacing.sm),
-                  itemBuilder: (context, i) {
-                    final n = _notifications[i];
-                    return AppCard(
-                      backgroundColor: n.unread ? n.color.withValues(alpha: 0.04) : AppColors.surface,
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            width: 42, height: 42,
+                        GestureDetector(
+                          onTap: () => context.canPop() ? context.pop() : context.go(_isStudent ? '/student' : '/business'),
+                          child: Container(
+                            width: 40, height: 40,
                             decoration: BoxDecoration(
-                              color: n.color.withValues(alpha: 0.12),
+                              color: AppColors.surfaceHigh,
                               borderRadius: BorderRadius.circular(AppRadius.md),
+                              border: Border.all(color: AppColors.border),
                             ),
-                            child: Icon(n.icon, color: n.color, size: 20),
+                            child: const Icon(Icons.arrow_back_ios_new_rounded,
+                                color: AppColors.textSecondary, size: 14),
                           ),
-                          const SizedBox(width: AppSpacing.md),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Expanded(
-                                      child: Text(n.title,
-                                          style: GoogleFonts.plusJakartaSans(
-                                              fontSize: 14,
-                                              fontWeight: n.unread ? FontWeight.w700 : FontWeight.w600,
-                                              color: AppColors.textPrimary)),
-                                    ),
-                                    Text(n.time,
-                                        style: GoogleFonts.jetBrainsMono(
-                                            fontSize: 9, color: AppColors.textMuted)),
-                                    if (n.unread) ...[  
-                                      const SizedBox(width: 6),
-                                      Container(
-                                        width: 7, height: 7,
-                                        decoration: BoxDecoration(
-                                            color: n.color, shape: BoxShape.circle),
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                                const SizedBox(height: 4),
-                                Text(n.body,
-                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.4)),
-                              ],
+                        ),
+                        const SizedBox(width: AppSpacing.md),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Notifications', style: Theme.of(context).textTheme.headlineSmall),
+                            Text('// $unreadCount unread',
+                                style: GoogleFonts.jetBrainsMono(fontSize: 10, color: _primary)),
+                          ],
+                        ),
+                        const Spacer(),
+                        if (unreadCount > 0)
+                          IconButton(
+                            icon: const Icon(Icons.done_all_rounded, color: AppColors.textSecondary),
+                            onPressed: () => NotificationService().markAllAsRead(),
+                            tooltip: 'Mark all as read',
+                          ),
+                      ],
+                    ).animate().fadeIn(duration: 400.ms),
+                  ),
+                  Expanded(
+                    child: snapshot.hasError
+                        ? Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(AppSpacing.lg),
+                              child: Text('Error loading notifications:\n\n${snapshot.error}', textAlign: TextAlign.center, style: TextStyle(color: AppColors.error)),
                             ),
-                          ),
-                        ],
-                      ),
-                    ).animate()
-                        .fadeIn(duration: 350.ms, delay: Duration(milliseconds: i * 60))
-                        .slideY(begin: 0.05, duration: 300.ms, delay: Duration(milliseconds: i * 60));
-                  },
-                ),
-              ),
-            ],
+                          )
+                        : !snapshot.hasData
+                            ? const Center(child: CircularProgressIndicator())
+                            : notifications.isEmpty
+                                ? const Center(child: Text('No notifications yet'))
+                                : ListView.separated(
+                                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                                    itemCount: notifications.length,
+                                    separatorBuilder: (context, idx) => const SizedBox(height: AppSpacing.sm),
+                                    itemBuilder: (context, i) {
+                                      final n = notifications[i];
+                                      final isRead = n['is_read'] as bool;
+                                      final id = n['id'] as int;
+                                      final title = n['title'] as String;
+                                      final icon = _getIcon(title);
+                                      final color = _getColor(title);
+
+                                      return AppCard(
+                                        backgroundColor: !isRead ? color.withValues(alpha: 0.04) : AppColors.surface,
+                                        onTap: () {
+                                          if (!isRead) NotificationService().markAsRead(id);
+                                          final route = n['route'] as String?;
+                                          if (route != null && route.isNotEmpty) {
+                                            context.push(route);
+                                          }
+                                        },
+                                        child: Row(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Container(
+                                              width: 42, height: 42,
+                                              decoration: BoxDecoration(
+                                                color: color.withValues(alpha: 0.12),
+                                                borderRadius: BorderRadius.circular(AppRadius.md),
+                                              ),
+                                              child: Icon(icon, color: color, size: 20),
+                                            ),
+                                            const SizedBox(width: AppSpacing.md),
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                children: [
+                                                  Row(
+                                                    children: [
+                                                      Expanded(
+                                                        child: Text(title,
+                                                            style: GoogleFonts.plusJakartaSans(
+                                                                fontSize: 14,
+                                                                fontWeight: !isRead ? FontWeight.w700 : FontWeight.w600,
+                                                                color: AppColors.textPrimary)),
+                                                      ),
+                                                      if (!isRead)
+                                                        Container(
+                                                          width: 8, height: 8,
+                                                          margin: const EdgeInsets.only(left: 8),
+                                                          decoration: BoxDecoration(color: _primary, shape: BoxShape.circle),
+                                                        ),
+                                                    ],
+                                                  ),
+                                                  const SizedBox(height: 2),
+                                                  Text(n['body'] as String,
+                                                      style: GoogleFonts.inter(
+                                                          fontSize: 12,
+                                                          fontWeight: !isRead ? FontWeight.w500 : FontWeight.w400,
+                                                          color: !isRead ? AppColors.textPrimary : AppColors.textSecondary)),
+                                                  const SizedBox(height: 6),
+                                                  Text(_timeAgo(n['created_at'] as String),
+                                                      style: GoogleFonts.jetBrainsMono(fontSize: 10, color: AppColors.textMuted)),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ).animate().fadeIn(duration: 400.ms, delay: (50 * i).ms);
+                                    },
+                                  ),
+                  ),
+                ],
+              );
+            }
           ),
         ),
       ),
     );
   }
 }
-
-class _Notif {
-  final String id, title, body, time;
-  final IconData icon;
-  final Color color;
-  final bool unread;
-  const _Notif({required this.id, required this.icon, required this.color,
-      required this.title, required this.body, required this.time, required this.unread});
-}
-
-

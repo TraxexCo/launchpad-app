@@ -2,45 +2,129 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants.dart';
 import '../../widgets/app_background.dart';
-import '../../widgets/app_button.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/skill_chip.dart';
-import '../../widgets/report_modal.dart';
-import '../../data/mock_data.dart';
 
-class StudentPublicProfileScreen extends StatelessWidget {
+import '../../services/github_api_service.dart';
+import '../../services/review_service.dart';
+
+class StudentPublicProfileScreen extends StatefulWidget {
   final String studentId;
   const StudentPublicProfileScreen({super.key, required this.studentId});
 
-  static const _profile = {
-    'name': 'Juan dela Cruz',
-    'title': 'Flutter & Full-Stack Developer',
-    'school': 'Polytechnic University of the Philippines',
-    'year': '3rd Year · BSIT',
-    'bio':
-        'Mobile-first developer passionate about building real products. I specialize in Flutter and Laravel, and I love helping local businesses get their first app. 5 projects completed, 3 with local clients.',
-    'github': 'github.com/juandc',
-    'rating': '4.9',
-    'projects': 5,
-    'proposals': 12,
-    'completedJobs': 3,
-    'responseTime': '< 4h',
-    'skills': ['Flutter', 'Dart', 'Laravel', 'PHP', 'MySQL', 'Firebase', 'Figma'],
-  };
+  @override
+  State<StudentPublicProfileScreen> createState() => _StudentPublicProfileScreenState();
+}
 
-  static const _portfolioItems = [
-    {'title': 'Café POS System', 'type': 'Mobile App', 'icon': Icons.point_of_sale_rounded},
-    {'title': 'QuizBee App', 'type': 'Mobile App', 'icon': Icons.quiz_rounded},
-    {'title': 'Grade Tracker', 'type': 'Web App', 'icon': Icons.grade_rounded},
-  ];
+class _StudentPublicProfileScreenState extends State<StudentPublicProfileScreen> {
+  Map<String, dynamic> _profile = {};
+  List<Map<String, dynamic>> _portfolioItems = [];
+  StudentReviewSummary _reviewSummary = const StudentReviewSummary(
+    averageRating: 0.0,
+    totalReviews: 0,
+    completedJobsCount: 0,
+    reviews: [],
+  );
+  bool _profileLoading = true;
+  String? _profileError;
+
+  final GithubApiService _githubApiService = GithubApiService();
+  List<Map<String, dynamic>> _repos = [];
+  bool _isLoading = true;
+  String? _error;
+  String _selectedLanguage = 'All';
+  Set<String> _availableLanguages = {'All'};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    try {
+      final client = Supabase.instance.client;
+      final profile = await client.from('profiles').select('full_name')
+          .eq('id', widget.studentId).single();
+      final student = await client.from('student_profiles').select()
+          .eq('user_id', widget.studentId).maybeSingle();
+      final skillLinks = await client.from('student_skills')
+          .select('skills(name)').eq('student_id', widget.studentId);
+      final projects = await client.from('portfolio_projects')
+          .select('id,title,description,project_type').eq('student_id', widget.studentId)
+          .order('created_at', ascending: false);
+      final reviews = await ReviewService().getStudentReviews(widget.studentId);
+      if (!mounted) return;
+      setState(() {
+        _profile = {
+          'name': profile['full_name'] as String? ?? 'Student',
+          'school': student?['school'] as String? ?? '',
+          'course': student?['course'] as String? ?? '',
+          'year': student?['year_level'] as String? ?? '',
+          'bio': student?['bio'] as String? ?? '',
+          'github': student?['github_username'] as String? ?? '',
+          'skills': skillLinks.map((row) =>
+              (row['skills'] as Map<String, dynamic>?)?['name'] as String? ?? '').where((s) => s.isNotEmpty).toList(),
+        };
+        _portfolioItems = projects;
+        _reviewSummary = reviews;
+        _profileLoading = false;
+      });
+      await _fetchGithubRepos();
+    } catch (error) {
+      if (mounted) setState(() { _profileError = '$error'; _profileLoading = false; });
+    }
+  }
+
+  Future<void> _fetchGithubRepos() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      final username = _profile['github'] as String? ?? '';
+      if (username.isEmpty) {
+        if (mounted) setState(() { _repos = []; _isLoading = false; });
+        return;
+      }
+      final repos = await _githubApiService.fetchUserRepositories(username);
+      
+      final languages = {'All'};
+      for (var repo in repos) {
+        if (repo['language'] != null) {
+          languages.add(repo['language'] as String);
+        }
+      }
+
+      if (!mounted) return;
+      setState(() {
+        _repos = repos;
+        _availableLanguages = languages;
+        _isLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: AppBackground(
+      body: _profileLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _profileError != null
+              ? Center(child: Text('Could not load student profile: $_profileError'))
+              : AppBackground(
         tintColor: AppColors.studentPrimary.withValues(alpha: 0.04),
         child: Column(
           children: [
@@ -52,6 +136,7 @@ class StudentPublicProfileScreen extends StatelessWidget {
                   SliverToBoxAdapter(child: _buildStats(context)),
                   SliverToBoxAdapter(child: _buildBio(context)),
                   SliverToBoxAdapter(child: _buildSkills(context)),
+                  SliverToBoxAdapter(child: _buildGithubPortfolio(context)),
                   SliverToBoxAdapter(child: _buildPortfolio(context)),
                   SliverToBoxAdapter(child: _buildReviews(context)),
                   const SliverToBoxAdapter(child: SizedBox(height: 120)),
@@ -71,7 +156,7 @@ class StudentPublicProfileScreen extends StatelessWidget {
       elevation: 0,
       pinned: true,
       leading: GestureDetector(
-        onTap: () => context.go('/business'),
+        onTap: () => context.canPop() ? context.pop() : context.go('/business'),
         child: Container(
           margin: const EdgeInsets.all(8),
           decoration: BoxDecoration(
@@ -83,22 +168,6 @@ class StudentPublicProfileScreen extends StatelessWidget {
               color: AppColors.textSecondary, size: 14),
         ),
       ),
-      actions: [
-        IconButton(
-          icon: const Icon(Icons.outlined_flag_rounded, color: AppColors.textSecondary),
-          tooltip: 'Report Student',
-          onPressed: () => ReportModal.show(context, targetName: mockStudentProfile.name, targetType: 'student'),
-        ),
-        Container(
-          margin: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceHigh.withValues(alpha: 0.9),
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            border: Border.all(color: AppColors.border),
-          ),
-          child: const Icon(Icons.share_outlined, color: AppColors.textSecondary, size: 16),
-        ),
-      ],
     );
   }
 
@@ -122,7 +191,9 @@ class StudentPublicProfileScreen extends StatelessWidget {
                 ),
                 child: Center(
                   child: Text(
-                    mockStudentProfile.initials,
+                    (_profile['name'] as String).split(' ')
+                        .where((part) => part.isNotEmpty)
+                        .take(2).map((part) => part[0]).join().toUpperCase(),
                     style: GoogleFonts.plusJakartaSans(
                         fontSize: 28, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
                   ),
@@ -133,22 +204,13 @@ class StudentPublicProfileScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(mockStudentProfile.name,
-                              style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 20, fontWeight: FontWeight.w800,
-                                  color: AppColors.textPrimary)),
-                        ),
-                        if (mockStudentProfile.isVerified) ...[
-                          const SizedBox(width: AppSpacing.xs),
-                          const Icon(Icons.verified_rounded, color: AppColors.studentPrimary, size: 20),
-                        ],
-                      ],
-                    ),
+                    Text(_profile['name'] as String,
+                        style: GoogleFonts.plusJakartaSans(
+                            fontSize: 20, fontWeight: FontWeight.w800,
+                            color: AppColors.textPrimary)),
                     const SizedBox(height: 3),
-                    Text(_profile['title'] as String,
+                    Text((_profile['course'] as String).isEmpty
+                            ? 'Student developer' : _profile['course'] as String,
                         style: GoogleFonts.inter(fontSize: 13, color: AppColors.textSecondary)),
                     const SizedBox(height: 4),
                     Row(
@@ -156,7 +218,10 @@ class StudentPublicProfileScreen extends StatelessWidget {
                         const Icon(Icons.school_outlined, color: AppColors.textMuted, size: 12),
                         const SizedBox(width: 4),
                         Expanded(
-                          child: Text('${_profile['year']} · PUP',
+                          child: Text(((_profile['school'] as String).isEmpty &&
+                                  (_profile['year'] as String).isEmpty)
+                              ? 'School details not added'
+                              : '${_profile['year']} · ${_profile['school']}',
                               style: GoogleFonts.inter(fontSize: 11, color: AppColors.textMuted),
                               maxLines: 1, overflow: TextOverflow.ellipsis),
                         ),
@@ -173,17 +238,22 @@ class StudentPublicProfileScreen extends StatelessWidget {
   }
 
   Widget _buildStats(BuildContext context) {
+    final ratingStr = _reviewSummary.totalReviews > 0
+        ? '${_reviewSummary.averageRating} ★'
+        : '—';
+    final completedJobsStr = '${_reviewSummary.completedJobsCount}';
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
       child: Row(
         children: [
-          _StatTile(value: '${_profile['rating']}★', label: 'Rating', color: AppColors.warning),
+          _StatTile(value: ratingStr, label: 'Rating', color: AppColors.warning),
           const SizedBox(width: AppSpacing.sm),
-          _StatTile(value: '${_profile['completedJobs']}', label: 'Jobs Done', color: AppColors.success),
+          _StatTile(value: completedJobsStr, label: 'Jobs Done', color: AppColors.success),
           const SizedBox(width: AppSpacing.sm),
-          _StatTile(value: '${_profile['projects']}', label: 'Projects', color: AppColors.studentPrimary),
+          _StatTile(value: '${_portfolioItems.length}', label: 'Projects', color: AppColors.studentPrimary),
           const SizedBox(width: AppSpacing.sm),
-          _StatTile(value: _profile['responseTime'] as String, label: 'Response', color: AppColors.studentAccent),
+          _StatTile(value: '100%', label: 'Response', color: AppColors.studentAccent),
         ],
       ).animate().fadeIn(duration: 500.ms, delay: 100.ms),
     );
@@ -196,13 +266,13 @@ class StudentPublicProfileScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _SectionLabel(label: 'About'),
+          const _SectionLabel(label: 'About'),
           const SizedBox(height: AppSpacing.md),
-          Text(_profile['bio'] as String,
+          Text((_profile['bio'] as String).isEmpty ? 'No bio added yet.' : _profile['bio'] as String,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.7)),
           const SizedBox(height: AppSpacing.md),
-          GestureDetector(
-            onTap: () {},
+          if ((_profile['github'] as String).isNotEmpty) GestureDetector(
+            onTap: () => launchUrl(Uri.https('github.com', '/${_profile['github']}')),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -228,7 +298,7 @@ class StudentPublicProfileScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _SectionLabel(label: 'Skills'),
+          const _SectionLabel(label: 'Skills'),
           const SizedBox(height: AppSpacing.md),
           Wrap(
             spacing: AppSpacing.sm,
@@ -242,6 +312,162 @@ class StudentPublicProfileScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildGithubPortfolio(BuildContext context) {
+    List<Map<String, dynamic>> displayedRepos = _repos;
+    if (_selectedLanguage != 'All') {
+      displayedRepos = _repos.where((r) => r['language'] == _selectedLanguage).toList();
+    }
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg, AppSpacing.xl, AppSpacing.lg, 0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  const _SectionLabel(label: 'Live GitHub Portfolio'),
+                  const SizedBox(width: AppSpacing.sm),
+                  if ((_profile['github'] as String).isNotEmpty) Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.success.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(AppRadius.full),
+                      border: Border.all(color: AppColors.success.withValues(alpha: 0.4)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 6, height: 6,
+                          decoration: const BoxDecoration(
+                            color: AppColors.success,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Text('LIVE', style: GoogleFonts.jetBrainsMono(
+                          fontSize: 9, fontWeight: FontWeight.w700,
+                          color: AppColors.success,
+                          letterSpacing: 0.5,
+                        )),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              if ((_profile['github'] as String).isNotEmpty) IconButton(
+                icon: const Icon(Icons.refresh_rounded, size: 20, color: AppColors.studentPrimary),
+                onPressed: _isLoading ? null : _fetchGithubRepos,
+                tooltip: 'Refresh GitHub Data',
+              )
+            ],
+          ),
+          if (!_isLoading && _error == null && _availableLanguages.length > 1) ...[
+            const SizedBox(height: AppSpacing.sm),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: _availableLanguages.map((lang) {
+                  final isSelected = _selectedLanguage == lang;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: ChoiceChip(
+                      label: Text(lang, style: GoogleFonts.inter(fontSize: 11)),
+                      selected: isSelected,
+                      selectedColor: AppColors.studentPrimary.withValues(alpha: 0.2),
+                      onSelected: (selected) {
+                        if (selected) setState(() => _selectedLanguage = lang);
+                      },
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+          ],
+          const SizedBox(height: AppSpacing.md),
+          if ((_profile['github'] as String).isEmpty)
+            Text('No GitHub account linked.', style: GoogleFonts.inter(color: AppColors.textMuted))
+          else if (_isLoading)
+            const Center(child: Padding(
+              padding: EdgeInsets.all(AppSpacing.lg),
+              child: CircularProgressIndicator(color: AppColors.studentPrimary),
+            ))
+          else if (_error != null)
+            AppCard(
+              child: Row(
+                children: [
+                  const Icon(Icons.error_outline, color: AppColors.error),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(child: Text(_error!, style: GoogleFonts.inter(color: AppColors.error, fontSize: 12))),
+                ],
+              ),
+            )
+          else if (displayedRepos.isEmpty)
+            Text('No repositories found.', style: GoogleFonts.inter(color: AppColors.textMuted))
+          else
+            ...displayedRepos.take(5).map((repo) => Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: AppCard(
+                onTap: () {
+                  final url = Uri.tryParse(repo['html_url']?.toString() ?? '');
+                  if (url != null && url.scheme == 'https' && url.host == 'github.com') {
+                    launchUrl(url);
+                  }
+                },
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(repo['name'] ?? 'Unknown',
+                              style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary),
+                              maxLines: 1, overflow: TextOverflow.ellipsis),
+                        ),
+                        Row(
+                          children: [
+                            const Icon(Icons.star_rounded, color: AppColors.warning, size: 14),
+                            const SizedBox(width: 4),
+                            Text('${repo['stargazers_count'] ?? 0}', style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary)),
+                          ],
+                        )
+                      ],
+                    ),
+                    if (repo['description'] != null) ...[
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(repo['description'],
+                          style: GoogleFonts.inter(fontSize: 12, color: AppColors.textMuted),
+                          maxLines: 2, overflow: TextOverflow.ellipsis),
+                    ],
+                    const SizedBox(height: AppSpacing.sm),
+                    Row(
+                      children: [
+                        Container(
+                          width: 10, height: 10,
+                          decoration: const BoxDecoration(shape: BoxShape.circle, color: AppColors.studentPrimary),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(repo['language'] ?? 'Unknown', style: GoogleFonts.jetBrainsMono(fontSize: 11, color: AppColors.textSecondary)),
+                        const Spacer(),
+                        Text('Updated: ${(repo['updated_at'] as String).substring(0, 10)}',
+                            style: GoogleFonts.inter(fontSize: 10, color: AppColors.textDisabled)),
+                      ],
+                    )
+                  ],
+                ),
+              ),
+            )),
+        ],
+      ).animate().fadeIn(duration: 500.ms, delay: 280.ms),
+    );
+  }
+
   Widget _buildPortfolio(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -249,12 +475,14 @@ class StudentPublicProfileScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _SectionLabel(label: 'Portfolio'),
+          const _SectionLabel(label: 'Past Projects'),
           const SizedBox(height: AppSpacing.md),
+          if (_portfolioItems.isEmpty)
+            Text('No portfolio projects yet.', style: GoogleFonts.inter(color: AppColors.textMuted)),
           ..._portfolioItems.asMap().entries.map((e) => Padding(
             padding: const EdgeInsets.only(bottom: AppSpacing.sm),
             child: AppCard(
-              onTap: () => context.go('/student/portfolio/${e.key}'),
+              onTap: () => context.go('/student/portfolio/${e.value['id']}'),
               child: Row(
                 children: [
                   Container(
@@ -263,7 +491,7 @@ class StudentPublicProfileScreen extends StatelessWidget {
                       color: AppColors.studentPrimary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(AppRadius.md),
                     ),
-                    child: Icon(e.value['icon'] as IconData,
+                    child: const Icon(Icons.folder_outlined,
                         color: AppColors.studentPrimary, size: 20),
                   ),
                   const SizedBox(width: AppSpacing.md),
@@ -275,7 +503,7 @@ class StudentPublicProfileScreen extends StatelessWidget {
                             style: GoogleFonts.plusJakartaSans(
                                 fontSize: 14, fontWeight: FontWeight.w600,
                                 color: AppColors.textPrimary)),
-                        Text(e.value['type'] as String,
+                        Text(e.value['project_type'] as String? ?? 'Portfolio project',
                             style: GoogleFonts.jetBrainsMono(
                                 fontSize: 10, color: AppColors.studentPrimary)),
                       ],
@@ -300,71 +528,62 @@ class StudentPublicProfileScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _SectionLabel(label: 'Client Reviews (${mockStudentProfile.reviewCount})'),
-              TextButton(
-                onPressed: () {
-                  showModalBottomSheet(
-                    context: context,
-                    isScrollControlled: true,
-                    backgroundColor: Colors.transparent,
-                    builder: (context) => const _LeaveReviewModal(),
-                  );
-                },
-                child: Text('Write a Review', style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.studentPrimary)),
-              ),
+              const _SectionLabel(label: 'Client Reviews'),
+              const Spacer(),
+              if (_reviewSummary.totalReviews > 0)
+                Text('${_reviewSummary.totalReviews} review(s)',
+                    style: GoogleFonts.inter(fontSize: 12, color: AppColors.textMuted)),
             ],
           ),
           const SizedBox(height: AppSpacing.md),
-          if (mockStudentProfile.reviews.isEmpty)
-            Text('No reviews yet.', style: GoogleFonts.inter(color: AppColors.textMuted))
+          if (_reviewSummary.reviews.isEmpty)
+            Text('No reviews yet. Reviews will appear after completed contracts.',
+                style: GoogleFonts.inter(color: AppColors.textMuted))
           else
-            ...mockStudentProfile.reviews.map((review) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                child: AppCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Row(
-                            children: List.generate(
-                              5,
-                              (i) => Icon(
-                                i < review.rating.floor() ? Icons.star_rounded : Icons.star_border_rounded,
-                                color: AppColors.warning,
-                                size: 16,
-                              ),
+            ..._reviewSummary.reviews.map((rev) => Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                  child: AppCard(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(rev.reviewerName,
+                                style: GoogleFonts.plusJakartaSans(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.textPrimary)),
+                            Row(
+                              children: [
+                                for (int i = 1; i <= 5; i++)
+                                  Icon(
+                                    Icons.star_rounded,
+                                    size: 14,
+                                    color: i <= rev.rating
+                                        ? AppColors.warning
+                                        : AppColors.border,
+                                  ),
+                              ],
                             ),
-                          ),
-                          const SizedBox(width: AppSpacing.sm),
-                          Text(review.rating.toStringAsFixed(1),
-                              style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.warning)),
-                          const Spacer(),
-                          Text(review.authorName,
-                              style: GoogleFonts.inter(fontSize: 11, color: AppColors.textMuted)),
-                        ],
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      Text(
-                        '"${review.text}"',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(height: 1.6, fontStyle: FontStyle.italic),
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-                      Text(review.timeAgo, style: GoogleFonts.inter(fontSize: 10, color: AppColors.textDisabled)),
-                    ],
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        Text(rev.jobTitle,
+                            style: GoogleFonts.jetBrainsMono(
+                                fontSize: 10, color: AppColors.studentPrimary)),
+                        const SizedBox(height: AppSpacing.sm),
+                        Text(rev.body,
+                            style: Theme.of(context).textTheme.bodyMedium),
+                      ],
+                    ),
                   ),
-                ).animate().fadeIn(duration: 400.ms, delay: 500.ms),
-              );
-            }),
+                )),
         ],
       ),
     );
   }
-
   Widget _buildBottom(BuildContext context) {
     return Container(
       padding: const EdgeInsets.fromLTRB(
@@ -372,27 +591,9 @@ class StudentPublicProfileScreen extends StatelessWidget {
       decoration: const BoxDecoration(
         border: Border(top: BorderSide(color: AppColors.border)),
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: AppButton(
-              label: 'Message',
-              outlined: true,
-              icon: Icons.chat_bubble_outline_rounded,
-              onPressed: () => context.go('/chat/s1?name=Juan dela Cruz'),
-            ),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            flex: 2,
-            child: AppButton(
-              label: 'Invite to Job',
-              icon: Icons.send_rounded,
-              onPressed: () {},
-            ),
-          ),
-        ],
-      ),
+      child: Text('Messaging is available after a proposal is accepted. Invitations are coming later.',
+          textAlign: TextAlign.center,
+          style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 12)),
     );
   }
 }
@@ -445,75 +646,3 @@ class _SectionLabel extends StatelessWidget {
     );
   }
 }
-
-class _LeaveReviewModal extends StatefulWidget {
-  const _LeaveReviewModal();
-  @override
-  State<_LeaveReviewModal> createState() => _LeaveReviewModalState();
-}
-
-class _LeaveReviewModalState extends State<_LeaveReviewModal> {
-  int _rating = 0;
-  bool _submitting = false;
-
-  void _submit() async {
-    if (_rating == 0) return;
-    setState(() => _submitting = true);
-    await Future.delayed(const Duration(seconds: 1));
-    if (!mounted) return;
-    context.pop();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Review submitted successfully!'), backgroundColor: AppColors.success),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final keyboard = MediaQuery.of(context).viewInsets.bottom;
-    return Container(
-      padding: EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.xl + keyboard),
-      decoration: const BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text('Write a Review', style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: AppSpacing.md),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: List.generate(5, (i) {
-              return IconButton(
-                icon: Icon(
-                  i < _rating ? Icons.star_rounded : Icons.star_border_rounded,
-                  color: AppColors.warning,
-                  size: 40,
-                ),
-                onPressed: () => setState(() => _rating = i + 1),
-              );
-            }),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          TextField(
-            maxLines: 4,
-            decoration: InputDecoration(
-              hintText: 'Share your experience working with this student...',
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
-              contentPadding: const EdgeInsets.all(AppSpacing.md),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          AppButton(
-            label: _submitting ? 'Submitting...' : 'Submit Review',
-            onPressed: _rating > 0 ? _submit : null,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-
-

@@ -1,8 +1,10 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants.dart';
+import '../../services/proposal_service.dart';
+import '../../services/api_service.dart';
 import '../../widgets/app_background.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_text_field.dart';
@@ -25,9 +27,6 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
   int _timelineWeeks = 3;
   int _step = 0; // 0=write, 1=preview, 2=sent
   bool _loading = false;
-  int _attachedProject = -1;
-
-  static const _projects = ['Café POS System', 'QuizBee Mobile App', 'Grade Tracker Web'];
 
   @override
   void dispose() {
@@ -39,9 +38,25 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
   Future<void> _send() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
-    await Future.delayed(const Duration(seconds: 2));
-    if (!mounted) return;
-    setState(() { _loading = false; _step = 2; });
+    
+    try {
+      await ProposalService().submitProposal(
+        jobId: int.parse(widget.jobId),
+        coverLetter: _coverCtrl.text,
+        rate: _rateCtrl.text,
+        estimatedTimelineWeeks: _timelineWeeks,
+      );
+
+      if (!mounted) return;
+      setState(() { _loading = false; _step = 2; });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      final msg = e is ApiException ? e.message : e.toString();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('❌ $msg'), backgroundColor: AppColors.error),
+      );
+    }
   }
 
   @override
@@ -159,7 +174,7 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
           Row(
             children: [
               GestureDetector(
-                onTap: () => _step == 0 ? context.go('/student/jobs/${widget.jobId}') : setState(() => _step = 0),
+                onTap: () => _step == 0 ? (context.canPop() ? context.pop() : context.go('/student/jobs/${widget.jobId}')) : setState(() => _step = 0),
                 child: Container(
                   width: 40, height: 40,
                   decoration: BoxDecoration(
@@ -331,40 +346,8 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
 
             const SizedBox(height: AppSpacing.md),
 
-            ..._projects.asMap().entries.map((e) {
-              final selected = _attachedProject == e.key;
-              return Padding(
-                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                child: GestureDetector(
-                  onTap: () => setState(() => _attachedProject = selected ? -1 : e.key),
-                  child: AnimatedContainer(
-                    duration: AppDurations.fast,
-                    padding: const EdgeInsets.all(AppSpacing.md),
-                    decoration: BoxDecoration(
-                      color: selected ? AppColors.studentPrimary.withValues(alpha: 0.1) : AppColors.surfaceHigh,
-                      borderRadius: BorderRadius.circular(AppRadius.md),
-                      border: Border.all(
-                        color: selected ? AppColors.studentPrimary.withValues(alpha: 0.6) : AppColors.border,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.folder_outlined, color: selected ? AppColors.studentPrimary : AppColors.textMuted, size: 18),
-                        const SizedBox(width: AppSpacing.sm),
-                        Text(e.value, style: GoogleFonts.inter(fontSize: 13,
-                            color: selected ? AppColors.studentPrimary : AppColors.textPrimary)),
-                        const Spacer(),
-                        Icon(
-                          selected ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
-                          color: selected ? AppColors.studentPrimary : AppColors.border,
-                          size: 18,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            }),
+            Text('Portfolio attachments will be available after projects are saved.',
+                style: GoogleFonts.inter(fontSize: 12, color: AppColors.textMuted)),
 
             const SizedBox(height: AppSpacing.xxl),
           ],
@@ -406,15 +389,6 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
                 _ConfirmRow(icon: Icons.payments_outlined, label: 'Your Rate', value: '₱${_rateCtrl.text}', accent: AppColors.studentPrimary),
                 const SizedBox(height: AppSpacing.sm),
                 _ConfirmRow(icon: Icons.timer_outlined, label: 'Timeline', value: '$_timelineWeeks weeks', accent: AppColors.studentAccent),
-                if (_attachedProject >= 0) ...[
-                  const SizedBox(height: AppSpacing.sm),
-                  _ConfirmRow(
-                    icon: Icons.folder_outlined,
-                    label: 'Attached Project',
-                    value: _projects[_attachedProject],
-                    accent: AppColors.info,
-                  ),
-                ],
               ],
             ),
           ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1),

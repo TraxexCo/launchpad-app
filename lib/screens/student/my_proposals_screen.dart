@@ -1,8 +1,10 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants.dart';
+import '../../services/proposal_service.dart';
+import '../../models/proposal.dart';
 import '../../widgets/app_background.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/status_badge.dart';
@@ -17,11 +19,23 @@ class MyProposalsScreen extends StatefulWidget {
 class _MyProposalsScreenState extends State<MyProposalsScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tab;
+  List<Proposal> _allProposals = [];
+  bool _loading = true;
 
   @override
   void initState() {
     super.initState();
     _tab = TabController(length: 4, vsync: this);
+    _loadProposals();
+  }
+
+  Future<void> _loadProposals() async {
+    try {
+      final proposals = await ProposalService().getMyProposals();
+      if (mounted) setState(() { _allProposals = proposals; _loading = false; });
+    } catch (e) {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   @override
@@ -43,7 +57,9 @@ class _MyProposalsScreenState extends State<MyProposalsScreen>
               _buildHeader(context),
               _buildStats(),
               _buildTabBar(),
-              Expanded(child: _buildTabViews()),
+              Expanded(child: _loading 
+                ? const Center(child: CircularProgressIndicator(color: AppColors.studentPrimary))
+                : _buildTabViews()),
             ],
           ),
         ),
@@ -58,7 +74,7 @@ class _MyProposalsScreenState extends State<MyProposalsScreen>
       child: Row(
         children: [
           GestureDetector(
-            onTap: () => context.go('/student'),
+            onTap: () => context.canPop() ? context.pop() : context.go('/student'),
             child: Container(
               width: 40,
               height: 40,
@@ -93,20 +109,20 @@ class _MyProposalsScreenState extends State<MyProposalsScreen>
           horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
       child: Row(
         children: [
-          _StatCard(value: '${_all.length}', label: 'Total', color: AppColors.studentPrimary),
+          _StatCard(value: '${_allProposals.length}', label: 'Total', color: AppColors.studentPrimary),
           const SizedBox(width: AppSpacing.sm),
           _StatCard(
-              value: '${_all.where((p) => p.status == ProposalStatus.sent).length}',
+              value: '${_allProposals.where((p) => p.status == 'pending').length}',
               label: 'Pending',
               color: AppColors.info),
           const SizedBox(width: AppSpacing.sm),
           _StatCard(
-              value: '${_all.where((p) => p.status == ProposalStatus.accepted).length}',
+              value: '${_allProposals.where((p) => p.status == 'accepted').length}',
               label: 'Accepted',
               color: AppColors.success),
           const SizedBox(width: AppSpacing.sm),
           _StatCard(
-              value: '${_all.where((p) => p.status == ProposalStatus.rejected).length}',
+              value: '${_allProposals.where((p) => p.status == 'rejected').length}',
               label: 'Rejected',
               color: AppColors.error),
         ],
@@ -154,17 +170,17 @@ class _MyProposalsScreenState extends State<MyProposalsScreen>
     return TabBarView(
       controller: _tab,
       children: [
-        _ProposalList(proposals: _all),
-        _ProposalList(proposals: _all.where((p) => p.status == ProposalStatus.sent).toList()),
-        _ProposalList(proposals: _all.where((p) => p.status == ProposalStatus.accepted).toList()),
-        _ProposalList(proposals: _all.where((p) => p.status == ProposalStatus.rejected).toList()),
+        _ProposalList(proposals: _allProposals),
+        _ProposalList(proposals: _allProposals.where((p) => p.status == 'pending').toList()),
+        _ProposalList(proposals: _allProposals.where((p) => p.status == 'accepted').toList()),
+        _ProposalList(proposals: _allProposals.where((p) => p.status == 'rejected').toList()),
       ],
     );
   }
 }
 
 class _ProposalList extends StatelessWidget {
-  final List<_MockProposal> proposals;
+  final List<Proposal> proposals;
   const _ProposalList({required this.proposals});
 
   @override
@@ -195,14 +211,22 @@ class _ProposalList extends StatelessWidget {
 }
 
 class _ProposalCard extends StatelessWidget {
-  final _MockProposal proposal;
+  final Proposal proposal;
   const _ProposalCard({required this.proposal});
+
+  String _timeAgo(DateTime dt) {
+    final diff = DateTime.now().difference(dt);
+    if (diff.inDays > 0) return '${diff.inDays}d ago';
+    if (diff.inHours > 0) return '${diff.inHours}h ago';
+    if (diff.inMinutes > 0) return '${diff.inMinutes}m ago';
+    return 'Just now';
+  }
 
   @override
   Widget build(BuildContext context) {
     return AppCard(
-      onTap: proposal.status == ProposalStatus.accepted
-          ? () => context.go('/chat/${proposal.id}?name=${proposal.business}')
+      onTap: proposal.status == 'accepted'
+          ? () => context.go('/chat/${proposal.id}?name=${Uri.encodeComponent(proposal.jobTitle ?? 'Job')}')
           : null,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -224,10 +248,10 @@ class _ProposalCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(proposal.business,
+                    Text('Business', // mock as API doesn't return business name on student side yet
                         style: GoogleFonts.inter(
                             fontSize: 11, color: AppColors.textMuted)),
-                    Text(proposal.jobTitle,
+                    Text(proposal.jobTitle ?? 'Job',
                         style: GoogleFonts.plusJakartaSans(
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
@@ -237,11 +261,11 @@ class _ProposalCard extends StatelessWidget {
                   ],
                 ),
               ),
-              StatusBadge.fromProposal(proposal.status),
+              StatusBadge.fromApiStatus(proposal.status),
             ],
           ),
           const SizedBox(height: AppSpacing.sm + 2),
-          Text(proposal.coverSnippet,
+          Text(proposal.pitchText,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.bodySmall),
@@ -250,20 +274,20 @@ class _ProposalCard extends StatelessWidget {
             children: [
               _Pill(
                   icon: Icons.payments_outlined,
-                  value: proposal.rate,
+                  value: '₱${proposal.proposedBudget}',
                   color: AppColors.studentPrimary),
               const SizedBox(width: AppSpacing.sm),
               _Pill(
                   icon: Icons.timer_outlined,
-                  value: proposal.timeline,
+                  value: '${proposal.estimatedTimelineWeeks}w',
                   color: AppColors.studentAccent),
               const Spacer(),
-              Text(proposal.sentAgo,
+              Text(_timeAgo(proposal.createdAt),
                   style: GoogleFonts.jetBrainsMono(
                       fontSize: 10, color: AppColors.textMuted)),
             ],
           ),
-          if (proposal.status == ProposalStatus.accepted) ...[  
+          if (proposal.status == 'accepted') ...[  
             const SizedBox(height: AppSpacing.md),
             Container(
               padding: const EdgeInsets.all(AppSpacing.sm + 2),
@@ -278,7 +302,7 @@ class _ProposalCard extends StatelessWidget {
                   const Icon(Icons.chat_bubble_outline_rounded,
                       color: AppColors.success, size: 14),
                   const SizedBox(width: AppSpacing.sm),
-                  Text('Tap to open chat with ${proposal.business}',
+                  Text('Tap to open chat',
                       style: GoogleFonts.inter(
                           fontSize: 11, color: AppColors.success)),
                 ],
@@ -354,43 +378,5 @@ class _StatCard extends StatelessWidget {
     );
   }
 }
-
-class _MockProposal {
-  final String id, business, jobTitle, coverSnippet, rate, timeline, sentAgo;
-  final ProposalStatus status;
-  const _MockProposal({
-    required this.id,
-    required this.business,
-    required this.jobTitle,
-    required this.coverSnippet,
-    required this.rate,
-    required this.timeline,
-    required this.sentAgo,
-    required this.status,
-  });
-}
-
-const _all = [
-  _MockProposal(
-    id: '1', business: 'BAMBOU Greenhouse Café', jobTitle: 'Online Ordering App',
-    coverSnippet: 'Hi! I am a 3rd year CS student at PUP Manila with 2 years of Flutter experience. I have built 3 complete mobile apps...',
-    rate: '₱11,500', timeline: '3 weeks', sentAgo: '2h ago', status: ProposalStatus.sent,
-  ),
-  _MockProposal(
-    id: '2', business: 'Mang Juan\'s Hardware', jobTitle: 'Inventory Management System',
-    coverSnippet: 'I specialize in Laravel + MySQL systems and have built a similar inventory system for a school project...',
-    rate: '₱14,000', timeline: '4 weeks', sentAgo: '1d ago', status: ProposalStatus.accepted,
-  ),
-  _MockProposal(
-    id: '3', business: 'Ate Rose\'s Ukay-Ukay', jobTitle: 'E-Commerce Website',
-    coverSnippet: 'I can build a full e-commerce site using Next.js with GCash integration...',
-    rate: '₱18,000', timeline: '5 weeks', sentAgo: '3d ago', status: ProposalStatus.rejected,
-  ),
-  _MockProposal(
-    id: '4', business: 'Beans & Brew Coffee', jobTitle: 'Customer Loyalty App',
-    coverSnippet: 'I built a loyalty rewards module for my capstone project — I can adapt it for your café...',
-    rate: '₱13,000', timeline: '3 weeks', sentAgo: '5d ago', status: ProposalStatus.sent,
-  ),
-];
 
 

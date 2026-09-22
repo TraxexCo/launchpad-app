@@ -3,7 +3,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants.dart';
-import '../../data/mock_data.dart';
+import '../../services/job_service.dart';
+import '../../models/job_post.dart';
 import '../../widgets/app_background.dart';
 import '../../widgets/app_card.dart';
 
@@ -18,12 +19,32 @@ class _BrowseJobsScreenState extends State<BrowseJobsScreen> {
   final _searchCtrl = TextEditingController();
   String _activeFilter = 'All';
   String _sortBy = 'Newest';
+  
+  List<JobPost> _allJobs = [];
+  bool _loading = true;
+  String? _error;
 
   static const _filters = ['All', 'Mobile App', 'Web App', 'E-Commerce', 'POS', 'Digital Menu', 'Inventory'];
-  static const _sorts = ['Newest', 'Budget ↑', 'Budget ↓', 'Nearest'];
+  static const _sorts = ['Newest', 'Budget ↑', 'Budget ↓'];
 
-  List<MockJob> get _filtered {
-    var list = mockBrowseJobs.toList();
+  @override
+  void initState() {
+    super.initState();
+    _loadJobs();
+  }
+
+  Future<void> _loadJobs() async {
+    setState(() { _loading = true; _error = null; });
+    try {
+      final jobs = await JobService().getAllJobs();
+      if (mounted) setState(() { _allJobs = jobs; _loading = false; });
+    } catch (e) {
+      if (mounted) setState(() { _error = e.toString(); _loading = false; });
+    }
+  }
+
+  List<JobPost> get _filtered {
+    var list = _allJobs.toList();
     if (_activeFilter != 'All') {
       list = list.where((j) => j.category == _activeFilter).toList();
     }
@@ -31,8 +52,18 @@ class _BrowseJobsScreenState extends State<BrowseJobsScreen> {
       final q = _searchCtrl.text.toLowerCase();
       list = list.where((j) =>
         j.title.toLowerCase().contains(q) ||
-        j.business.toLowerCase().contains(q)).toList();
+        (j.businessName?.toLowerCase().contains(q) ?? false)).toList();
     }
+    
+    // Simple sort
+    if (_sortBy == 'Newest') {
+      list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    } else if (_sortBy == 'Budget ↑') {
+      list.sort((a, b) => (double.tryParse(a.budget) ?? 0).compareTo(double.tryParse(b.budget) ?? 0));
+    } else if (_sortBy == 'Budget ↓') {
+      list.sort((a, b) => (double.tryParse(b.budget) ?? 0).compareTo(double.tryParse(a.budget) ?? 0));
+    }
+    
     return list;
   }
 
@@ -70,7 +101,7 @@ class _BrowseJobsScreenState extends State<BrowseJobsScreen> {
       child: Row(
         children: [
           GestureDetector(
-            onTap: () => context.go('/student'),
+            onTap: () => context.canPop() ? context.pop() : context.go('/student'),
             child: Container(
               width: 40, height: 40,
               decoration: BoxDecoration(
@@ -228,6 +259,13 @@ class _BrowseJobsScreenState extends State<BrowseJobsScreen> {
   }
 
   Widget _buildJobList() {
+    if (_loading) {
+      return const Center(child: CircularProgressIndicator(color: AppColors.studentPrimary));
+    }
+    if (_error != null) {
+      return Center(child: Text(_error!, style: TextStyle(color: AppColors.error)));
+    }
+
     final jobs = _filtered;
     if (jobs.isEmpty) {
       return Center(
@@ -260,8 +298,16 @@ class _BrowseJobsScreenState extends State<BrowseJobsScreen> {
 // Job Card
 // ─────────────────────────────────────────────────────────────────────────────
 class _JobCard extends StatelessWidget {
-  final MockJob job;
+  final JobPost job;
   const _JobCard({required this.job});
+
+  String _timeAgo(DateTime dt) {
+    final diff = DateTime.now().difference(dt);
+    if (diff.inDays > 0) return '${diff.inDays}d ago';
+    if (diff.inHours > 0) return '${diff.inHours}h ago';
+    if (diff.inMinutes > 0) return '${diff.inMinutes}m ago';
+    return 'Just now';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -293,9 +339,9 @@ class _JobCard extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Text(job.business,
+                        Text(job.businessName ?? 'Business',
                             style: GoogleFonts.inter(fontSize: 12, color: AppColors.textMuted)),
-                        if (job.isVerifiedBusiness) ...[
+                        if (job.verificationStatus == 'verified') ...[
                           const SizedBox(width: 4),
                           const Icon(Icons.verified_rounded, color: AppColors.studentPrimary, size: 14),
                         ],
@@ -351,12 +397,12 @@ class _JobCard extends StatelessWidget {
             children: [
               const Icon(Icons.location_on_outlined, color: AppColors.textMuted, size: 12),
               const SizedBox(width: 3),
-              Text(job.distance,
+              Text(job.location,
                   style: GoogleFonts.inter(fontSize: 11, color: AppColors.textMuted)),
               const SizedBox(width: AppSpacing.md),
               const Icon(Icons.access_time_rounded, color: AppColors.textMuted, size: 12),
               const SizedBox(width: 3),
-              Text(job.postedAgo,
+              Text(_timeAgo(job.createdAt),
                   style: GoogleFonts.inter(fontSize: 11, color: AppColors.textMuted)),
               const Spacer(),
               Container(
@@ -377,15 +423,6 @@ class _JobCard extends StatelessWidget {
                       fontSize: 9,
                       color: job.urgency == 'Urgent' ? AppColors.error : AppColors.success,
                     )),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Row(
-                children: [
-                  const Icon(Icons.person_outline_rounded, color: AppColors.textMuted, size: 12),
-                  const SizedBox(width: 3),
-                  Text('${job.proposals} pitches',
-                      style: GoogleFonts.inter(fontSize: 11, color: AppColors.textMuted)),
-                ],
               ),
             ],
           ),

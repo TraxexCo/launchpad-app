@@ -6,6 +6,8 @@ import '../../widgets/app_background.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_text_field.dart';
 import '../../widgets/skill_chip.dart';
+import '../../services/auth_service.dart';
+import '../../services/api_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   final UserRole role;
@@ -67,10 +69,44 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
 
   Future<void> _submit() async {
     setState(() => _loading = true);
-    await Future.delayed(const Duration(seconds: 2));
-    if (!mounted) return;
-    setState(() => _loading = false);
-    context.go('/verify?role=${_isStudent ? 'student' : 'business'}');
+    
+    try {
+      final role = _isStudent ? 'student' : 'business';
+      final extraFields = _isStudent ? {
+        'bio': _bioCtrl.text,
+        'github_url': _githubCtrl.text,
+        'skills': _selectedSkills.toList(),
+      } : {
+        'business_name': _bizNameCtrl.text,
+        'location': _addressCtrl.text,
+      };
+
+      final confirmationRequired = await AuthService().register(
+        role: role,
+        name: _nameCtrl.text,
+        email: _emailCtrl.text,
+        password: _passCtrl.text,
+        extraFields: extraFields,
+      );
+
+      if (!mounted) return;
+      setState(() => _loading = false);
+      if (confirmationRequired) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Check your email to confirm your account, then sign in.'),
+        ));
+        context.go('/login?role=$role');
+      } else {
+        context.go(role == 'student' ? '/student' : '/business');
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      final msg = e is ApiException ? e.message : e.toString();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('❌ $msg'), backgroundColor: AppColors.error),
+      );
+    }
   }
 
   @override
@@ -109,11 +145,11 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
                     ),
                     _buildStep(
                       formKey: _formKeys[2],
-                      title: _isStudent ? 'Your tech\nstack.' : 'Verify your\nbusiness.',
-                      subtitle: _isStudent ? 'Pick all skills that apply.' : 'Upload your DTI permit.',
+                      title: _isStudent ? 'Your tech\nstack.' : 'Your business\naccount.',
+                      subtitle: _isStudent ? 'Pick all skills that apply.' : 'Verification can be submitted after signup.',
                       child: _isStudent
                           ? _SkillsStep(selected: _selectedSkills, accentColor: _primary, onToggle: (s) => setState(() => _selectedSkills.contains(s) ? _selectedSkills.remove(s) : _selectedSkills.add(s)))
-                          : _VerificationStep(accentColor: _primary),
+                          : const Text('Your account will start as unverified. Document submission will be available after setup.'),
                     ),
                   ],
                 ),
@@ -349,7 +385,7 @@ class _BusinessProfileStep extends StatelessWidget {
             children: [
               Icon(Icons.verified_outlined, color: accentColor, size: 16),
               const SizedBox(width: AppSpacing.sm),
-              Expanded(child: Text('You will need to verify your business in the next step to post jobs.',
+              Expanded(child: Text('Business verification is not available yet. Your account starts as unverified.',
                   style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary, height: 1.4))),
             ],
           ),
@@ -377,97 +413,3 @@ class _SkillsStep extends StatelessWidget {
     );
   }
 }
-
-class _VerificationStep extends StatelessWidget {
-  final Color accentColor;
-  const _VerificationStep({required this.accentColor});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      children: [
-        _UploadTile(icon: Icons.receipt_long_rounded, title: 'DTI / Business Permit', subtitle: 'Upload a photo of your business registration.', accentColor: accentColor),
-        const SizedBox(height: AppSpacing.md),
-        _UploadTile(icon: Icons.add_a_photo_rounded, title: 'Storefront Photo', subtitle: 'Take a live photo outside your shop. GPS location will be verified.', accentColor: accentColor),
-        const SizedBox(height: AppSpacing.lg),
-        Container(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          decoration: BoxDecoration(
-            color: accentColor.withValues(alpha: 0.06),
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            border: Border.all(color: accentColor.withValues(alpha: 0.2)),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Icon(Icons.shield_outlined, color: accentColor, size: 16),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(child: Text('KYB verification protects both businesses and students from fraud. Your data is encrypted.',
-                  style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary, height: 1.5))),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _UploadTile extends StatefulWidget {
-  final IconData icon;
-  final String title, subtitle;
-  final Color accentColor;
-  const _UploadTile({required this.icon, required this.title, required this.subtitle, required this.accentColor});
-
-  @override
-  State<_UploadTile> createState() => _UploadTileState();
-}
-
-class _UploadTileState extends State<_UploadTile> {
-  bool _uploaded = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => setState(() => _uploaded = !_uploaded),
-      child: AnimatedContainer(
-        duration: AppDurations.normal,
-        padding: const EdgeInsets.all(AppSpacing.md),
-        decoration: BoxDecoration(
-          color: _uploaded ? AppColors.success.withValues(alpha: 0.06) : AppColors.surfaceHigh,
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-          border: Border.all(
-            color: _uploaded ? AppColors.success.withValues(alpha: 0.4) : AppColors.border,
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 48, height: 48,
-              decoration: BoxDecoration(
-                color: (_uploaded ? AppColors.success : widget.accentColor).withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(AppRadius.md),
-              ),
-              child: Icon(_uploaded ? Icons.check_circle_rounded : widget.icon,
-                  color: _uploaded ? AppColors.success : widget.accentColor, size: 22),
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(widget.title, style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
-                  const SizedBox(height: 3),
-                  Text(widget.subtitle, style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary, height: 1.4)),
-                ],
-              ),
-            ),
-            Icon(_uploaded ? Icons.check_rounded : Icons.upload_rounded,
-                color: _uploaded ? AppColors.success : AppColors.textMuted, size: 18),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-

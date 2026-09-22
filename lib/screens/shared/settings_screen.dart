@@ -1,10 +1,11 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants.dart';
 import '../../widgets/app_background.dart';
 import '../../widgets/app_button.dart';
+import '../../services/auth_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   final UserRole role;
@@ -55,16 +56,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       const SizedBox(height: AppSpacing.xl),
                       _buildSectionLabel('Account'),
                       const SizedBox(height: AppSpacing.md),
-                      _buildTile(icon: Icons.edit_outlined, label: 'Edit Profile', color: _primary, onTap: () {}),
-                      _buildTile(icon: Icons.lock_outline_rounded, label: 'Change Password', color: _primary, onTap: () {}),
-                      _buildTile(icon: Icons.help_outline_rounded, label: 'Help & Support', color: AppColors.info, onTap: () {}),
-                      _buildTile(icon: Icons.privacy_tip_outlined, label: 'Privacy Policy', color: AppColors.textMuted, onTap: () {}),
+                      _buildTile(icon: Icons.edit_outlined, label: 'Edit Profile', color: _primary, onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✏️ Edit Profile — coming soon!')))),
+                      _buildTile(icon: Icons.lock_outline_rounded, label: 'Change Password', color: _primary, onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('🔒 Change Password — coming soon!')))),
+                      _buildTile(icon: Icons.help_outline_rounded, label: 'Help & Support', color: AppColors.info, onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('🆘 Help & Support — coming soon!')))),
+                      _buildTile(icon: Icons.privacy_tip_outlined, label: 'Privacy Policy', color: AppColors.textMuted, onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('📄 Privacy Policy — coming soon!')))),
                       const SizedBox(height: AppSpacing.xl),
                       AppButton(
                         label: 'Sign Out',
                         outlined: true,
                         icon: Icons.logout_rounded,
-                        onPressed: () => context.go('/onboarding'),
+                        onPressed: () async {
+                          await AuthService().logout();
+                          if (context.mounted) context.go('/onboarding');
+                        },
                       ),
                       const SizedBox(height: AppSpacing.md),
                       Center(
@@ -91,7 +95,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Row(
         children: [
           GestureDetector(
-            onTap: () => context.go(_isStudent ? '/student' : '/business'),
+            onTap: () => context.canPop() ? context.pop() : context.go(_isStudent ? '/student' : '/business'),
             child: Container(
               width: 40, height: 40,
               decoration: BoxDecoration(

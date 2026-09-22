@@ -3,7 +3,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants.dart';
+import '../../services/job_service.dart';
+import '../../services/proposal_service.dart';
+import '../../services/auth_service.dart';
+import '../../services/contract_service.dart';
+import '../../services/review_service.dart';
+import '../../services/github_api_service.dart';
+import '../../models/job_post.dart';
+import '../../models/proposal.dart';
 import '../../core/theme.dart';
 import '../../data/mock_data.dart';
 import '../../widgets/app_background.dart';
@@ -20,6 +30,15 @@ class StudentDashboard extends StatefulWidget {
 
 class _StudentDashboardState extends State<StudentDashboard> {
   int _navIndex = 0;
+  String _name = 'Student';
+
+  @override
+  void initState() {
+    super.initState();
+    AuthService().getCurrentUser().then((user) {
+      if (mounted && user != null) setState(() => _name = user.name);
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,15 +49,18 @@ class _StudentDashboardState extends State<StudentDashboard> {
         child: SafeArea(
           child: Column(
             children: [
-              _AppBar(onLogout: () => context.go('/onboarding')),
+              _AppBar(name: _name, onLogout: () async {
+                await AuthService().logout();
+                if (context.mounted) context.go('/onboarding');
+              }),
               Expanded(
                 child: IndexedStack(
                   index: _navIndex,
-                  children: const [
-                    _HomeTab(),
-                    _RadarTab(),
-                    _PortfolioTab(),
-                    _ProfileTab(),
+                  children: [
+                    _HomeTab(name: _name, onNavigate: (i) => setState(() => _navIndex = i)),
+                    const _RadarTab(),
+                    const _PortfolioTab(),
+                    const _ProfileTab(),
                   ],
                 ),
               ),
@@ -58,8 +80,9 @@ class _StudentDashboardState extends State<StudentDashboard> {
 // App Bar
 // ─────────────────────────────────────────────────────────────────────────────
 class _AppBar extends StatelessWidget {
+  final String name;
   final VoidCallback onLogout;
-  const _AppBar({required this.onLogout});
+  const _AppBar({required this.name, required this.onLogout});
 
   @override
   Widget build(BuildContext context) {
@@ -83,7 +106,8 @@ class _AppBar extends StatelessWidget {
               ],
             ),
             child: Center(
-              child: Text('JD',
+              child: Text(name.split(' ').where((part) => part.isNotEmpty)
+                      .take(2).map((part) => part[0]).join().toUpperCase(),
                   style: GoogleFonts.plusJakartaSans(
                       fontSize: 14,
                       fontWeight: FontWeight.w800,
@@ -102,7 +126,7 @@ class _AppBar extends StatelessWidget {
                       fontWeight: FontWeight.w800,
                       color: AppColors.textPrimary,
                       letterSpacing: -0.5)),
-              Text('Juan dela Cruz',
+              Text(name,
                   style: GoogleFonts.jetBrainsMono(
                       fontSize: 10, color: AppColors.textMuted)),
             ],
@@ -223,8 +247,57 @@ class _BottomNav extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 // TAB 0 — Home
 // ─────────────────────────────────────────────────────────────────────────────
-class _HomeTab extends StatelessWidget {
-  const _HomeTab();
+
+class _HomeTab extends StatefulWidget {
+  final String name;
+  final ValueChanged<int> onNavigate;
+  const _HomeTab({required this.name, required this.onNavigate});
+
+  @override
+  State<_HomeTab> createState() => _HomeTabState();
+}
+
+class _HomeTabState extends State<_HomeTab> {
+  List<JobPost> _jobs = [];
+  List<Proposal> _proposals = [];
+  List<ContractItem> _contracts = [];
+  int _projectCount = 0;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    try {
+      final userId = Supabase.instance.client.auth.currentUser?.id;
+      final futures = await Future.wait([
+        JobService().getAllJobs(),
+        ProposalService().getMyProposals(),
+        ContractService().getMyContracts(),
+        if (userId != null)
+          Supabase.instance.client
+              .from('portfolio_projects')
+              .select('id')
+              .eq('student_id', userId)
+        else
+          Future.value(<Map<String, dynamic>>[]),
+      ]);
+      if (mounted) {
+        setState(() {
+          _jobs = futures[0] as List<JobPost>;
+          _proposals = futures[1] as List<Proposal>;
+          _contracts = futures[2] as List<ContractItem>;
+          _projectCount = (futures[3] as List).length;
+          _loading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -234,7 +307,7 @@ class _HomeTab extends StatelessWidget {
         const SizedBox(height: AppSpacing.sm),
 
         // ── Welcome
-        Text('Hey, Juan 👋',
+        Text('Hey, ${widget.name.split(' ').first} 👋',
             style: Theme.of(context).textTheme.headlineMedium)
             .animate().fadeIn(duration: 500.ms).slideY(begin: 0.15),
         const SizedBox(height: AppSpacing.xs),
@@ -247,51 +320,185 @@ class _HomeTab extends StatelessWidget {
         // ── Stats row
         Row(
           children: [
-            _StatCard(label: 'Projects', value: '7', color: AppColors.studentPrimary),
+            _StatCard(label: 'Projects', value: '$_projectCount', color: AppColors.studentPrimary),
             const SizedBox(width: AppSpacing.sm),
-            _StatCard(label: 'Pitches', value: '12', color: AppColors.studentAccent),
+            _StatCard(label: 'Pitches', value: '${_proposals.length}', color: AppColors.studentAccent),
             const SizedBox(width: AppSpacing.sm),
-            _StatCard(label: 'Accepted', value: '3', color: AppColors.success),
+            _StatCard(label: 'Active Jobs', value: '${_contracts.where((c) => c.status == 'in_progress').length}', color: AppColors.success),
           ],
         )
             .animate()
             .fadeIn(duration: 500.ms, delay: 200.ms)
             .slideY(begin: 0.1, duration: 400.ms, delay: 200.ms),
 
+        // ── Active Contracts / Workspaces
+        if (_contracts.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.xl),
+          _SectionHeader(
+            title: 'Active Workspaces',
+            action: '${_contracts.length} active',
+            onAction: () {},
+          ),
+          const SizedBox(height: AppSpacing.md),
+          ..._contracts.map((c) => Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                child: AppCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              c.jobTitle,
+                              style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textPrimary),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: AppColors.success.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(AppRadius.full),
+                              border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
+                            ),
+                            child: Text('In Progress',
+                                style: GoogleFonts.jetBrainsMono(fontSize: 10, color: AppColors.success, fontWeight: FontWeight.w600)),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text('Client: ${c.businessName} · ₱${c.budget.toStringAsFixed(0)}',
+                          style: GoogleFonts.inter(fontSize: 12, color: AppColors.textMuted)),
+                      const SizedBox(height: AppSpacing.md),
+                      Row(
+                        children: [
+                          const Spacer(),
+                          GestureDetector(
+                            onTap: () => context.push('/chat/${c.proposalId}?name=${c.businessName}'),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs + 2),
+                              decoration: BoxDecoration(
+                                color: AppColors.studentPrimary.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(AppRadius.md),
+                                border: Border.all(color: AppColors.studentPrimary.withValues(alpha: 0.4)),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.chat_bubble_outline_rounded, size: 14, color: AppColors.studentPrimary),
+                                  const SizedBox(width: 6),
+                                  Text('Open Workspace Chat',
+                                      style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.studentPrimary)),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              )),
+        ],
+
         const SizedBox(height: AppSpacing.xl),
 
         // ── Radar teaser
-        _SectionHeader(title: 'Local Radar', action: 'View all', onAction: () {}),
+        _SectionHeader(title: 'Local Radar', action: 'View all', onAction: () => widget.onNavigate(1)),
         const SizedBox(height: AppSpacing.md),
-        const _RadarPreview(),
+        _RadarPreview(onNavigate: () => widget.onNavigate(1)),
 
         const SizedBox(height: AppSpacing.xl),
 
         // ── Browse Jobs CTA
         _SectionHeader(title: 'Open Jobs Near You', action: 'Browse all', onAction: () => context.go('/student/jobs')),
         const SizedBox(height: AppSpacing.md),
-        SizedBox(
-          height: 200,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: mockProjects.length,
-            separatorBuilder: (context, idx) => const SizedBox(width: AppSpacing.sm),
-            itemBuilder: (_, i) => _ProjectCard(project: mockProjects[i]),
-          ),
-        ).animate().fadeIn(duration: 500.ms, delay: 600.ms),
+        if (_loading)
+           const Center(child: Padding(padding: EdgeInsets.all(AppSpacing.md), child: CircularProgressIndicator(color: AppColors.studentPrimary))),
+        if (!_loading && _jobs.isEmpty)
+           Center(child: Padding(padding: const EdgeInsets.all(AppSpacing.md), child: Text('No open jobs', style: Theme.of(context).textTheme.bodyMedium))),
+        ..._jobs.take(3).toList().asMap().entries.map((e) {
+          final job = e.value;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+            child: AppCard(
+              onTap: () => context.go('/student/jobs/${job.id}'),
+              child: Row(
+                children: [
+                  Container(
+                    width: 44, height: 44,
+                    decoration: BoxDecoration(
+                      color: AppColors.businessPrimary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                    ),
+                    child: const Icon(Icons.work_outline_rounded, color: AppColors.businessPrimary, size: 22),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(job.title,
+                            maxLines: 1, overflow: TextOverflow.ellipsis,
+                            style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                        Text(job.businessName ?? 'Business',
+                            style: GoogleFonts.inter(fontSize: 11, color: AppColors.textMuted)),
+                      ],
+                    ),
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(job.budget,
+                          style: GoogleFonts.jetBrainsMono(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.studentPrimary)),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: job.urgency == 'Urgent'
+                              ? AppColors.error.withValues(alpha: 0.1)
+                              : AppColors.success.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(AppRadius.full),
+                        ),
+                        child: Text(job.urgency,
+                            style: GoogleFonts.inter(fontSize: 9,
+                                color: job.urgency == 'Urgent' ? AppColors.error : AppColors.success)),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ).animate().fadeIn(duration: 400.ms, delay: Duration(milliseconds: 500 + e.key * 80)),
+          );
+        }),
 
         const SizedBox(height: AppSpacing.xl),
 
         // ── Portfolio preview
         _SectionHeader(title: 'My Portfolio', action: 'Add project', onAction: () => context.go('/student/portfolio/add')),
         const SizedBox(height: AppSpacing.md),
-
+        Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+            child: Text('No projects in portfolio yet.', style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 13)),
+          ),
+        ),
         const SizedBox(height: AppSpacing.xl),
 
         // ── Active proposals
         _SectionHeader(title: 'Active Proposals', action: 'See all', onAction: () => context.go('/student/proposals')),
+        
+        if (_loading)
+           const Center(child: Padding(padding: EdgeInsets.all(AppSpacing.md), child: CircularProgressIndicator(color: AppColors.studentPrimary))),
+        if (!_loading && _proposals.isEmpty)
+           Center(child: Padding(padding: const EdgeInsets.all(AppSpacing.md), child: Text('No active proposals', style: Theme.of(context).textTheme.bodyMedium))),
 
-        ...mockStudentProposals.asMap().entries.map((e) => Padding(
+        ..._proposals.take(3).toList().asMap().entries.map((e) => Padding(
               padding: const EdgeInsets.only(bottom: AppSpacing.sm),
               child: _ProposalCard(proposal: e.value)
                   .animate()
@@ -308,8 +515,62 @@ class _HomeTab extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 // TAB 1 — Radar (full view)
 // ─────────────────────────────────────────────────────────────────────────────
-class _RadarTab extends StatelessWidget {
+class _RadarTab extends StatefulWidget {
   const _RadarTab();
+
+  @override
+  State<_RadarTab> createState() => _RadarTabState();
+}
+
+class _RadarTabState extends State<_RadarTab> {
+  List<Map<String, dynamic>> _businesses = [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadBusinesses();
+  }
+
+  Future<void> _loadBusinesses() async {
+    try {
+      final rows = await Supabase.instance.client
+          .from('business_profiles')
+          .select('user_id, business_name, address, category, phone')
+          .order('business_name');
+      if (mounted) {
+        setState(() {
+          if (rows.isNotEmpty) {
+            _businesses = List<Map<String, dynamic>>.from(rows);
+          } else {
+            _businesses = mockNearbyBusinesses
+                .map((b) => {
+                      'business_name': b.name,
+                      'address': b.distance,
+                      'category': 'Local Business',
+                      'isVerified': b.isVerified,
+                    })
+                .toList();
+          }
+          _loading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _businesses = mockNearbyBusinesses
+              .map((b) => {
+                    'business_name': b.name,
+                    'address': b.distance,
+                    'category': 'Local Business',
+                    'isVerified': b.isVerified,
+                  })
+              .toList();
+          _loading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -319,10 +580,25 @@ class _RadarTab extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: AppSpacing.sm),
-          Text('Local Radar', style: Theme.of(context).textTheme.headlineMedium),
-          const SizedBox(height: AppSpacing.xs),
-          Text('Undigitized businesses near you.',
-              style: Theme.of(context).textTheme.bodyMedium),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Local Radar', style: Theme.of(context).textTheme.headlineMedium),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text('Undigitized businesses near you.',
+                      style: Theme.of(context).textTheme.bodyMedium),
+                ],
+              ),
+              IconButton(
+                icon: const Icon(Icons.refresh_rounded, color: AppColors.studentPrimary, size: 20),
+                onPressed: _loading ? null : _loadBusinesses,
+                tooltip: 'Scan for businesses',
+              ),
+            ],
+          ),
           const SizedBox(height: AppSpacing.lg),
 
           // Full radar
@@ -333,10 +609,12 @@ class _RadarTab extends StatelessWidget {
 
           Expanded(
             flex: 2,
-            child: ListView.builder(
-              itemCount: mockNearbyBusinesses.length,
-              itemBuilder: (_, i) => _BusinessPingCard(biz: mockNearbyBusinesses[i]),
-            ),
+            child: _loading
+                ? const Center(child: CircularProgressIndicator(color: AppColors.studentPrimary))
+                : ListView.builder(
+                    itemCount: _businesses.length,
+                    itemBuilder: (_, i) => _BusinessPingCard(biz: _businesses[i]),
+                  ),
           ),
         ],
       ),
@@ -347,12 +625,71 @@ class _RadarTab extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 // TAB 2 — Portfolio
 // ─────────────────────────────────────────────────────────────────────────────
-class _PortfolioTab extends StatelessWidget {
+class _PortfolioTab extends StatefulWidget {
   const _PortfolioTab();
 
   @override
+  State<_PortfolioTab> createState() => _PortfolioTabState();
+}
+
+class _PortfolioTabState extends State<_PortfolioTab> {
+  bool _isLoading = true;
+  List<Map<String, dynamic>> _projects = [];
+  List<Map<String, dynamic>> _githubRepos = [];
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    try {
+      final userId = Supabase.instance.client.auth.currentUser?.id;
+      if (userId == null) return;
+
+      final dbProjects = await Supabase.instance.client.from('portfolio_projects')
+          .select('id,title,project_type').eq('student_id', userId)
+          .order('created_at', ascending: false);
+          
+      final studentProfile = await Supabase.instance.client.from('student_profiles')
+          .select('github_username').eq('user_id', userId).maybeSingle();
+
+      List<Map<String, dynamic>> repos = [];
+      if (studentProfile != null && studentProfile['github_username'] != null) {
+        final username = studentProfile['github_username'] as String;
+        if (username.isNotEmpty) {
+          try {
+            repos = await GithubApiService().fetchUserRepositories(username);
+          } catch (_) {
+            // Ignore github fetch errors silently for now so it doesn't break the whole tab
+          }
+        }
+      }
+
+      if (mounted) {
+        setState(() {
+          _projects = List<Map<String, dynamic>>.from(dbProjects);
+          _githubRepos = repos;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() { _error = e.toString(); _isLoading = false; });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Padding(
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator(color: AppColors.studentPrimary));
+    }
+    if (_error != null) {
+      return Center(child: Text('Could not load portfolio: $_error'));
+    }
+
+    return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -390,18 +727,54 @@ class _PortfolioTab extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.md),
-          Expanded(
-            child: GridView.builder(
+          
+          if (_projects.isNotEmpty) ...[
+            Text('Manual Projects', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: AppSpacing.sm),
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
                 crossAxisSpacing: AppSpacing.sm,
                 mainAxisSpacing: AppSpacing.sm,
                 childAspectRatio: 0.82,
               ),
-              itemCount: mockProjects.length,
-              itemBuilder: (_, i) => _ProjectGridCard(project: mockProjects[i]),
+              itemCount: _projects.length,
+              itemBuilder: (_, i) => _ProjectGridCard(project: _projects[i]),
             ),
-          ),
+            const SizedBox(height: AppSpacing.xl),
+          ],
+
+          if (_githubRepos.isNotEmpty) ...[
+            Row(
+              children: [
+                const Icon(Icons.code_rounded, size: 18, color: AppColors.textPrimary),
+                const SizedBox(width: 8),
+                Text('GitHub Repositories', style: Theme.of(context).textTheme.titleMedium),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            GridView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: AppSpacing.sm,
+                mainAxisSpacing: AppSpacing.sm,
+                childAspectRatio: 0.82,
+              ),
+              itemCount: _githubRepos.length,
+              itemBuilder: (_, i) => _GithubRepoGridCard(repo: _githubRepos[i]),
+            ),
+            const SizedBox(height: AppSpacing.xl),
+          ],
+
+          if (_projects.isEmpty && _githubRepos.isEmpty)
+            const Padding(
+              padding: EdgeInsets.only(top: AppSpacing.xxl),
+              child: Center(child: Text('No projects yet. Add your first project or link your GitHub.')),
+            ),
         ],
       ),
     );
@@ -411,102 +784,212 @@ class _PortfolioTab extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 // TAB 3 — Profile
 // ─────────────────────────────────────────────────────────────────────────────
-class _ProfileTab extends StatelessWidget {
+class _ProfileTab extends StatefulWidget {
   const _ProfileTab();
 
   @override
+  State<_ProfileTab> createState() => _ProfileTabState();
+}
+
+class _ProfileTabState extends State<_ProfileTab> {
+  late final Future<Map<String, dynamic>> _profile = _loadProfile();
+
+  Future<Map<String, dynamic>> _loadProfile() async {
+    final client = Supabase.instance.client;
+    final userId = client.auth.currentUser?.id;
+    if (userId == null) throw StateError('Sign in to view your profile');
+
+    final profile = await client.from('profiles').select('full_name')
+        .eq('id', userId).single();
+    final student = await client.from('student_profiles').select()
+        .eq('user_id', userId).maybeSingle();
+    final skillLinks = await client.from('student_skills')
+        .select('skills(name)').eq('student_id', userId);
+    final reviewSummary = await ReviewService().getStudentReviews(userId);
+
+    final skills = (skillLinks as List).map((row) =>
+        (row['skills'] as Map<String, dynamic>?)?['name'] as String? ?? '').where((s) => s.isNotEmpty).toList();
+
+    final isVerified = client.auth.currentUser?.emailConfirmedAt != null ||
+        (student != null && (student['school'] as String?)?.isNotEmpty == true);
+
+    return {
+      'name': profile['full_name'] as String? ?? 'Student',
+      'school': student?['school'] as String? ?? '',
+      'course': student?['course'] as String? ?? '',
+      'year': student?['year_level'] as String? ?? '',
+      'bio': student?['bio'] as String? ?? '',
+      'github': student?['github_username'] as String? ?? '',
+      'linkedin': student?['linkedin_url'] as String? ?? '',
+      'status': isVerified ? 'verified' : 'unverified',
+      'skills': skills,
+      'averageRating': reviewSummary.averageRating,
+      'totalReviews': reviewSummary.totalReviews,
+      'completedJobsCount': reviewSummary.completedJobsCount,
+    };
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-      child: Column(
-        children: [
-          const SizedBox(height: AppSpacing.md),
-          // Avatar hero
-          Center(
-            child: Container(
-              width: 90,
-              height: 90,
-              decoration: BoxDecoration(
-                gradient: AppTheme.studentGradient(),
-                borderRadius: BorderRadius.circular(AppRadius.xxl),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.studentPrimary.withValues(alpha: 0.4),
-                    blurRadius: 30,
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _profile,
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return Center(child: snapshot.hasError
+              ? Text('Could not load profile: ${snapshot.error}')
+              : const CircularProgressIndicator());
+        }
+        final profile = snapshot.data!;
+        final name = profile['name'] as String;
+        final initials = name.split(' ').where((p) => p.isNotEmpty).take(2).map((p) => p[0]).join().toUpperCase();
+        final course = profile['course'] as String;
+        final school = profile['school'] as String;
+        final year = profile['year'] as String;
+        final subtitle = course.isNotEmpty
+            ? (school.isNotEmpty ? '$course · $school' : course)
+            : (school.isNotEmpty ? school : 'Student developer');
+        final github = profile['github'] as String;
+        final bio = profile['bio'] as String;
+        final skills = profile['skills'] as List<String>;
+        final status = profile['status'] as String;
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          child: Column(
+            children: [
+              const SizedBox(height: AppSpacing.md),
+              // Avatar hero
+              Center(
+                child: Container(
+                  width: 90,
+                  height: 90,
+                  decoration: BoxDecoration(
+                    gradient: AppTheme.studentGradient(),
+                    borderRadius: BorderRadius.circular(AppRadius.xxl),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.studentPrimary.withValues(alpha: 0.4),
+                        blurRadius: 30,
+                      ),
+                    ],
+                  ),
+                  child: Center(
+                    child: Text(initials.isNotEmpty ? initials : 'ST',
+                        style: GoogleFonts.plusJakartaSans(
+                            fontSize: 28,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textPrimary)),
+                  ),
+                ).animate().scale(duration: 600.ms, curve: Curves.elasticOut),
+              ),
+
+              const SizedBox(height: AppSpacing.md),
+              Text(name,
+                  style: Theme.of(context).textTheme.headlineSmall),
+              const SizedBox(height: AppSpacing.xs),
+              Text(subtitle,
+                  style: Theme.of(context).textTheme.bodyMedium),
+              if (year.isNotEmpty) ...[
+                const SizedBox(height: 2),
+                Text(year, style: GoogleFonts.inter(fontSize: 12, color: AppColors.textMuted)),
+              ],
+              const SizedBox(height: AppSpacing.sm),
+              Text('Verification: $status', style: GoogleFonts.inter(
+                  color: status == 'verified' ? AppColors.success : AppColors.warning)),
+              const SizedBox(height: AppSpacing.xs),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    (profile['totalReviews'] as int) > 0
+                        ? '★ ${profile['averageRating']} (${profile['totalReviews']} reviews)'
+                        : 'No reviews yet',
+                    style: GoogleFonts.inter(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: (profile['totalReviews'] as int) > 0
+                            ? AppColors.warning
+                            : AppColors.textMuted),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  const Text('·', style: TextStyle(color: AppColors.textMuted)),
+                  const SizedBox(width: AppSpacing.sm),
+                  Text(
+                    '${profile['completedJobsCount']} jobs completed',
+                    style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: AppColors.textSecondary),
                   ),
                 ],
               ),
-              child: Center(
-                child: Text('JD',
-                    style: GoogleFonts.plusJakartaSans(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textPrimary)),
-              ),
-            ).animate().scale(duration: 600.ms, curve: Curves.elasticOut),
-          ),
-
-          const SizedBox(height: AppSpacing.md),
-          Text('Juan dela Cruz',
-              style: Theme.of(context).textTheme.headlineSmall),
-          const SizedBox(height: AppSpacing.xs),
-          Text('Flutter Developer · PUP Manila',
-              style: Theme.of(context).textTheme.bodyMedium),
-          const SizedBox(height: AppSpacing.sm),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.link_rounded, color: AppColors.studentPrimary, size: 14),
-              const SizedBox(width: 4),
-              Text('github.com/juandc',
-                  style: GoogleFonts.jetBrainsMono(
-                      fontSize: 12, color: AppColors.studentPrimary)),
-            ],
-          ),
-
-          const SizedBox(height: AppSpacing.xl),
-
-          // Skills
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Text('Tech Stack', style: Theme.of(context).textTheme.titleMedium),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Wrap(
-              spacing: AppSpacing.sm,
-              runSpacing: AppSpacing.sm,
-              children: ['Flutter', 'Dart', 'PHP', 'MySQL', 'React', 'Figma']
-                  .map((s) => SkillChip(
-                        label: s,
-                        selected: true,
-                        accentColor: AppColors.studentPrimary,
-                      ))
-                  .toList(),
-            ),
-          ),
-
-          const SizedBox(height: AppSpacing.xl),
-
-          // Bio card
-          AppCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('About', style: Theme.of(context).textTheme.titleMedium),
+              if (github.isNotEmpty) ...[
                 const SizedBox(height: AppSpacing.sm),
-                Text(
-                  'Flutter dev at PUP, passionate about crafting beautiful and performant mobile apps. Open for freelance project collaborations.',
-                  style: Theme.of(context).textTheme.bodyMedium,
+                GestureDetector(
+                  onTap: () {
+                    final cleanUser = github.replaceAll('https://github.com/', '').replaceAll('/', '').trim();
+                    launchUrl(Uri.https('github.com', '/$cleanUser'));
+                  },
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.link_rounded, color: AppColors.studentPrimary, size: 14),
+                      const SizedBox(width: 4),
+                      Text('github.com/$github',
+                          style: GoogleFonts.jetBrainsMono(
+                              fontSize: 12, color: AppColors.studentPrimary)),
+                      const SizedBox(width: 4),
+                      const Icon(Icons.open_in_new_rounded, color: AppColors.studentPrimary, size: 12),
+                    ],
+                  ),
                 ),
               ],
-            ),
-          ),
 
-          const SizedBox(height: AppSpacing.xl),
-        ],
-      ),
+              const SizedBox(height: AppSpacing.xl),
+
+              // Skills
+              if (skills.isNotEmpty) ...[
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text('Tech Stack', style: Theme.of(context).textTheme.titleMedium),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: Wrap(
+                    spacing: AppSpacing.sm,
+                    runSpacing: AppSpacing.sm,
+                    children: skills
+                        .map((s) => SkillChip(
+                              label: s,
+                              selected: true,
+                              accentColor: AppColors.studentPrimary,
+                            ))
+                        .toList(),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xl),
+              ],
+
+              // Bio card
+              AppCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('About', style: Theme.of(context).textTheme.titleMedium),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      bio.isNotEmpty ? bio : 'No bio added yet.',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: AppSpacing.xl),
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -741,11 +1224,13 @@ class _RadarPainter extends CustomPainter {
 }
 
 class _RadarPreview extends StatelessWidget {
-  const _RadarPreview();
+  final VoidCallback onNavigate;
+  const _RadarPreview({required this.onNavigate});
 
   @override
   Widget build(BuildContext context) {
     return AppCard(
+      onTap: onNavigate,
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: Row(
         children: [
@@ -789,69 +1274,19 @@ class _RadarPreview extends StatelessWidget {
   }
 }
 
-class _ProjectCard extends StatelessWidget {
-  final MockProject project;
-  const _ProjectCard({required this.project});
-
-  @override
-  Widget build(BuildContext context) {
-    return AppCard(
-      width: 180,
-      padding: EdgeInsets.zero,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            height: 110,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  project.color.withValues(alpha: 0.3),
-                  project.color.withValues(alpha: 0.1),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(AppRadius.lg)),
-            ),
-            child: Center(
-              child: Icon(project.icon, color: project.color, size: 40),
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(AppSpacing.sm + 2),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(project.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: GoogleFonts.plusJakartaSans(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textPrimary)),
-                const SizedBox(height: 3),
-                Text(project.tech,
-                    style: GoogleFonts.jetBrainsMono(
-                        fontSize: 10, color: AppColors.textMuted)),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _ProjectGridCard extends StatelessWidget {
-  final MockProject project;
+  final Map<String, dynamic> project;
   const _ProjectGridCard({required this.project});
 
   @override
   Widget build(BuildContext context) {
+    final title = project['title'] as String? ?? 'Untitled Project';
+    final projectType = project['project_type'] as String? ?? 'Portfolio project';
+    final id = project['id']?.toString() ?? '0';
+
     return AppCard(
       padding: EdgeInsets.zero,
+      onTap: () => context.push('/student/portfolio/$id'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -860,15 +1295,15 @@ class _ProjectGridCard extends StatelessWidget {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    project.color.withValues(alpha: 0.3),
-                    project.color.withValues(alpha: 0.08),
+                    AppColors.studentPrimary.withValues(alpha: 0.3),
+                    AppColors.studentPrimary.withValues(alpha: 0.08),
                   ],
                 ),
                 borderRadius: const BorderRadius.vertical(
                     top: Radius.circular(AppRadius.lg)),
               ),
-              child: Center(
-                child: Icon(project.icon, color: project.color, size: 36),
+              child: const Center(
+                child: Icon(Icons.folder_outlined, color: AppColors.studentPrimary, size: 36),
               ),
             ),
           ),
@@ -877,14 +1312,14 @@ class _ProjectGridCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(project.title,
+                Text(title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: GoogleFonts.plusJakartaSans(
                         fontSize: 12,
                         fontWeight: FontWeight.w700,
                         color: AppColors.textPrimary)),
-                Text(project.tech,
+                Text(projectType,
                     style: GoogleFonts.jetBrainsMono(
                         fontSize: 9, color: AppColors.textMuted)),
               ],
@@ -896,13 +1331,92 @@ class _ProjectGridCard extends StatelessWidget {
   }
 }
 
+class _GithubRepoGridCard extends StatelessWidget {
+  final Map<String, dynamic> repo;
+  const _GithubRepoGridCard({required this.repo});
+
+  @override
+  Widget build(BuildContext context) {
+    final title = repo['name'] as String? ?? 'Untitled Repo';
+    final language = repo['language'] as String? ?? 'Repository';
+    final url = repo['html_url'] as String? ?? '';
+
+    return AppCard(
+      padding: EdgeInsets.zero,
+      onTap: () {
+        if (url.isNotEmpty) launchUrl(Uri.parse(url));
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.surfaceHigh,
+                    AppColors.surface,
+                  ],
+                ),
+                borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(AppRadius.lg)),
+              ),
+              child: const Center(
+                child: Icon(Icons.code_rounded, color: AppColors.textPrimary, size: 36),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(AppSpacing.sm + 2),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: GoogleFonts.plusJakartaSans(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary)),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(language,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.jetBrainsMono(
+                              fontSize: 9, color: AppColors.textMuted)),
+                    ),
+                    if (repo['stargazers_count'] != null && repo['stargazers_count'] > 0)
+                      Row(
+                        children: [
+                          const Icon(Icons.star_rounded, size: 10, color: AppColors.warning),
+                          const SizedBox(width: 2),
+                          Text('${repo['stargazers_count']}',
+                              style: GoogleFonts.jetBrainsMono(
+                                  fontSize: 9, color: AppColors.textMuted)),
+                        ],
+                      ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _ProposalCard extends StatelessWidget {
-  final MockStudentProposal proposal;
+  final Proposal proposal;
   const _ProposalCard({required this.proposal});
 
   @override
   Widget build(BuildContext context) {
     return AppCard(
+      onTap: () => context.go('/student/proposals'),
       child: Row(
         children: [
           Container(
@@ -920,17 +1434,17 @@ class _ProposalCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(proposal.bizName,
+                Text(proposal.jobTitle ?? 'Job', // Mock business name missing from API
                     style: GoogleFonts.plusJakartaSans(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
                         color: AppColors.textPrimary)),
-                Text(proposal.projectType,
+                Text('₱${proposal.proposedBudget} · ${proposal.estimatedTimelineWeeks}w',
                     style: Theme.of(context).textTheme.bodySmall),
               ],
             ),
           ),
-          StatusBadge.fromProposal(proposal.status),
+          StatusBadge.fromApiStatus(proposal.status),
         ],
       ),
     );
@@ -938,14 +1452,28 @@ class _ProposalCard extends StatelessWidget {
 }
 
 class _BusinessPingCard extends StatelessWidget {
-  final MockBusiness biz;
+  final Map<String, dynamic> biz;
   const _BusinessPingCard({required this.biz});
 
   @override
   Widget build(BuildContext context) {
+    final name = biz['business_name'] as String? ?? biz['name'] as String? ?? 'Local Business';
+    final address = biz['address'] as String? ?? biz['distance'] as String? ?? 'Nearby';
+    final category = biz['category'] as String? ?? 'Local Store';
+    final isVerified = biz['verification_status'] == 'verified' || biz['isVerified'] == true;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: AppCard(
+        onTap: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('🚀 Proactive pitching to $name will be available in V2!'),
+              backgroundColor: AppColors.businessPrimary,
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        },
         child: Row(
           children: [
             Container(
@@ -966,22 +1494,23 @@ class _BusinessPingCard extends StatelessWidget {
                   Row(
                     children: [
                       Flexible(
-                        child: Text(biz.name,
+                        child: Text(name,
                             style: GoogleFonts.plusJakartaSans(
                                 fontSize: 14,
                                 fontWeight: FontWeight.w600,
                                 color: AppColors.textPrimary),
                             maxLines: 1, overflow: TextOverflow.ellipsis),
                       ),
-                      if (biz.isVerified) ...[
+                      if (isVerified) ...[
                         const SizedBox(width: 4),
                         const Icon(Icons.verified_rounded, color: AppColors.studentPrimary, size: 14),
                       ],
                     ],
                   ),
-                  Text(biz.distance,
+                  Text('$category · $address',
                       style: GoogleFonts.jetBrainsMono(
-                          fontSize: 10, color: AppColors.textMuted)),
+                          fontSize: 10, color: AppColors.textMuted),
+                      maxLines: 1, overflow: TextOverflow.ellipsis),
                 ],
               ),
             ),
@@ -992,7 +1521,7 @@ class _BusinessPingCard extends StatelessWidget {
                 color: AppColors.businessPrimary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(AppRadius.full),
               ),
-              child: Text('No website',
+              child: Text('Near You',
                   style: GoogleFonts.jetBrainsMono(
                       fontSize: 9, color: AppColors.businessPrimary)),
             ),

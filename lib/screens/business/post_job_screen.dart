@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -7,6 +7,7 @@ import '../../widgets/app_background.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_text_field.dart';
 import '../../widgets/app_card.dart';
+import '../../services/job_service.dart';
 
 class PostJobScreen extends StatefulWidget {
   const PostJobScreen({super.key});
@@ -64,16 +65,39 @@ class _PostJobScreenState extends State<PostJobScreen> with TickerProviderStateM
       _pageCtrl.previousPage(duration: const Duration(milliseconds: 400), curve: Curves.easeInOutCubic);
       setState(() => _step--);
     } else {
-      context.go('/business');
+      context.canPop() ? context.pop() : context.go('/business');
     }
   }
 
   Future<void> _submit() async {
     setState(() => _loading = true);
-    await Future.delayed(const Duration(seconds: 2));
-    if (!mounted) return;
-    setState(() => _loading = false);
-    context.go('/business');
+    try {
+      await JobService().createJob(
+        title: _titleCtrl.text.trim(),
+        description: _descCtrl.text.trim(),
+        budget: _budgetCtrl.text.trim(),
+        category: _category,
+        urgency: _urgency,
+        skills: _requiredSkills.toList(),
+        timeline: _timelineCtrl.text.trim(),
+        location: _locationCtrl.text.trim(),
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('✅ Job posted successfully!'),
+          backgroundColor: AppColors.success,
+        ),
+      );
+      context.canPop() ? context.pop(true) : context.go('/business');
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e'), backgroundColor: AppColors.error),
+      );
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
   }
 
   static const _stepTitles = ['Job Details', 'Requirements', 'Review & Post'];

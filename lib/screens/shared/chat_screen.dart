@@ -1,9 +1,12 @@
-﻿import 'package:flutter/material.dart';
+import 'dart:async';
+
+import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants.dart';
 import '../../widgets/app_background.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ChatScreen extends StatefulWidget {
   final String chatId;
@@ -17,28 +20,81 @@ class ChatScreen extends StatefulWidget {
 class _ChatScreenState extends State<ChatScreen> {
   final _msgCtrl = TextEditingController();
   final _scrollCtrl = ScrollController();
-  final _messages = <_Msg>[
-    _Msg(text: 'Hi! I am Juan. I just sent a proposal for your ordering app.', fromMe: false, time: '10:02 AM'),
-    _Msg(text: 'Hi Juan! I saw your pitch — your POS project really impressed me.', fromMe: true, time: '10:04 AM'),
-    _Msg(text: 'Thank you! I can start right away. When would be a good time to visit the café?', fromMe: false, time: '10:05 AM'),
-    _Msg(text: 'How about this Saturday at 2pm?', fromMe: true, time: '10:07 AM'),
-    _Msg(text: 'Saturday works! I will be there at 2pm. Should I bring my laptop to show you the prototype?', fromMe: false, time: '10:08 AM'),
-    _Msg(text: 'Yes please! Looking forward to it.', fromMe: true, time: '10:09 AM'),
-  ];
+  final _messages = <_Msg>[];
+  StreamSubscription<List<Map<String, dynamic>>>? _subscription;
+  int? _contractId;
+  bool _loading = true;
+  bool _sending = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadConversation();
+  }
+
+  Future<void> _loadConversation() async {
+    try {
+      final proposalId = int.parse(widget.chatId);
+      final contract = await Supabase.instance.client.from('contracts')
+          .select('id').eq('proposal_id', proposalId).maybeSingle();
+      if (contract == null) throw StateError('Chat is available after a proposal is accepted.');
+      final contractId = contract['id'] as int;
+      _subscription = Supabase.instance.client.from('messages')
+          .stream(primaryKey: ['id']).eq('contract_id', contractId)
+          .order('created_at').listen((rows) {
+        if (!mounted) return;
+        final userId = Supabase.instance.client.auth.currentUser?.id;
+        setState(() {
+          _messages
+            ..clear()
+            ..addAll(rows.map((row) => _Msg(
+              text: row['body'] as String,
+              fromMe: row['sender_id'] == userId,
+              time: _formatTime(row['created_at'] as String),
+            )));
+          _loading = false;
+        });
+      }, onError: (Object error) {
+        if (mounted) setState(() { _error = '$error'; _loading = false; });
+      });
+      if (mounted) setState(() { _contractId = contractId; _loading = false; });
+    } catch (error) {
+      if (mounted) setState(() { _error = '$error'; _loading = false; });
+    }
+  }
+
+  String _formatTime(String value) {
+    final date = DateTime.tryParse(value)?.toLocal();
+    if (date == null) return '';
+    final hour = date.hour % 12 == 0 ? 12 : date.hour % 12;
+    return '$hour:${date.minute.toString().padLeft(2, '0')} ${date.hour < 12 ? 'AM' : 'PM'}';
+  }
 
   @override
   void dispose() {
+    _subscription?.cancel();
     _msgCtrl.dispose();
     _scrollCtrl.dispose();
     super.dispose();
   }
 
-  void _send() {
-    if (_msgCtrl.text.trim().isEmpty) return;
-    setState(() {
-      _messages.add(_Msg(text: _msgCtrl.text.trim(), fromMe: true, time: 'Now'));
+  Future<void> _send() async {
+    final contractId = _contractId;
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    final body = _msgCtrl.text.trim();
+    if (body.isEmpty || contractId == null || userId == null || _sending) return;
+    setState(() => _sending = true);
+    try {
+      await Supabase.instance.client.from('messages').insert({
+        'contract_id': contractId, 'sender_id': userId, 'body': body,
+      });
       _msgCtrl.clear();
-    });
+    } catch (error) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$error')));
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_scrollCtrl.hasClients) {
         _scrollCtrl.animateTo(
@@ -59,8 +115,14 @@ class _ChatScreenState extends State<ChatScreen> {
           child: Column(
             children: [
               _buildAppBar(context),
-              Expanded(child: _buildMessages()),
-              _buildInput(),
+              Expanded(child: _loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : _error != null
+                      ? Center(child: Text(_error!))
+                      : _messages.isEmpty
+                          ? const Center(child: Text('No messages yet. Say hello!'))
+                          : _buildMessages()),
+              if (_contractId != null) _buildInput(),
             ],
           ),
         ),
@@ -75,7 +137,7 @@ class _ChatScreenState extends State<ChatScreen> {
       child: Row(
         children: [
           GestureDetector(
-            onTap: () => context.go('/student/proposals'),
+            onTap: () => context.canPop() ? context.pop() : context.go('/student'),
             child: Container(
               width: 38, height: 38,
               decoration: BoxDecoration(
@@ -113,22 +175,19 @@ class _ChatScreenState extends State<ChatScreen> {
                 Text(widget.peerName,
                     style: GoogleFonts.plusJakartaSans(
                         fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-                Row(
-                  children: [
-                    Container(
-                      width: 7, height: 7,
-                      decoration: const BoxDecoration(
-                          color: AppColors.success, shape: BoxShape.circle),
-                    ),
-                    const SizedBox(width: 4),
-                    Text('Online',
-                        style: GoogleFonts.inter(fontSize: 11, color: AppColors.success)),
-                  ],
-                ),
+                Text('Project conversation',
+                    style: GoogleFonts.inter(fontSize: 11, color: AppColors.textMuted)),
               ],
             ),
           ),
-          const Icon(Icons.more_vert_rounded, color: AppColors.textMuted),
+          GestureDetector(
+            onTap: () {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('🔔 Chat options coming soon.'), duration: Duration(seconds: 2)),
+              );
+            },
+            child: const Icon(Icons.more_vert_rounded, color: AppColors.textMuted),
+          ),
         ],
       ).animate().fadeIn(duration: 400.ms),
     );
@@ -228,7 +287,7 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
           const SizedBox(width: AppSpacing.sm),
           GestureDetector(
-            onTap: _send,
+            onTap: _sending ? null : _send,
             child: Container(
               width: 48, height: 48,
               decoration: BoxDecoration(

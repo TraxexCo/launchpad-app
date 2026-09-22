@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../core/constants.dart';
 import '../widgets/app_background.dart';
+import '../services/auth_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -16,9 +17,24 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    Future.delayed(const Duration(milliseconds: 3000), () {
-      if (mounted) context.go('/onboarding');
-    });
+    _checkAuth();
+  }
+
+  Future<void> _checkAuth() async {
+    await Future.delayed(const Duration(milliseconds: 2000));
+    if (!mounted) return;
+    
+    final user = await AuthService().getCurrentUser();
+    if (!mounted) return;
+    if (user != null) {
+      if (user.role == 'business') {
+        context.go('/business');
+      } else {
+        context.go('/student');
+      }
+    } else {
+      context.go('/onboarding');
+    }
   }
 
   @override

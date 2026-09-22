@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -6,6 +6,11 @@ import '../../core/constants.dart';
 import '../../widgets/app_background.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/status_badge.dart';
+
+import '../../models/job_post.dart';
+import '../../models/proposal.dart';
+import '../../services/job_service.dart';
+import '../../services/proposal_service.dart';
 
 class JobProposalsScreen extends StatefulWidget {
   final String jobId;
@@ -17,47 +22,46 @@ class JobProposalsScreen extends StatefulWidget {
 
 class _JobProposalsScreenState extends State<JobProposalsScreen> {
   String _sort = 'Newest';
+  JobPost? _job;
+  List<Proposal> _proposals = [];
+  bool _loading = true;
 
-  static const _job = {
-    'title': 'Online Ordering App',
-    'proposals': 4,
-    'budget': '₱12,000',
-    'status': 'Open',
-  };
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
 
-  static const _proposals = [
-    {
-      'id': 'p1', 'name': 'Juan dela Cruz', 'school': 'PUP Manila',
-      'rate': '₱11,500', 'timeline': '3 weeks',
-      'cover': 'Hi! I am a 3rd year BSIT student specializing in Flutter development. I have built 3 complete mobile apps and one of them is a POS system for a local restaurant. I can start immediately.',
-      'skills': ['Flutter', 'Firebase', 'Dart'],
-      'rating': 4.9, 'jobs': 3, 'status': 'pending',
-    },
-    {
-      'id': 'p2', 'name': 'Maria Santos', 'school': 'TUP Cavite',
-      'rate': '₱12,000', 'timeline': '4 weeks',
-      'cover': 'Experienced Flutter developer with Firebase expertise. I recently built a food delivery app prototype for my capstone project and can replicate and extend it for your cafe.',
-      'skills': ['Flutter', 'Dart', 'PHP'],
-      'rating': 4.7, 'jobs': 1, 'status': 'pending',
-    },
-    {
-      'id': 'p3', 'name': 'Carlo Reyes', 'school': 'DLSU Manila',
-      'rate': '₱15,000', 'timeline': '3 weeks',
-      'cover': 'Full-stack developer with experience in both mobile and backend. I can build the Flutter app and set up the PHP API for GCash integration.',
-      'skills': ['Flutter', 'Laravel', 'PHP', 'MySQL'],
-      'rating': 5.0, 'jobs': 5, 'status': 'pending',
-    },
-    {
-      'id': 'p4', 'name': 'Ana Lim', 'school': 'UST Manila',
-      'rate': '₱9,500', 'timeline': '5 weeks',
-      'cover': 'I am a UI/UX-focused developer. My apps are not just functional but look professional. I can show you my Figma prototypes before we even start coding.',
-      'skills': ['Flutter', 'Figma', 'Firebase'],
-      'rating': 4.5, 'jobs': 2, 'status': 'pending',
-    },
-  ];
+  Future<void> _loadData() async {
+    try {
+      final jId = int.parse(widget.jobId);
+      final job = await JobService().getJobById(jId);
+      final proposals = await ProposalService().getProposalsByJob(jId);
+      if (mounted) {
+        setState(() {
+          _job = job;
+          _proposals = proposals;
+          _loading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  void _sortProposals() {
+    if (_sort == 'Newest') {
+      _proposals.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    } else if (_sort == 'Lowest Rate') {
+      _proposals.sort((a, b) => (double.tryParse(a.proposedBudget) ?? 0)
+          .compareTo(double.tryParse(b.proposedBudget) ?? 0));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (_sort != 'Newest') _sortProposals(); // Sort before building if changed
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: AppBackground(
@@ -66,9 +70,15 @@ class _JobProposalsScreenState extends State<JobProposalsScreen> {
           child: Column(
             children: [
               _buildHeader(context),
-              _buildJobSummary(context),
+              if (_job != null) _buildJobSummary(context),
               _buildSortRow(context),
-              Expanded(child: _buildList()),
+              Expanded(
+                child: _loading
+                    ? const Center(child: CircularProgressIndicator(color: AppColors.businessPrimary))
+                    : _proposals.isEmpty
+                        ? Center(child: Text('No proposals yet', style: Theme.of(context).textTheme.bodyMedium))
+                        : _buildList(),
+              ),
             ],
           ),
         ),
@@ -83,7 +93,7 @@ class _JobProposalsScreenState extends State<JobProposalsScreen> {
       child: Row(
         children: [
           GestureDetector(
-            onTap: () => context.go('/business'),
+            onTap: () => context.canPop() ? context.pop() : context.go('/business'),
             child: Container(
               width: 40, height: 40,
               decoration: BoxDecoration(
@@ -100,9 +110,10 @@ class _JobProposalsScreenState extends State<JobProposalsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('Proposals', style: Theme.of(context).textTheme.headlineSmall),
-              Text('// ${_job['proposals']} pitches received',
-                  style: GoogleFonts.jetBrainsMono(
-                      fontSize: 10, color: AppColors.businessPrimary)),
+              if (!_loading)
+                Text('// ${_proposals.length} pitches received',
+                    style: GoogleFonts.jetBrainsMono(
+                        fontSize: 10, color: AppColors.businessPrimary)),
             ],
           ),
         ],
@@ -132,16 +143,16 @@ class _JobProposalsScreenState extends State<JobProposalsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(_job['title'] as String,
+                  Text(_job!.title,
                       style: GoogleFonts.plusJakartaSans(
                           fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-                  Text(_job['budget'] as String,
+                  Text('₱${_job!.budget}',
                       style: GoogleFonts.jetBrainsMono(
                           fontSize: 12, color: AppColors.businessPrimary, fontWeight: FontWeight.w600)),
                 ],
               ),
             ),
-            StatusBadge(label: _job['status'] as String, color: AppColors.success),
+            StatusBadge(label: _job!.urgency, color: _job!.urgency == 'Urgent' ? AppColors.error : AppColors.success),
           ],
         ),
       ).animate().fadeIn(duration: 400.ms, delay: 80.ms),
@@ -162,10 +173,12 @@ class _JobProposalsScreenState extends State<JobProposalsScreen> {
             dropdownColor: AppColors.surface,
             style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary),
             icon: const Icon(Icons.keyboard_arrow_down_rounded, color: AppColors.textMuted, size: 14),
-            items: ['Newest', 'Lowest Rate', 'Highest Rating']
+            items: ['Newest', 'Lowest Rate']
                 .map((s) => DropdownMenuItem(value: s, child: Text(s)))
                 .toList(),
-            onChanged: (v) => setState(() => _sort = v!),
+            onChanged: (v) {
+              setState(() => _sort = v!);
+            },
           ),
         ],
       ).animate().fadeIn(duration: 400.ms, delay: 140.ms),
@@ -180,7 +193,7 @@ class _JobProposalsScreenState extends State<JobProposalsScreen> {
       separatorBuilder: (context, idx) => const SizedBox(height: AppSpacing.md),
       itemBuilder: (context, i) {
         final p = _proposals[i];
-        return _ProposalCard(proposal: p)
+        return _ProposalCard(proposal: p, job: _job!)
             .animate()
             .fadeIn(duration: 350.ms, delay: Duration(milliseconds: i * 70))
             .slideY(begin: 0.08, duration: 300.ms, delay: Duration(milliseconds: i * 70));
@@ -190,14 +203,15 @@ class _JobProposalsScreenState extends State<JobProposalsScreen> {
 }
 
 class _ProposalCard extends StatelessWidget {
-  final Map<String, dynamic> proposal;
-  const _ProposalCard({required this.proposal});
+  final Proposal proposal;
+  final JobPost job;
+  const _ProposalCard({required this.proposal, required this.job});
 
   @override
   Widget build(BuildContext context) {
-    final skills = proposal['skills'] as List;
+    // We don't have skills natively on proposals right now from the backend, so we leave it empty.
     return AppCard(
-      onTap: () => context.go('/business/proposals/${proposal['id']}'),
+      onTap: () => context.go('/business/proposals/${proposal.id}', extra: proposal),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -215,7 +229,7 @@ class _ProposalCard extends StatelessWidget {
                 ),
                 child: Center(
                   child: Text(
-                    (proposal['name'] as String).split(' ').map((w) => w[0]).take(2).join(),
+                    (proposal.studentName != null && proposal.studentName!.isNotEmpty) ? proposal.studentName![0] : 'S',
                     style: GoogleFonts.plusJakartaSans(
                         fontSize: 16, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
                   ),
@@ -226,10 +240,10 @@ class _ProposalCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(proposal['name'] as String,
+                    Text(proposal.studentName ?? 'Student',
                         style: GoogleFonts.plusJakartaSans(
                             fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-                    Text(proposal['school'] as String,
+                    Text('View student details...',
                         style: GoogleFonts.inter(fontSize: 11, color: AppColors.textMuted)),
                   ],
                 ),
@@ -237,44 +251,22 @@ class _ProposalCard extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.star_rounded, color: AppColors.warning, size: 12),
-                      const SizedBox(width: 3),
-                      Text('${proposal['rating']}',
-                          style: GoogleFonts.plusJakartaSans(
-                              fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.warning)),
-                    ],
-                  ),
-                  Text('${proposal['jobs']} jobs done',
-                      style: GoogleFonts.inter(fontSize: 10, color: AppColors.textMuted)),
+                  StatusBadge.fromApiStatus(proposal.status),
                 ],
               ),
             ],
           ),
           const SizedBox(height: AppSpacing.sm + 2),
-          Text(proposal['cover'] as String,
+          Text(proposal.pitchText,
               maxLines: 2, overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.bodySmall),
           const SizedBox(height: AppSpacing.md),
           Row(
             children: [
-              _Pill(label: proposal['rate'] as String, color: AppColors.businessPrimary, icon: Icons.payments_outlined),
+              _Pill(label: '₱${proposal.proposedBudget}', color: AppColors.businessPrimary, icon: Icons.payments_outlined),
               const SizedBox(width: AppSpacing.sm),
-              _Pill(label: proposal['timeline'] as String, color: AppColors.businessAccent, icon: Icons.timer_outlined),
+              _Pill(label: '${proposal.estimatedTimelineWeeks} weeks', color: AppColors.businessAccent, icon: Icons.timer_outlined),
               const Spacer(),
-              ...skills.take(2).map((s) => Padding(
-                padding: const EdgeInsets.only(left: 4),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: AppColors.studentPrimary.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(AppRadius.full),
-                  ),
-                  child: Text(s as String,
-                      style: GoogleFonts.jetBrainsMono(fontSize: 9, color: AppColors.studentPrimary)),
-                ),
-              )),
             ],
           ),
         ],

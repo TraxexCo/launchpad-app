@@ -27,6 +27,13 @@ class ReportModal extends StatefulWidget {
 class _ReportModalState extends State<ReportModal> {
   String? _selectedReason;
   bool _submitting = false;
+  final TextEditingController _detailsCtrl = TextEditingController();
+
+  @override
+  void dispose() {
+    _detailsCtrl.dispose();
+    super.dispose();
+  }
 
   final List<String> _reasons = [
     'Not complying with agreement',
@@ -122,6 +129,7 @@ class _ReportModalState extends State<ReportModal> {
           }),
           const SizedBox(height: AppSpacing.md),
           AppTextField(
+            controller: _detailsCtrl,
             label: 'Additional Details (Optional)',
             hint: 'Provide more context to help our investigation...',
             maxLines: 3,

@@ -4,7 +4,6 @@ import '../screens/splash_screen.dart';
 import '../screens/onboarding/onboarding_screen.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/register_screen.dart';
-import '../screens/auth/verification_screen.dart';
 import '../screens/student/student_dashboard.dart';
 import '../screens/student/browse_jobs_screen.dart';
 import '../screens/student/job_detail_screen.dart';
@@ -17,12 +16,31 @@ import '../screens/business/business_dashboard.dart';
 import '../screens/business/post_job_screen.dart';
 import '../screens/business/job_proposals_screen.dart';
 import '../screens/business/proposal_detail_screen.dart';
+import '../screens/business/edit_job_screen.dart';
 import '../screens/shared/notifications_screen.dart';
 import '../screens/shared/chat_screen.dart';
 import '../screens/shared/settings_screen.dart';
-
+import '../models/job_post.dart';
+import '../models/proposal.dart';
+import '../services/auth_service.dart';
 final appRouter = GoRouter(
   initialLocation: '/splash',
+  refreshListenable: AuthService(),
+  redirect: (context, state) async {
+    final path = state.uri.path;
+    final publicRoute = path == '/splash' || path == '/onboarding' ||
+        path == '/login' || path == '/register';
+    final user = await AuthService().getCurrentUser();
+    if (user == null) return publicRoute ? null : '/onboarding';
+    final home = user.role == 'business' ? '/business' : '/student';
+    if (path == '/splash' || path == '/onboarding' ||
+        path == '/login' || path == '/register') {
+      return home;
+    }
+    if (path.startsWith('/student') && user.role != 'student') return home;
+    if (path.startsWith('/business') && user.role != 'business') return home;
+    return null;
+  },
   routes: [
     GoRoute(path: '/splash',      builder: (context, state) => const SplashScreen()),
     GoRoute(path: '/onboarding',  builder: (context, state) => const OnboardingScreen()),
@@ -40,14 +58,6 @@ final appRouter = GoRouter(
         final role = state.uri.queryParameters['role'] == 'business'
             ? UserRole.business : UserRole.student;
         return RegisterScreen(role: role);
-      },
-    ),
-    GoRoute(
-      path: '/verify',
-      builder: (context, state) {
-        final role = state.uri.queryParameters['role'] == 'business'
-            ? UserRole.business : UserRole.student;
-        return VerificationScreen(role: role);
       },
     ),
 
@@ -100,7 +110,15 @@ final appRouter = GoRouter(
       path: '/business/proposals/:id',
       builder: (context, state) {
         final id = state.pathParameters['id'] ?? '0';
-        return ProposalDetailScreen(proposalId: id);
+        final proposal = state.extra as Proposal?;
+        return ProposalDetailScreen(proposalId: id, proposal: proposal);
+      },
+    ),
+    GoRoute(
+      path: '/business/jobs/:id/edit',
+      builder: (context, state) {
+        final jobJson = state.extra as JobPost;
+        return EditJobScreen(job: jobJson);
       },
     ),
 

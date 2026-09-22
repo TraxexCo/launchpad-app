@@ -3,11 +3,14 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants.dart';
+import '../../services/job_service.dart';
+import '../../models/job_post.dart';
 import '../../widgets/app_background.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/skill_chip.dart';
 import '../../widgets/report_modal.dart';
+import '../../services/saved_job_service.dart';
 
 class JobDetailScreen extends StatefulWidget {
   final String jobId;
@@ -19,7 +22,27 @@ class JobDetailScreen extends StatefulWidget {
 
 class _JobDetailScreenState extends State<JobDetailScreen> {
   bool _bookmarked = false;
-  final _job = _mockJobs['1']!;
+  JobPost? _job;
+  bool _loading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadJob();
+  }
+
+  Future<void> _loadJob() async {
+    setState(() { _loading = true; _error = null; });
+    try {
+      final id = int.parse(widget.jobId);
+      final job = await JobService().getJobById(id);
+      final saved = await SavedJobService().isJobSaved(id);
+      if (mounted) setState(() { _job = job; _bookmarked = saved; _loading = false; });
+    } catch (e) {
+      if (mounted) setState(() { _error = e.toString(); _loading = false; });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,26 +50,30 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
       backgroundColor: AppColors.background,
       body: AppBackground(
         tintColor: AppColors.studentPrimary.withValues(alpha: 0.04),
-        child: Column(
-          children: [
-            Expanded(
-              child: CustomScrollView(
-                slivers: [
-                  _buildAppBar(context),
-                  SliverToBoxAdapter(child: _buildBusinessCard()),
-                  SliverToBoxAdapter(child: _buildJobMeta()),
-                  SliverToBoxAdapter(child: _buildDescription()),
-                  SliverToBoxAdapter(child: _buildRequirements()),
-                  SliverToBoxAdapter(child: _buildSkillsSection()),
-                  SliverToBoxAdapter(child: _buildTimeline()),
-                  SliverToBoxAdapter(child: _buildAboutBusiness()),
-                  const SliverToBoxAdapter(child: SizedBox(height: 120)),
-                ],
-              ),
-            ),
-            _buildBottomCTA(context),
-          ],
-        ),
+        child: _loading
+            ? const Center(child: CircularProgressIndicator(color: AppColors.studentPrimary))
+            : _error != null
+                ? Center(child: Text(_error!, style: const TextStyle(color: AppColors.error)))
+                : _job == null
+                    ? const Center(child: Text('Job not found'))
+                    : Column(
+                        children: [
+                          Expanded(
+                            child: CustomScrollView(
+                              slivers: [
+                                _buildAppBar(context),
+                                SliverToBoxAdapter(child: _buildBusinessCard()),
+                                SliverToBoxAdapter(child: _buildJobMeta()),
+                                SliverToBoxAdapter(child: _buildDescription()),
+                                SliverToBoxAdapter(child: _buildSkillsSection()),
+                                SliverToBoxAdapter(child: _buildTimeline()),
+                                const SliverToBoxAdapter(child: SizedBox(height: 120)),
+                              ],
+                            ),
+                          ),
+                          _buildBottomCTA(context),
+                        ],
+                      ),
       ),
     );
   }
@@ -58,7 +85,7 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
       pinned: true,
       expandedHeight: 0,
       leading: GestureDetector(
-        onTap: () => context.go('/student/jobs'),
+        onTap: () => context.canPop() ? context.pop() : context.go('/student/jobs'),
         child: Container(
           margin: const EdgeInsets.all(8),
           decoration: BoxDecoration(
@@ -73,10 +100,29 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
         IconButton(
           icon: const Icon(Icons.outlined_flag_rounded, color: AppColors.textSecondary),
           tooltip: 'Report Job',
-          onPressed: () => ReportModal.show(context, targetName: _job['title'] as String, targetType: 'job'),
+          onPressed: () => ReportModal.show(context, targetName: _job!.title, targetType: 'job'),
         ),
         GestureDetector(
-          onTap: () => setState(() => _bookmarked = !_bookmarked),
+          onTap: () async {
+            final messenger = ScaffoldMessenger.of(context);
+            try {
+              final isSaved = await SavedJobService().toggleSave(int.parse(widget.jobId));
+              if (!mounted) return;
+              setState(() => _bookmarked = isSaved);
+              messenger.showSnackBar(
+                SnackBar(
+                  content: Text(isSaved ? '📌 Job saved to bookmarks!' : 'Removed from bookmarks.'),
+                  duration: const Duration(seconds: 2),
+                ),
+              );
+            } catch (e) {
+              if (mounted) {
+                messenger.showSnackBar(
+                  SnackBar(content: Text('Could not update saved job: $e')),
+                );
+              }
+            }
+          },
           child: Container(
             margin: const EdgeInsets.all(8),
             decoration: BoxDecoration(
@@ -124,23 +170,25 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                       color: AppColors.businessPrimary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(AppRadius.full),
                     ),
-                    child: Text('// ${_job['category']}',
+                    child: Text('// ${_job!.category}',
                         style: GoogleFonts.jetBrainsMono(fontSize: 9, color: AppColors.businessPrimary)),
                   ),
                   const SizedBox(height: 5),
-                  Text(_job['business'] as String,
+                  Text(_job!.businessName ?? 'Business',
                       style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
                   const SizedBox(height: 2),
                   Row(
                     children: [
                       const Icon(Icons.location_on_outlined, color: AppColors.textMuted, size: 12),
                       const SizedBox(width: 3),
-                      Text(_job['location'] as String,
+                      Text(_job!.location,
                           style: GoogleFonts.inter(fontSize: 12, color: AppColors.textMuted)),
-                      const SizedBox(width: AppSpacing.sm),
-                      const Icon(Icons.verified_rounded, color: AppColors.success, size: 12),
-                      const SizedBox(width: 3),
-                      Text('Verified', style: GoogleFonts.inter(fontSize: 12, color: AppColors.success)),
+                      if (_job!.verificationStatus == 'verified') ...[
+                        const SizedBox(width: AppSpacing.sm),
+                        const Icon(Icons.verified_rounded, color: AppColors.success, size: 12),
+                        const SizedBox(width: 3),
+                        Text('Verified', style: GoogleFonts.inter(fontSize: 12, color: AppColors.success)),
+                      ],
                     ],
                   ),
                 ],
@@ -158,19 +206,16 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(_job['title'] as String,
+          Text(_job!.title,
               style: Theme.of(context).textTheme.displaySmall),
           const SizedBox(height: AppSpacing.md),
           Row(
             children: [
               _MetaTile(icon: Icons.payments_outlined, label: 'Budget',
-                  value: _job['budget'] as String, accent: AppColors.studentPrimary, mono: true),
+                  value: _job!.budget, accent: AppColors.studentPrimary, mono: true),
               const SizedBox(width: AppSpacing.sm),
-              _MetaTile(icon: Icons.access_time_rounded, label: 'Deadline',
-                  value: _job['deadline'] as String, accent: AppColors.studentAccent),
-              const SizedBox(width: AppSpacing.sm),
-              _MetaTile(icon: Icons.people_outline_rounded, label: 'Pitches',
-                  value: '${_job['proposals']} sent', accent: AppColors.warning),
+              _MetaTile(icon: Icons.access_time_rounded, label: 'Urgency',
+                  value: _job!.urgency, accent: AppColors.studentAccent),
             ],
           ),
         ],
@@ -186,47 +231,15 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
         children: [
           _SectionLabel(label: 'Job Description'),
           const SizedBox(height: AppSpacing.md),
-          Text(_job['description'] as String,
+          Text(_job!.description,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.7)),
         ],
       ).animate().fadeIn(duration: 500.ms, delay: 180.ms),
     );
   }
 
-  Widget _buildRequirements() {
-    final reqs = _job['requirements'] as List<String>;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _SectionLabel(label: 'What\'s Needed'),
-          const SizedBox(height: AppSpacing.md),
-          ...reqs.asMap().entries.map((e) => Padding(
-            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  margin: const EdgeInsets.only(top: 6),
-                  width: 6, height: 6,
-                  decoration: const BoxDecoration(
-                    color: AppColors.studentPrimary, shape: BoxShape.circle,
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(child: Text(e.value,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.5))),
-              ],
-            ),
-          ).animate().fadeIn(duration: 300.ms, delay: Duration(milliseconds: 250 + e.key * 60))),
-        ],
-      ),
-    );
-  }
-
   Widget _buildSkillsSection() {
-    final skills = _job['skills'] as List<String>;
+    final skills = _job!.skills;
     return Padding(
       padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.xl, AppSpacing.lg, AppSpacing.md),
       child: Column(
@@ -244,6 +257,14 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
         ],
       ).animate().fadeIn(duration: 500.ms, delay: 350.ms),
     );
+  }
+
+  String _timeAgo(DateTime dt) {
+    final diff = DateTime.now().difference(dt);
+    if (diff.inDays > 0) return '${diff.inDays}d ago';
+    if (diff.inHours > 0) return '${diff.inHours}h ago';
+    if (diff.inMinutes > 0) return '${diff.inMinutes}m ago';
+    return 'Just now';
   }
 
   Widget _buildTimeline() {
@@ -266,7 +287,7 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
               children: [
                 Text('Expected Timeline',
                     style: GoogleFonts.inter(fontSize: 12, color: AppColors.textMuted)),
-                Text(_job['timeline'] as String,
+                Text(_job!.timeline,
                     style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w600,
                         color: AppColors.textPrimary)),
               ],
@@ -276,38 +297,13 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text('Posted', style: GoogleFonts.inter(fontSize: 12, color: AppColors.textMuted)),
-                Text(_job['posted'] as String,
+                Text(_timeAgo(_job!.createdAt),
                     style: GoogleFonts.jetBrainsMono(fontSize: 12, color: AppColors.textSecondary)),
               ],
             ),
           ],
         ),
       ).animate().fadeIn(duration: 500.ms, delay: 420.ms),
-    );
-  }
-
-  Widget _buildAboutBusiness() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.xl, AppSpacing.lg, AppSpacing.md),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _SectionLabel(label: 'About the Business'),
-          const SizedBox(height: AppSpacing.md),
-          Text(_job['about'] as String,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.7)),
-          const SizedBox(height: AppSpacing.md),
-          Row(
-            children: [
-              _StatPill(icon: Icons.star_rounded, value: '4.8', label: 'Rating', color: AppColors.warning),
-              const SizedBox(width: AppSpacing.sm),
-              _StatPill(icon: Icons.check_circle_outline, value: '3', label: 'Projects Done', color: AppColors.success),
-              const SizedBox(width: AppSpacing.sm),
-              _StatPill(icon: Icons.timer_outlined, value: '1d', label: 'Avg Reply', color: AppColors.info),
-            ],
-          ),
-        ],
-      ).animate().fadeIn(duration: 500.ms, delay: 480.ms),
     );
   }
 
@@ -335,9 +331,8 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
             child: AppButton(
               label: 'Submit Pitch',
               icon: Icons.rocket_launch_rounded,
-              onPressed: () => context.go(
-                '/student/jobs/${widget.jobId}/pitch',
-                extra: {'title': _job['title']},
+              onPressed: () => context.push(
+                '/student/jobs/${widget.jobId}/pitch?title=${Uri.encodeComponent(_job!.title)}',
               ),
             ),
           ),
@@ -404,63 +399,4 @@ class _SectionLabel extends StatelessWidget {
     );
   }
 }
-
-class _StatPill extends StatelessWidget {
-  final IconData icon;
-  final String value, label;
-  final Color color;
-  const _StatPill({required this.icon, required this.value, required this.label, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(AppRadius.md),
-          border: Border.all(color: color.withValues(alpha: 0.2)),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: color, size: 16),
-            const SizedBox(height: 3),
-            Text(value, style: GoogleFonts.plusJakartaSans(fontSize: 13, fontWeight: FontWeight.w700, color: color)),
-            Text(label, style: GoogleFonts.inter(fontSize: 9, color: AppColors.textMuted)),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Mock Data
-// ─────────────────────────────────────────────────────────────────────────────
-final _mockJobs = <String, Map<String, dynamic>>{
-  '1': {
-    'id': '1', 'title': 'Online Ordering App',
-    'business': 'BAMBOU Greenhouse Café',
-    'category': 'Mobile App',
-    'location': 'Brgy. Pinyahan, QC · 0.3 km away',
-    'budget': '₱12,000',
-    'deadline': 'Aug 10, 2025',
-    'timeline': '3–4 weeks',
-    'posted': '2 hours ago',
-    'proposals': 4,
-    'description': 'We need a Flutter mobile app for customers to browse our full menu, add items to cart, choose pickup time, and pay via GCash or cash on pickup. The app should feel modern — matching our café branding (earthy greens, warm whites). Customers should receive an in-app notification when their order is ready.',
-    'requirements': [
-      'Flutter/Dart mobile app (iOS + Android)',
-      'Browse menu by category (drinks, pastries, meals)',
-      'Cart and checkout with pickup time scheduling',
-      'GCash and cash-on-pickup payment options',
-      'Order status push notifications',
-      'Simple admin panel to mark orders as ready',
-    ],
-    'skills': ['Flutter', 'Dart', 'Firebase', 'PHP', 'MySQL'],
-    'about': "BAMBOU Greenhouse Café is a cozy urban café located in QC known for our plant-filled interior, specialty coffee, and homemade pastries. We've been operating for 3 years and serve 100+ customers daily. We want to go digital to reduce queuing and serve takeout customers better.",
-  },
-};
-
-
 

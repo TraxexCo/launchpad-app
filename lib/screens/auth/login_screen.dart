@@ -6,6 +6,8 @@ import '../../core/constants.dart';
 import '../../widgets/app_background.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_text_field.dart';
+import '../../services/auth_service.dart';
+import '../../services/api_service.dart';
 
 class LoginScreen extends StatefulWidget {
   final UserRole role;
@@ -32,10 +34,20 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
-    await Future.delayed(const Duration(seconds: 2));
-    if (!mounted) return;
-    setState(() => _loading = false);
-    context.go(_isStudent ? '/student' : '/business');
+    
+    try {
+      final session = await AuthService().login(_emailCtrl.text, _passCtrl.text);
+      if (!mounted) return;
+      setState(() => _loading = false);
+      context.go(session.role == 'student' ? '/student' : '/business');
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      final msg = e is ApiException ? e.message : e.toString();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('❌ $msg'), backgroundColor: AppColors.error),
+      );
+    }
   }
 
   @override
@@ -54,7 +66,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: AppSpacing.lg),
 
                   GestureDetector(
-                    onTap: () => context.go('/onboarding'),
+                    onTap: () => context.canPop() ? context.pop() : context.go('/onboarding'),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -126,7 +138,51 @@ class _LoginScreenState extends State<LoginScreen> {
                   Align(
                     alignment: Alignment.centerRight,
                     child: GestureDetector(
-                      onTap: () {},
+                      onTap: () {
+                        final resetCtrl = TextEditingController();
+                        showDialog(
+                          context: context,
+                          builder: (_) => AlertDialog(
+                            title: Text('Reset Password', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+                            content: Text('Enter your email and we will send you a reset link.', style: GoogleFonts.inter(fontSize: 14)),
+                            actions: [
+                              TextField(
+                                controller: resetCtrl,
+                                decoration: InputDecoration(
+                                  hintText: 'your@email.com',
+                                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                                ),
+                                keyboardType: TextInputType.emailAddress,
+                              ),
+                              const SizedBox(height: 12),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+                                  TextButton(
+                                    onPressed: () async {
+                                      try {
+                                        await AuthService().resetPassword(resetCtrl.text);
+                                        if (!context.mounted) return;
+                                        Navigator.pop(context);
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          const SnackBar(content: Text('Check your email for a reset link.'), backgroundColor: AppColors.success),
+                                        );
+                                      } catch (error) {
+                                        if (!context.mounted) return;
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(content: Text('$error'), backgroundColor: AppColors.error),
+                                        );
+                                      }
+                                    },
+                                    child: const Text('Send Link'),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        );
+                      },
                       child: Text('Forgot password?',
                           style: GoogleFonts.inter(fontSize: 13, color: _primary, fontWeight: FontWeight.w500)),
                     ),

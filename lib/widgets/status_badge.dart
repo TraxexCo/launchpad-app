@@ -30,6 +30,19 @@ class StatusBadge extends StatelessWidget {
     }
   }
 
+  factory StatusBadge.fromApiStatus(String status) {
+    switch (status.toLowerCase()) {
+      case 'pending':
+        return const StatusBadge(label: 'Sent', color: AppColors.info, pulsing: true);
+      case 'accepted':
+        return const StatusBadge(label: 'Accepted', color: AppColors.success);
+      case 'rejected':
+        return const StatusBadge(label: 'Rejected', color: AppColors.error);
+      default:
+        return const StatusBadge(label: 'Draft', color: AppColors.textMuted);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(

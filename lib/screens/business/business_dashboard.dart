@@ -2,13 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/constants.dart';
 import '../../core/theme.dart';
-import '../../data/mock_data.dart';
 import '../../widgets/app_background.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/status_badge.dart';
+import '../../services/job_service.dart';
+import '../../services/proposal_service.dart';
+import '../../services/auth_service.dart';
+import '../../services/contract_service.dart';
+import '../../models/job_post.dart';
+import '../../models/proposal.dart';
 
 class BusinessDashboard extends StatefulWidget {
   const BusinessDashboard({super.key});
@@ -19,6 +25,20 @@ class BusinessDashboard extends StatefulWidget {
 
 class _BusinessDashboardState extends State<BusinessDashboard> {
   int _navIndex = 0;
+  String _businessName = 'Business';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUser();
+  }
+
+  Future<void> _loadUser() async {
+    final user = await AuthService().getCurrentUser();
+    if (user != null && mounted) {
+      setState(() => _businessName = user.name);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +49,10 @@ class _BusinessDashboardState extends State<BusinessDashboard> {
         child: SafeArea(
           child: Column(
             children: [
-              _BizAppBar(onLogout: () => context.go('/onboarding')),
+              _BizAppBar(businessName: _businessName, onLogout: () {
+                AuthService().logout();
+                context.go('/onboarding');
+              }),
               Expanded(
                 child: IndexedStack(
                   index: _navIndex,
@@ -57,8 +80,9 @@ class _BusinessDashboardState extends State<BusinessDashboard> {
 // App Bar
 // ─────────────────────────────────────────────────────────────────────────────
 class _BizAppBar extends StatelessWidget {
+  final String businessName;
   final VoidCallback onLogout;
-  const _BizAppBar({required this.onLogout});
+  const _BizAppBar({required this.businessName, required this.onLogout});
 
   @override
   Widget build(BuildContext context) {
@@ -89,13 +113,14 @@ class _BizAppBar extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('BAMBOU Café',
+              Text(businessName,
                   style: GoogleFonts.plusJakartaSans(
                       fontSize: 15,
                       fontWeight: FontWeight.w800,
                       color: AppColors.textPrimary,
                       letterSpacing: -0.5)),
-              StatusBadge.verified(),
+              Text('Business account', style: GoogleFonts.inter(
+                  fontSize: 11, color: AppColors.textMuted)),
             ],
           ),
 
@@ -103,7 +128,7 @@ class _BizAppBar extends StatelessWidget {
 
           _BizIconBtn(icon: Icons.notifications_none_rounded, onTap: () => context.go('/notifications?role=business')),
           const SizedBox(width: AppSpacing.sm),
-          _BizIconBtn(icon: Icons.settings_outlined, onTap: () => context.go('/settings?role=business')),
+          _BizIconBtn(icon: Icons.logout_rounded, onTap: onLogout),
         ],
       ),
     );
@@ -210,8 +235,62 @@ class _BizBottomNav extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 // TAB 0 — Home
 // ─────────────────────────────────────────────────────────────────────────────
-class _BizHomeTab extends StatelessWidget {
+class _BizHomeTab extends StatefulWidget {
   const _BizHomeTab();
+
+  @override
+  State<_BizHomeTab> createState() => _BizHomeTabState();
+}
+
+class _BizHomeTabState extends State<_BizHomeTab> {
+  List<JobPost> _jobs = [];
+  List<Proposal> _proposals = [];
+  List<ContractItem> _contracts = [];
+  String _businessName = 'Business';
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadData();
+  }
+
+  Future<void> _loadData() async {
+    try {
+      final user = await AuthService().getCurrentUser();
+      if (user != null) {
+        _businessName = user.name;
+        final futures = await Future.wait([
+          JobService().getJobsByBusiness(user.id),
+          ContractService().getMyContracts(),
+        ]);
+        final jobs = futures[0] as List<JobPost>;
+        final contracts = futures[1] as List<ContractItem>;
+        
+        // Fetch proposals for all jobs
+        final allProposals = <Proposal>[];
+        for (var job in jobs) {
+          final p = await ProposalService().getProposalsByJob(int.parse(job.id));
+          for (var prop in p) {
+            prop = prop.copyWith(jobTitle: job.title, jobBudget: job.budget);
+            allProposals.add(prop);
+          }
+        }
+        allProposals.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+        if (mounted) {
+          setState(() {
+            _jobs = jobs;
+            _proposals = allProposals;
+            _contracts = contracts;
+            _loading = false;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -224,7 +303,7 @@ class _BizHomeTab extends StatelessWidget {
         Text('Welcome back,',
             style: Theme.of(context).textTheme.bodyLarge)
             .animate().fadeIn(duration: 400.ms),
-        Text('BAMBOU Café ☕',
+        Text('$_businessName 👋',
             style: Theme.of(context).textTheme.headlineMedium)
             .animate().fadeIn(duration: 500.ms, delay: 80.ms)
             .slideY(begin: 0.15),
@@ -234,21 +313,97 @@ class _BizHomeTab extends StatelessWidget {
         // ── Stats row
         Row(
           children: [
-            _BizStatCard(label: 'Active Jobs', value: '3', color: AppColors.businessPrimary),
+            _BizStatCard(label: 'Active Jobs', value: '${_jobs.length}', color: AppColors.businessPrimary),
             const SizedBox(width: AppSpacing.sm),
-            _BizStatCard(label: 'Proposals', value: '11', color: AppColors.businessAccent),
+            _BizStatCard(label: 'Proposals', value: '${_proposals.length}', color: AppColors.businessAccent),
             const SizedBox(width: AppSpacing.sm),
-            _BizStatCard(label: 'Hired', value: '2', color: AppColors.success),
+            _BizStatCard(label: 'Hired', value: '${_contracts.length}', color: AppColors.success),
           ],
         )
             .animate()
             .fadeIn(duration: 500.ms, delay: 200.ms)
             .slideY(begin: 0.1, duration: 400.ms, delay: 200.ms),
 
+        // ── Active Contracts Section
+        if (_contracts.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.xl),
+          _BizSectionHeader(
+            title: 'Active Contracts',
+            action: '${_contracts.length} ongoing',
+            onAction: () {},
+          ),
+          const SizedBox(height: AppSpacing.md),
+          ..._contracts.map((c) => Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                child: AppCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              c.jobTitle,
+                              style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textPrimary),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: AppColors.success.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(AppRadius.full),
+                              border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
+                            ),
+                            child: Text('In Progress',
+                                style: GoogleFonts.jetBrainsMono(fontSize: 10, color: AppColors.success, fontWeight: FontWeight.w600)),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text('Assigned Student: ${c.studentName} · ₱${c.budget.toStringAsFixed(0)}',
+                          style: GoogleFonts.inter(fontSize: 12, color: AppColors.textMuted)),
+                      const SizedBox(height: AppSpacing.md),
+                      Row(
+                        children: [
+                          const Spacer(),
+                          GestureDetector(
+                            onTap: () => context.push('/chat/${c.proposalId}?name=${c.studentName}'),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs + 2),
+                              decoration: BoxDecoration(
+                                color: AppColors.businessPrimary.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(AppRadius.md),
+                                border: Border.all(color: AppColors.businessPrimary.withValues(alpha: 0.4)),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.chat_bubble_outline_rounded, size: 14, color: AppColors.businessPrimary),
+                                  const SizedBox(width: 6),
+                                  Text('Open Project Chat',
+                                      style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.businessPrimary)),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              )),
+        ],
+
         const SizedBox(height: AppSpacing.xl),
 
         // ── Post a job CTA
-        _PostJobCard()
+        _PostJobCard(onPosted: _loadData)
             .animate()
             .fadeIn(duration: 500.ms, delay: 350.ms)
             .slideY(begin: 0.1, duration: 400.ms, delay: 350.ms),
@@ -257,9 +412,16 @@ class _BizHomeTab extends StatelessWidget {
 
         // ── Active jobs section
         _BizSectionHeader(
-            title: 'Active Jobs', action: 'View all', onAction: () => context.go('/business/jobs/1/proposals')),
+            title: 'Active Jobs', action: 'View all', onAction: () {
+               final state = context.findAncestorStateOfType<_BusinessDashboardState>();
+               if (state != null) state.setState(() => state._navIndex = 1);
+            }),
         const SizedBox(height: AppSpacing.md),
-        ...mockBusinessJobs.asMap().entries.map((e) => Padding(
+        
+        if (_loading) const Center(child: Padding(padding: EdgeInsets.all(AppSpacing.md), child: CircularProgressIndicator(color: AppColors.businessPrimary))),
+        if (!_loading && _jobs.isEmpty) Center(child: Padding(padding: const EdgeInsets.all(AppSpacing.md), child: Text('No active jobs', style: Theme.of(context).textTheme.bodyMedium))),
+
+        ..._jobs.take(3).toList().asMap().entries.map((e) => Padding(
               padding: const EdgeInsets.only(bottom: AppSpacing.sm),
               child: _JobCard(job: e.value)
                   .animate()
@@ -276,9 +438,16 @@ class _BizHomeTab extends StatelessWidget {
 
         // ── Recent proposals
         _BizSectionHeader(
-            title: 'Recent Proposals', action: 'See all', onAction: () => context.go('/business/jobs/1/proposals')),
+            title: 'Recent Proposals', action: 'See all', onAction: () {
+               final state = context.findAncestorStateOfType<_BusinessDashboardState>();
+               if (state != null) state.setState(() => state._navIndex = 2);
+            }),
         const SizedBox(height: AppSpacing.md),
-        ...mockIncomingProposals.asMap().entries.map((e) => Padding(
+        
+        if (_loading) const Center(child: Padding(padding: EdgeInsets.all(AppSpacing.md), child: CircularProgressIndicator(color: AppColors.businessPrimary))),
+        if (!_loading && _proposals.isEmpty) Center(child: Padding(padding: const EdgeInsets.all(AppSpacing.md), child: Text('No recent proposals', style: Theme.of(context).textTheme.bodyMedium))),
+
+        ..._proposals.take(3).toList().asMap().entries.map((e) => Padding(
               padding: const EdgeInsets.only(bottom: AppSpacing.sm),
               child: _IncomingProposalCard(proposal: e.value)
                   .animate()
@@ -296,8 +465,58 @@ class _BizHomeTab extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 // TAB 1 — Jobs
 // ─────────────────────────────────────────────────────────────────────────────
-class _BizJobsTab extends StatelessWidget {
+class _BizJobsTab extends StatefulWidget {
   const _BizJobsTab();
+  @override
+  State<_BizJobsTab> createState() => _BizJobsTabState();
+}
+
+class _BizJobsTabState extends State<_BizJobsTab> {
+  List<JobPost> _jobs = [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadJobs();
+  }
+
+  Future<void> _loadJobs() async {
+    setState(() => _loading = true);
+    final user = await AuthService().getCurrentUser();
+    if (user != null) {
+      final jobs = await JobService().getJobsByBusiness(user.id);
+      if (mounted) setState(() { _jobs = jobs; _loading = false; });
+    } else {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _deleteJob(JobPost job) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text('Delete Job', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
+        content: Text('Delete "${job.title}"? This cannot be undone.', style: GoogleFonts.inter()),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete', style: TextStyle(color: AppColors.error)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      await JobService().deleteJob(int.parse(job.id));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('🗑️ Job deleted.'), backgroundColor: AppColors.error),
+        );
+        _loadJobs();
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -310,39 +529,209 @@ class _BizJobsTab extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: Text('My Job Posts',
-                    style: Theme.of(context).textTheme.headlineMedium),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('My Job Posts', style: Theme.of(context).textTheme.headlineMedium),
+                    Text('${_jobs.length} job(s) posted', style: GoogleFonts.inter(fontSize: 12, color: AppColors.textMuted)),
+                  ],
+                ),
               ),
               AppButton.business(
                 label: '+ Post Job',
                 isExpanded: false,
-                onPressed: () {},
+                onPressed: () async {
+                  await context.push('/business/post-job');
+                  _loadJobs(); // refresh after returning
+                },
               ),
             ],
           ),
           const SizedBox(height: AppSpacing.md),
-          Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.lg, vertical: AppSpacing.md),
-              itemCount: mockBusinessJobs.length,
-              itemBuilder: (_, i) => Padding(
-                padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                child: _JobCard(job: mockBusinessJobs[i]),
+          if (_loading)
+            const Expanded(child: Center(child: CircularProgressIndicator(color: AppColors.businessPrimary)))
+          else if (_jobs.isEmpty)
+            Expanded(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.work_off_outlined, size: 56, color: AppColors.textDisabled),
+                    const SizedBox(height: AppSpacing.md),
+                    Text('No jobs posted yet', style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textMuted)),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text('Tap "+ Post Job" to create your first listing.', style: GoogleFonts.inter(fontSize: 13, color: AppColors.textDisabled)),
+                  ],
+                ),
+              ),
+            )
+          else
+            Expanded(
+              child: ListView.builder(
+                itemCount: _jobs.length,
+                itemBuilder: (_, i) {
+                  final job = _jobs[i];
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                    child: AppCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(job.title,
+                                        style: GoogleFonts.plusJakartaSans(
+                                            fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                                    const SizedBox(height: 4),
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.businessPrimary.withValues(alpha: 0.1),
+                                            borderRadius: BorderRadius.circular(AppRadius.full),
+                                          ),
+                                          child: Text(job.category, style: GoogleFonts.inter(fontSize: 10, color: AppColors.businessPrimary, fontWeight: FontWeight.w600)),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        if (job.urgency == 'Urgent')
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                            decoration: BoxDecoration(
+                                              color: AppColors.error.withValues(alpha: 0.1),
+                                              borderRadius: BorderRadius.circular(AppRadius.full),
+                                            ),
+                                            child: Text('Urgent', style: GoogleFonts.inter(fontSize: 10, color: AppColors.error, fontWeight: FontWeight.w600)),
+                                          ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Text('₱${job.budget}',
+                                  style: GoogleFonts.jetBrainsMono(
+                                      fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.businessPrimary)),
+                            ],
+                          ),
+                          if (job.description.isNotEmpty) ...[
+                            const SizedBox(height: AppSpacing.sm),
+                            Text(job.description,
+                                style: GoogleFonts.inter(fontSize: 12, color: AppColors.textMuted),
+                                maxLines: 2, overflow: TextOverflow.ellipsis),
+                          ],
+                          const SizedBox(height: AppSpacing.sm),
+                          Row(
+                            children: [
+                              const Icon(Icons.access_time_rounded, size: 12, color: AppColors.textDisabled),
+                              const SizedBox(width: 4),
+                              Text(job.timeline, style: GoogleFonts.inter(fontSize: 11, color: AppColors.textDisabled)),
+                              const Spacer(),
+                              // UPDATE button
+                              GestureDetector(
+                                onTap: () async {
+                                  await context.push('/business/jobs/${job.id}/edit', extra: job);
+                                  _loadJobs();
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.businessPrimary.withValues(alpha: 0.08),
+                                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                                    border: Border.all(color: AppColors.businessPrimary.withValues(alpha: 0.25)),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.edit_rounded, size: 11, color: AppColors.businessPrimary),
+                                      const SizedBox(width: 4),
+                                      Text('Edit', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.businessPrimary)),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: AppSpacing.sm),
+                              // DELETE button
+                              GestureDetector(
+                                onTap: () => _deleteJob(job),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.error.withValues(alpha: 0.08),
+                                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                                    border: Border.all(color: AppColors.error.withValues(alpha: 0.25)),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.delete_rounded, size: 11, color: AppColors.error),
+                                      const SizedBox(width: 4),
+                                      Text('Delete', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.error)),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ).animate().fadeIn(duration: 300.ms, delay: Duration(milliseconds: i * 80)),
+                  );
+                },
               ),
             ),
-          ),
         ],
       ),
     );
   }
 }
 
+
 // ─────────────────────────────────────────────────────────────────────────────
 // TAB 2 — Proposals inbox
 // ─────────────────────────────────────────────────────────────────────────────
-class _BizProposalsTab extends StatelessWidget {
+class _BizProposalsTab extends StatefulWidget {
   const _BizProposalsTab();
+  @override
+  State<_BizProposalsTab> createState() => _BizProposalsTabState();
+}
+
+class _BizProposalsTabState extends State<_BizProposalsTab> {
+  List<Proposal> _proposals = [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProposals();
+  }
+
+  Future<void> _loadProposals() async {
+    setState(() => _loading = true);
+    try {
+      final user = await AuthService().getCurrentUser();
+      if (user == null) throw Exception('Not logged in');
+      
+      final jobs = await JobService().getJobsByBusiness(user.id);
+      
+      List<Proposal> allProposals = [];
+      for (final job in jobs) {
+        final jobProposals = await ProposalService().getProposalsByJob(int.parse(job.id));
+        for (var p in jobProposals) {
+          p = p.copyWith(jobTitle: job.title, jobBudget: job.budget);
+          allProposals.add(p);
+        }
+      }
+      allProposals.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+      if (mounted) setState(() { _proposals = allProposals; _loading = false; });
+    } catch (e) {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -355,18 +744,23 @@ class _BizProposalsTab extends StatelessWidget {
           Text('Proposals Inbox',
               style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: AppSpacing.xs),
-          Text('${mockIncomingProposals.length} proposals received',
+          Text('${_proposals.length} proposals received',
               style: Theme.of(context).textTheme.bodyMedium),
           const SizedBox(height: AppSpacing.md),
-          Expanded(
-            child: ListView.separated(
-              itemCount: mockIncomingProposals.length,
-              separatorBuilder: (context, idx) =>
-                  const SizedBox(height: AppSpacing.sm),
-              itemBuilder: (_, i) =>
-                  _IncomingProposalCard(proposal: mockIncomingProposals[i]),
+          if (_loading)
+            const Expanded(child: Center(child: CircularProgressIndicator(color: AppColors.businessPrimary)))
+          else if (_proposals.isEmpty)
+            Expanded(child: Center(child: Text('No proposals yet', style: Theme.of(context).textTheme.bodyMedium)))
+          else
+            Expanded(
+              child: ListView.separated(
+                itemCount: _proposals.length,
+                separatorBuilder: (context, idx) =>
+                    const SizedBox(height: AppSpacing.sm),
+                itemBuilder: (_, i) =>
+                    _IncomingProposalCard(proposal: _proposals[i]),
+              ),
             ),
-          ),
         ],
       ),
     );
@@ -376,111 +770,70 @@ class _BizProposalsTab extends StatelessWidget {
 // ─────────────────────────────────────────────────────────────────────────────
 // TAB 3 — Business Profile
 // ─────────────────────────────────────────────────────────────────────────────
-class _BizProfileTab extends StatelessWidget {
+class _BizProfileTab extends StatefulWidget {
   const _BizProfileTab();
 
   @override
+  State<_BizProfileTab> createState() => _BizProfileTabState();
+}
+
+class _BizProfileTabState extends State<_BizProfileTab> {
+  late final Future<Map<String, dynamic>> _profile = _loadProfile();
+
+  Future<Map<String, dynamic>> _loadProfile() async {
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) throw StateError('Sign in to view your profile');
+    return Supabase.instance.client.from('business_profiles').select()
+        .eq('user_id', userId).single();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-      child: Column(
-        children: [
-          const SizedBox(height: AppSpacing.md),
-
-          // ── Business avatar hero
-          Center(
-            child: Stack(
-              alignment: Alignment.bottomRight,
-              children: [
-                Container(
-                  width: 90,
-                  height: 90,
-                  decoration: BoxDecoration(
-                    gradient: AppTheme.businessGradient(),
-                    borderRadius: BorderRadius.circular(AppRadius.xxl),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.businessPrimary.withValues(alpha: 0.4),
-                        blurRadius: 30,
-                      ),
-                    ],
-                  ),
-                  child: const Icon(Icons.storefront_rounded,
-                      color: AppColors.textPrimary, size: 40),
-                ),
-                Container(
-                  width: 28,
-                  height: 28,
-                  decoration: BoxDecoration(
-                    color: AppColors.success,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.background, width: 2),
-                  ),
-                  child: const Icon(Icons.verified_rounded,
-                      color: Colors.white, size: 14),
-                ),
-              ],
-            ).animate().scale(duration: 600.ms, curve: Curves.elasticOut),
-          ),
-
-          const SizedBox(height: AppSpacing.md),
-          Text('BAMBOU Greenhouse Café',
-              style: Theme.of(context).textTheme.headlineSmall,
-              textAlign: TextAlign.center),
-          const SizedBox(height: AppSpacing.xs),
-          Text('123 Rizal St., Brgy. San Antonio, Manila',
-              style: Theme.of(context).textTheme.bodyMedium,
-              textAlign: TextAlign.center),
-          const SizedBox(height: AppSpacing.sm),
-          StatusBadge.verified(),
-
-          const SizedBox(height: AppSpacing.xl),
-
-          // ── Business info cards
-          _BizInfoRow(icon: Icons.category_outlined, label: 'Category', value: 'Café / Restaurant'),
-          const SizedBox(height: AppSpacing.sm),
-          _BizInfoRow(icon: Icons.phone_outlined, label: 'Contact', value: '+63 912 345 6789'),
-          const SizedBox(height: AppSpacing.sm),
-          _BizInfoRow(icon: Icons.location_on_outlined, label: 'Coordinates', value: '14.5995° N, 120.9842° E'),
-
-          const SizedBox(height: AppSpacing.xl),
-
-          // ── Verification details
-          AppCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Icon(Icons.shield_rounded,
-                        color: AppColors.success, size: 16),
-                    const SizedBox(width: AppSpacing.sm),
-                    Text('KYB Verification',
-                        style: Theme.of(context).textTheme.titleMedium),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.md),
-                _VerificationRow(
-                    icon: Icons.receipt_long_rounded,
-                    label: 'DTI Permit',
-                    done: true),
-                const SizedBox(height: AppSpacing.sm),
-                _VerificationRow(
-                    icon: Icons.add_a_photo_rounded,
-                    label: 'Storefront Photo',
-                    done: true),
-                const SizedBox(height: AppSpacing.sm),
-                _VerificationRow(
-                    icon: Icons.gps_fixed_rounded,
-                    label: 'GPS Verified',
-                    done: true),
-              ],
+    return FutureBuilder<Map<String, dynamic>>(
+      future: _profile,
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return Center(child: snapshot.hasError
+              ? Text('Could not load profile: ${snapshot.error}')
+              : const CircularProgressIndicator());
+        }
+        final profile = snapshot.data!;
+        final status = profile['verification_status'] as String? ?? 'unverified';
+        return SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          child: Column(children: [
+            const SizedBox(height: AppSpacing.md),
+            Container(
+              width: 90, height: 90,
+              decoration: BoxDecoration(
+                gradient: AppTheme.businessGradient(),
+                borderRadius: BorderRadius.circular(AppRadius.xxl),
+              ),
+              child: const Icon(Icons.storefront_rounded,
+                  color: AppColors.textPrimary, size: 40),
             ),
-          ),
-
-          const SizedBox(height: AppSpacing.xl),
-        ],
-      ),
+            const SizedBox(height: AppSpacing.md),
+            Text(profile['business_name'] as String,
+                style: Theme.of(context).textTheme.headlineSmall,
+                textAlign: TextAlign.center),
+            const SizedBox(height: AppSpacing.xs),
+            Text((profile['address'] as String?)?.isNotEmpty == true
+                ? profile['address'] as String : 'No address added',
+                style: Theme.of(context).textTheme.bodyMedium,
+                textAlign: TextAlign.center),
+            const SizedBox(height: AppSpacing.sm),
+            Text('Verification: $status', style: GoogleFonts.inter(
+                color: status == 'verified' ? AppColors.success : AppColors.warning)),
+            const SizedBox(height: AppSpacing.xl),
+            _BizInfoRow(icon: Icons.category_outlined, label: 'Category',
+                value: profile['category'] as String? ?? 'Not added'),
+            const SizedBox(height: AppSpacing.sm),
+            _BizInfoRow(icon: Icons.phone_outlined, label: 'Contact',
+                value: profile['phone'] as String? ?? 'Not added'),
+            const SizedBox(height: AppSpacing.xl),
+          ]),
+        );
+      },
     );
   }
 }
@@ -523,30 +876,6 @@ class _BizInfoRow extends StatelessWidget {
   }
 }
 
-class _VerificationRow extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool done;
-  const _VerificationRow({required this.icon, required this.label, required this.done});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon, color: AppColors.textMuted, size: 16),
-        const SizedBox(width: AppSpacing.sm),
-        Expanded(
-          child: Text(label, style: Theme.of(context).textTheme.bodyMedium),
-        ),
-        Icon(
-          done ? Icons.check_circle_rounded : Icons.radio_button_unchecked_rounded,
-          color: done ? AppColors.success : AppColors.textMuted,
-          size: 18,
-        ),
-      ],
-    );
-  }
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SHARED SUB-WIDGETS
@@ -614,10 +943,19 @@ class _BizStatCard extends StatelessWidget {
 }
 
 class _PostJobCard extends StatelessWidget {
+  final VoidCallback onPosted;
+
+  const _PostJobCard({required this.onPosted});
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => context.go('/business/post-job'),
+      onTap: () async {
+        final result = await context.push('/business/post-job');
+        if (result == true) {
+          onPosted();
+        }
+      },
       child: Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
@@ -699,13 +1037,13 @@ class _PostJobCard extends StatelessWidget {
 
 
 class _JobCard extends StatelessWidget {
-  final MockBusinessJob job;
+  final JobPost job;
   const _JobCard({required this.job});
 
   @override
   Widget build(BuildContext context) {
     return AppCard(
-      onTap: () => context.go('/business/jobs/1/proposals'),
+      onTap: () => context.go('/business/jobs/${job.id}/proposals'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -718,7 +1056,7 @@ class _JobCard extends StatelessWidget {
                   color: AppColors.businessPrimary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
-                child: Icon(job.icon,
+                child: const Icon(Icons.work_outline_rounded,
                     color: AppColors.businessPrimary, size: 20),
               ),
               const SizedBox(width: AppSpacing.md),
@@ -731,7 +1069,7 @@ class _JobCard extends StatelessWidget {
                             fontSize: 14,
                             fontWeight: FontWeight.w700,
                             color: AppColors.textPrimary)),
-                    Text('${job.proposals} proposals received',
+                    Text('Tap to view proposals',
                         style: GoogleFonts.jetBrainsMono(
                             fontSize: 10, color: AppColors.textMuted)),
                   ],
@@ -767,13 +1105,21 @@ class _JobCard extends StatelessWidget {
 }
 
 class _IncomingProposalCard extends StatelessWidget {
-  final MockIncomingProposal proposal;
+  final Proposal proposal;
   const _IncomingProposalCard({required this.proposal});
+
+  String _timeAgo(DateTime dt) {
+    final diff = DateTime.now().difference(dt);
+    if (diff.inDays > 0) return '${diff.inDays}d ago';
+    if (diff.inHours > 0) return '${diff.inHours}h ago';
+    if (diff.inMinutes > 0) return '${diff.inMinutes}m ago';
+    return 'Just now';
+  }
 
   @override
   Widget build(BuildContext context) {
     return AppCard(
-      onTap: () {},
+      onTap: () => context.go('/business/proposals/${proposal.id}', extra: proposal),
       child: Row(
         children: [
           // Avatar
@@ -789,7 +1135,7 @@ class _IncomingProposalCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(AppRadius.md),
             ),
             child: Center(
-              child: Text(proposal.initials,
+              child: Text(proposal.studentName != null && proposal.studentName!.isNotEmpty ? proposal.studentName![0] : 'S',
                   style: GoogleFonts.plusJakartaSans(
                       fontSize: 14,
                       fontWeight: FontWeight.w800,
@@ -804,20 +1150,16 @@ class _IncomingProposalCard extends StatelessWidget {
                 Row(
                   children: [
                     Flexible(
-                      child: Text(proposal.studentName,
+                      child: Text(proposal.studentName ?? 'Student',
                           style: GoogleFonts.plusJakartaSans(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                               color: AppColors.textPrimary),
                           maxLines: 1, overflow: TextOverflow.ellipsis),
                     ),
-                    if (proposal.isVerifiedStudent) ...[
-                      const SizedBox(width: 4),
-                      const Icon(Icons.verified_rounded, color: AppColors.studentPrimary, size: 14),
-                    ],
                   ],
                 ),
-                Text('${proposal.skill} • ${proposal.budget}',
+                Text('${proposal.jobTitle ?? 'Job'} • ₱${proposal.proposedBudget}',
                     style: GoogleFonts.jetBrainsMono(
                         fontSize: 10, color: AppColors.textMuted)),
               ],
@@ -826,9 +1168,9 @@ class _IncomingProposalCard extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              StatusBadge.fromProposal(proposal.status),
+              StatusBadge.fromApiStatus(proposal.status),
               const SizedBox(height: 4),
-              Text(proposal.timeAgo,
+              Text(_timeAgo(proposal.createdAt),
                   style: GoogleFonts.inter(
                       fontSize: 10, color: AppColors.textMuted)),
             ],
