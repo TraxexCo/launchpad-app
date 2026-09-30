@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/constants.dart';
 import '../../services/job_service.dart';
 import '../../models/job_post.dart';
@@ -22,6 +23,7 @@ class JobDetailScreen extends StatefulWidget {
 
 class _JobDetailScreenState extends State<JobDetailScreen> {
   bool _bookmarked = false;
+  bool _hasApplied = false;
   JobPost? _job;
   bool _loading = true;
   String? _error;
@@ -38,7 +40,16 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
       final id = int.parse(widget.jobId);
       final job = await JobService().getJobById(id);
       final saved = await SavedJobService().isJobSaved(id);
-      if (mounted) setState(() { _job = job; _bookmarked = saved; _loading = false; });
+      final client = Supabase.instance.client;
+      final userId = client.auth.currentUser?.id;
+      final applied = userId != null &&
+          await client.from('proposals').select('id')
+              .eq('job_id', id).eq('student_id', userId).maybeSingle() != null;
+      if (mounted) {
+        setState(() {
+          _job = job; _bookmarked = saved; _hasApplied = applied; _loading = false;
+        });
+      }
     } catch (e) {
       if (mounted) setState(() { _error = e.toString(); _loading = false; });
     }
@@ -329,9 +340,9 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
           Expanded(
             flex: 2,
             child: AppButton(
-              label: 'Submit Pitch',
+              label: _hasApplied ? 'Proposal Submitted' : 'Submit Proposal',
               icon: Icons.rocket_launch_rounded,
-              onPressed: () => context.push(
+              onPressed: _hasApplied ? null : () => context.push(
                 '/student/jobs/${widget.jobId}/pitch?title=${Uri.encodeComponent(_job!.title)}',
               ),
             ),
@@ -399,4 +410,3 @@ class _SectionLabel extends StatelessWidget {
     );
   }
 }
-

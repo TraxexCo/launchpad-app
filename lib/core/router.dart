@@ -4,6 +4,7 @@ import '../screens/splash_screen.dart';
 import '../screens/onboarding/onboarding_screen.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/register_screen.dart';
+import '../screens/auth/recover_password_screen.dart';
 import '../screens/student/student_dashboard.dart';
 import '../screens/student/browse_jobs_screen.dart';
 import '../screens/student/job_detail_screen.dart';
@@ -28,6 +29,9 @@ final appRouter = GoRouter(
   refreshListenable: AuthService(),
   redirect: (context, state) async {
     final path = state.uri.path;
+    if (AuthService().isRecoveringPassword) {
+      return path == '/recover-password' ? null : '/recover-password';
+    }
     final publicRoute = path == '/splash' || path == '/onboarding' ||
         path == '/login' || path == '/register';
     final user = await AuthService().getCurrentUser();
@@ -37,8 +41,8 @@ final appRouter = GoRouter(
         path == '/login' || path == '/register') {
       return home;
     }
-    if (path.startsWith('/student') && user.role != 'student') return home;
-    if (path.startsWith('/business') && user.role != 'business') return home;
+    if (path.startsWith('/student') && user.role != 'student') return '$home?unauthorized=1';
+    if (path.startsWith('/business') && user.role != 'business') return '$home?unauthorized=1';
     return null;
   },
   routes: [
@@ -60,6 +64,7 @@ final appRouter = GoRouter(
         return RegisterScreen(role: role);
       },
     ),
+    GoRoute(path: '/recover-password', builder: (context, state) => const RecoverPasswordScreen()),
 
     // ── Student routes
     GoRoute(path: '/student',       builder: (context, state) => const StudentDashboard()),

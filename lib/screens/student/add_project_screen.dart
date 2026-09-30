@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/constants.dart';
+import '../../core/form_validation.dart';
 import '../../widgets/app_background.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_text_field.dart';
@@ -110,7 +111,7 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
                           controller: _titleCtrl,
                           accentColor: AppColors.studentPrimary,
                           textInputAction: TextInputAction.next,
-                          validator: (v) => (v == null || v.isEmpty) ? 'Title is required' : null,
+                          validator: FormValidation.projectTitle,
                         ),
                         const SizedBox(height: AppSpacing.md),
                         AppTextField(

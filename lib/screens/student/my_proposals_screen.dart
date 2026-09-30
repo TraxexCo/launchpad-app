@@ -302,7 +302,7 @@ class _ProposalCard extends StatelessWidget {
                   const Icon(Icons.chat_bubble_outline_rounded,
                       color: AppColors.success, size: 14),
                   const SizedBox(width: AppSpacing.sm),
-                  Text('Tap to open chat',
+                  Text('Active Contract · Open Workspace / Chat',
                       style: GoogleFonts.inter(
                           fontSize: 11, color: AppColors.success)),
                 ],

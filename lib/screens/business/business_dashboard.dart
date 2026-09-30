@@ -15,6 +15,7 @@ import '../../services/auth_service.dart';
 import '../../services/contract_service.dart';
 import '../../models/job_post.dart';
 import '../../models/proposal.dart';
+import '../../widgets/confirm_sign_out.dart';
 
 class BusinessDashboard extends StatefulWidget {
   const BusinessDashboard({super.key});
@@ -30,6 +31,13 @@ class _BusinessDashboardState extends State<BusinessDashboard> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && GoRouterState.of(context).uri.queryParameters['unauthorized'] == '1') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Unauthorized: this area is for student accounts.')),
+        );
+      }
+    });
     _loadUser();
   }
 
@@ -49,10 +57,8 @@ class _BusinessDashboardState extends State<BusinessDashboard> {
         child: SafeArea(
           child: Column(
             children: [
-              _BizAppBar(businessName: _businessName, onLogout: () {
-                AuthService().logout();
-                context.go('/onboarding');
-              }),
+              _BizAppBar(businessName: _businessName,
+                  onLogout: () => confirmSignOut(context)),
               Expanded(
                 child: IndexedStack(
                   index: _navIndex,
@@ -248,11 +254,24 @@ class _BizHomeTabState extends State<_BizHomeTab> {
   List<ContractItem> _contracts = [];
   String _businessName = 'Business';
   bool _loading = true;
+  RealtimeChannel? _proposalChannel;
 
   @override
   void initState() {
     super.initState();
     _loadData();
+    _proposalChannel = Supabase.instance.client.channel('business-home-proposals')
+        .onPostgresChanges(event: PostgresChangeEvent.all, schema: 'public',
+            table: 'proposals', callback: (_) => _loadData())
+        .subscribe();
+  }
+
+  @override
+  void dispose() {
+    if (_proposalChannel != null) {
+      Supabase.instance.client.removeChannel(_proposalChannel!);
+    }
+    super.dispose();
   }
 
   Future<void> _loadData() async {
@@ -703,11 +722,24 @@ class _BizProposalsTab extends StatefulWidget {
 class _BizProposalsTabState extends State<_BizProposalsTab> {
   List<Proposal> _proposals = [];
   bool _loading = true;
+  RealtimeChannel? _proposalChannel;
 
   @override
   void initState() {
     super.initState();
     _loadProposals();
+    _proposalChannel = Supabase.instance.client.channel('business-inbox-proposals')
+        .onPostgresChanges(event: PostgresChangeEvent.all, schema: 'public',
+            table: 'proposals', callback: (_) => _loadProposals())
+        .subscribe();
+  }
+
+  @override
+  void dispose() {
+    if (_proposalChannel != null) {
+      Supabase.instance.client.removeChannel(_proposalChannel!);
+    }
+    super.dispose();
   }
 
   Future<void> _loadProposals() async {

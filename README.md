@@ -1,5 +1,8 @@
 # launchpad_app
 
+LaunchPad uses a hosted Supabase project. See [SUPABASE_SETUP.md](SUPABASE_SETUP.md)
+for the database structure, project dashboard, and run instructions.
+
 A new Flutter project.
 
 ## Getting Started

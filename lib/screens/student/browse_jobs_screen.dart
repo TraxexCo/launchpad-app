@@ -24,7 +24,7 @@ class _BrowseJobsScreenState extends State<BrowseJobsScreen> {
   bool _loading = true;
   String? _error;
 
-  static const _filters = ['All', 'Mobile App', 'Web App', 'E-Commerce', 'POS', 'Digital Menu', 'Inventory'];
+  static const _filters = ['All', 'Mobile App', 'Web Dev', 'Web App', 'E-Commerce', 'POS', 'Digital Menu', 'Inventory'];
   static const _sorts = ['Newest', 'Budget ↑', 'Budget ↓'];
 
   @override

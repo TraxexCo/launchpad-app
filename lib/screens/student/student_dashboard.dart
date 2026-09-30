@@ -15,11 +15,11 @@ import '../../services/github_api_service.dart';
 import '../../models/job_post.dart';
 import '../../models/proposal.dart';
 import '../../core/theme.dart';
-import '../../data/mock_data.dart';
 import '../../widgets/app_background.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/skill_chip.dart';
 import '../../widgets/status_badge.dart';
+import '../../widgets/confirm_sign_out.dart';
 
 class StudentDashboard extends StatefulWidget {
   const StudentDashboard({super.key});
@@ -35,6 +35,13 @@ class _StudentDashboardState extends State<StudentDashboard> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && GoRouterState.of(context).uri.queryParameters['unauthorized'] == '1') {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Unauthorized: this area is for business accounts.')),
+        );
+      }
+    });
     AuthService().getCurrentUser().then((user) {
       if (mounted && user != null) setState(() => _name = user.name);
     });
@@ -49,10 +56,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
         child: SafeArea(
           child: Column(
             children: [
-              _AppBar(name: _name, onLogout: () async {
-                await AuthService().logout();
-                if (context.mounted) context.go('/onboarding');
-              }),
+              _AppBar(name: _name, onLogout: () => confirmSignOut(context)),
               Expanded(
                 child: IndexedStack(
                   index: _navIndex,
@@ -523,8 +527,12 @@ class _RadarTab extends StatefulWidget {
 }
 
 class _RadarTabState extends State<_RadarTab> {
+  static const _mapboxToken = String.fromEnvironment('MAPBOX_PUBLIC_TOKEN');
   List<Map<String, dynamic>> _businesses = [];
   bool _loading = true;
+  String? _error;
+  int _selectedIndex = 0;
+  int _zoom = 13;
 
   @override
   void initState() {
@@ -536,40 +544,40 @@ class _RadarTabState extends State<_RadarTab> {
     try {
       final rows = await Supabase.instance.client
           .from('business_profiles')
-          .select('user_id, business_name, address, category, phone')
+          .select('user_id, business_name, address, category, phone, latitude, longitude')
           .order('business_name');
       if (mounted) {
         setState(() {
-          if (rows.isNotEmpty) {
-            _businesses = List<Map<String, dynamic>>.from(rows);
-          } else {
-            _businesses = mockNearbyBusinesses
-                .map((b) => {
-                      'business_name': b.name,
-                      'address': b.distance,
-                      'category': 'Local Business',
-                      'isVerified': b.isVerified,
-                    })
-                .toList();
-          }
+          _businesses = List<Map<String, dynamic>>.from(rows);
+          _selectedIndex = 0;
+          _error = null;
           _loading = false;
         });
       }
-    } catch (_) {
+    } catch (error) {
       if (mounted) {
         setState(() {
-          _businesses = mockNearbyBusinesses
-              .map((b) => {
-                    'business_name': b.name,
-                    'address': b.distance,
-                    'category': 'Local Business',
-                    'isVerified': b.isVerified,
-                  })
-              .toList();
+          _businesses = [];
+          _error = 'Could not load businesses: $error';
           _loading = false;
         });
       }
     }
+  }
+
+  Uri? get _mapUrl {
+    if (_mapboxToken.isEmpty) return null;
+    final located = _businesses.where((business) =>
+      business['latitude'] is num && business['longitude'] is num).take(20).toList();
+    if (located.isEmpty) return null;
+    final selected = _businesses[_selectedIndex];
+    final center = selected['latitude'] is num && selected['longitude'] is num
+        ? selected : located.first;
+    final markers = located.map((business) =>
+      'pin-s+14b8a6(${business['longitude']},${business['latitude']})').join(',');
+    return Uri.parse('https://api.mapbox.com/styles/v1/mapbox/streets-v12/static/'
+        '$markers/${center['longitude']},${center['latitude']},$_zoom/600x300'
+        '?access_token=${Uri.encodeQueryComponent(_mapboxToken)}');
   }
 
   @override
@@ -588,7 +596,7 @@ class _RadarTabState extends State<_RadarTab> {
                 children: [
                   Text('Local Radar', style: Theme.of(context).textTheme.headlineMedium),
                   const SizedBox(height: AppSpacing.xs),
-                  Text('Undigitized businesses near you.',
+                  Text('Businesses in the LaunchPad directory.',
                       style: Theme.of(context).textTheme.bodyMedium),
                 ],
               ),
@@ -601,20 +609,48 @@ class _RadarTabState extends State<_RadarTab> {
           ),
           const SizedBox(height: AppSpacing.lg),
 
-          // Full radar
           Expanded(
             flex: 3,
-            child: Center(child: _RadarWidget(size: 280)),
+            child: _loading
+                ? const Center(child: CircularProgressIndicator())
+                : _error != null
+                    ? Center(child: Text(_error!))
+                    : _mapboxToken.isEmpty
+                        ? const Center(child: Text('Add MAPBOX_PUBLIC_TOKEN to your app build to show the map.'))
+                        : _mapUrl == null
+                            ? const Center(child: Text('No businesses have map coordinates yet.'))
+                            : Column(children: [
+                                Expanded(child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                                  child: Image.network(_mapUrl.toString(),
+                                    width: double.infinity, fit: BoxFit.cover,
+                                    errorBuilder: (_, _, _) => const Center(
+                                      child: Text('Map could not load. Check the Mapbox token and connection.'))),
+                                )),
+                                Row(children: [
+                                  const Text('© Mapbox © OpenStreetMap'),
+                                  const Spacer(),
+                                  IconButton(onPressed: _zoom <= 1 ? null : () => setState(() => _zoom--),
+                                    icon: const Icon(Icons.remove), tooltip: 'Zoom out'),
+                                  IconButton(onPressed: _zoom >= 18 ? null : () => setState(() => _zoom++),
+                                    icon: const Icon(Icons.add), tooltip: 'Zoom in'),
+                                ]),
+                              ]),
           ),
 
           Expanded(
             flex: 2,
             child: _loading
                 ? const Center(child: CircularProgressIndicator(color: AppColors.studentPrimary))
-                : ListView.builder(
-                    itemCount: _businesses.length,
-                    itemBuilder: (_, i) => _BusinessPingCard(biz: _businesses[i]),
-                  ),
+                : _businesses.isEmpty
+                    ? const Center(child: Text('No businesses found.'))
+                    : ListView.builder(
+                        itemCount: _businesses.length,
+                        itemBuilder: (_, i) => GestureDetector(
+                          onTap: () => setState(() => _selectedIndex = i),
+                          child: _BusinessPingCard(biz: _businesses[i]),
+                        ),
+                      ),
           ),
         ],
       ),
@@ -636,7 +672,10 @@ class _PortfolioTabState extends State<_PortfolioTab> {
   bool _isLoading = true;
   List<Map<String, dynamic>> _projects = [];
   List<Map<String, dynamic>> _githubRepos = [];
+  Set<String> _importedUrls = {};
+  String? _importingUrl;
   String? _error;
+  String? _githubError;
 
   @override
   void initState() {
@@ -650,7 +689,7 @@ class _PortfolioTabState extends State<_PortfolioTab> {
       if (userId == null) return;
 
       final dbProjects = await Supabase.instance.client.from('portfolio_projects')
-          .select('id,title,project_type').eq('student_id', userId)
+          .select('id,title,project_type,repository_url').eq('student_id', userId)
           .order('created_at', ascending: false);
           
       final studentProfile = await Supabase.instance.client.from('student_profiles')
@@ -662,8 +701,8 @@ class _PortfolioTabState extends State<_PortfolioTab> {
         if (username.isNotEmpty) {
           try {
             repos = await GithubApiService().fetchUserRepositories(username);
-          } catch (_) {
-            // Ignore github fetch errors silently for now so it doesn't break the whole tab
+          } catch (error) {
+            _githubError = error.toString();
           }
         }
       }
@@ -671,12 +710,54 @@ class _PortfolioTabState extends State<_PortfolioTab> {
       if (mounted) {
         setState(() {
           _projects = List<Map<String, dynamic>>.from(dbProjects);
+          _importedUrls = dbProjects.map((row) => row['repository_url']?.toString() ?? '')
+              .where((url) => url.isNotEmpty).toSet();
           _githubRepos = repos;
+          if (repos.isNotEmpty) _githubError = null;
           _isLoading = false;
         });
       }
     } catch (e) {
       if (mounted) setState(() { _error = e.toString(); _isLoading = false; });
+    }
+  }
+
+  Future<void> _importRepo(Map<String, dynamic> repo) async {
+    final url = repo['html_url']?.toString() ?? '';
+    if (url.isEmpty || _importedUrls.contains(url) || _importingUrl != null) return;
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (userId == null) return;
+    setState(() => _importingUrl = url);
+    try {
+      final existing = await Supabase.instance.client.from('portfolio_projects')
+          .select('id').eq('student_id', userId).eq('repository_url', url).maybeSingle();
+      if (existing == null) {
+        await Supabase.instance.client.from('portfolio_projects').insert({
+          'student_id': userId,
+          'title': repo['name']?.toString() ?? 'GitHub project',
+          'description': (repo['description']?.toString().trim().isNotEmpty ?? false)
+              ? repo['description'].toString().trim()
+              : 'Public GitHub repository imported from $url',
+          'repository_url': url,
+          'demo_url': (repo['homepage']?.toString().startsWith('https://') ?? false)
+              ? repo['homepage'] : null,
+          'project_type': 'Other',
+        });
+      }
+      await _loadData();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Repository added to portfolio.')),
+        );
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not import repository: $error')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _importingUrl = null);
     }
   }
 
@@ -765,10 +846,24 @@ class _PortfolioTabState extends State<_PortfolioTab> {
                 childAspectRatio: 0.82,
               ),
               itemCount: _githubRepos.length,
-              itemBuilder: (_, i) => _GithubRepoGridCard(repo: _githubRepos[i]),
+              itemBuilder: (_, i) {
+                final repo = _githubRepos[i];
+                final url = repo['html_url']?.toString() ?? '';
+                return _GithubRepoGridCard(
+                  repo: repo,
+                  imported: _importedUrls.contains(url),
+                  importing: _importingUrl == url,
+                  onImport: () => _importRepo(repo),
+                );
+              },
             ),
             const SizedBox(height: AppSpacing.xl),
           ],
+
+          if (_githubError != null) Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.md),
+            child: Text('GitHub: $_githubError'),
+          ),
 
           if (_projects.isEmpty && _githubRepos.isEmpty)
             const Padding(
@@ -1074,10 +1169,7 @@ class _RadarWidgetState extends State<_RadarWidget>
     with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
 
-  static const _dots = [
-    (0.35, 0.25), (0.72, 0.40), (0.20, 0.60),
-    (0.60, 0.70), (0.45, 0.80), (0.80, 0.20),
-  ];
+  static const List<(double, double)> _dots = [];
 
   @override
   void initState() {
@@ -1240,13 +1332,13 @@ class _RadarPreview extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('6 businesses found',
+                Text('Explore business map',
                     style: GoogleFonts.plusJakartaSans(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
                         color: AppColors.textPrimary)),
                 const SizedBox(height: AppSpacing.xs),
-                Text('No websites detected. Potential clients nearby.',
+                Text('View registered businesses with saved map locations.',
                     style: GoogleFonts.inter(
                         fontSize: 12,
                         color: AppColors.textSecondary,
@@ -1333,7 +1425,11 @@ class _ProjectGridCard extends StatelessWidget {
 
 class _GithubRepoGridCard extends StatelessWidget {
   final Map<String, dynamic> repo;
-  const _GithubRepoGridCard({required this.repo});
+  final bool imported;
+  final bool importing;
+  final VoidCallback onImport;
+  const _GithubRepoGridCard({required this.repo, required this.imported,
+    required this.importing, required this.onImport});
 
   @override
   Widget build(BuildContext context) {
@@ -1399,6 +1495,14 @@ class _GithubRepoGridCard extends StatelessWidget {
                         ],
                       ),
                   ],
+                ),
+                const SizedBox(height: 4),
+                SizedBox(
+                  height: 28,
+                  child: TextButton(
+                    onPressed: imported || importing ? null : onImport,
+                    child: Text(imported ? 'In portfolio' : importing ? 'Importing…' : 'Import'),
+                  ),
                 ),
               ],
             ),
@@ -1534,6 +1638,3 @@ class _BusinessPingCard extends StatelessWidget {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MOCK DATA
-
-
-

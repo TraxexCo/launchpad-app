@@ -21,6 +21,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final _msgCtrl = TextEditingController();
   final _scrollCtrl = ScrollController();
   final _messages = <_Msg>[];
+  final _failedMessages = <_Msg>[];
   StreamSubscription<List<Map<String, dynamic>>>? _subscription;
   int? _contractId;
   bool _loading = true;
@@ -90,8 +91,16 @@ class _ChatScreenState extends State<ChatScreen> {
         'contract_id': contractId, 'sender_id': userId, 'body': body,
       });
       _msgCtrl.clear();
-    } catch (error) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$error')));
+    } catch (_) {
+      if (mounted) {
+        setState(() => _failedMessages.add(_Msg(
+          text: body, fromMe: true, time: 'Not sent', failed: true,
+        )));
+        _msgCtrl.clear();
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Network error: unable to send message'),
+        ));
+      }
     } finally {
       if (mounted) setState(() => _sending = false);
     }
@@ -104,6 +113,27 @@ class _ChatScreenState extends State<ChatScreen> {
         );
       }
     });
+  }
+
+  Future<void> _retry(_Msg message) async {
+    final contractId = _contractId;
+    final userId = Supabase.instance.client.auth.currentUser?.id;
+    if (contractId == null || userId == null || _sending) return;
+    setState(() => _sending = true);
+    try {
+      await Supabase.instance.client.from('messages').insert({
+        'contract_id': contractId, 'sender_id': userId, 'body': message.text,
+      });
+      if (mounted) setState(() => _failedMessages.remove(message));
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Network error: unable to send message'),
+        ));
+      }
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
   }
 
   @override
@@ -119,7 +149,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   ? const Center(child: CircularProgressIndicator())
                   : _error != null
                       ? Center(child: Text(_error!))
-                      : _messages.isEmpty
+                      : _messages.isEmpty && _failedMessages.isEmpty
                           ? const Center(child: Text('No messages yet. Say hello!'))
                           : _buildMessages()),
               if (_contractId != null) _buildInput(),
@@ -194,13 +224,14 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildMessages() {
+    final visible = [..._messages, ..._failedMessages];
     return ListView.builder(
       controller: _scrollCtrl,
       padding: const EdgeInsets.all(AppSpacing.lg),
-      itemCount: _messages.length,
+      itemCount: visible.length,
       itemBuilder: (context, i) {
-        final m = _messages[i];
-        final showTime = i == 0 || _messages[i - 1].fromMe != m.fromMe;
+        final m = visible[i];
+        final showTime = i == 0 || visible[i - 1].fromMe != m.fromMe;
         return Padding(
           padding: const EdgeInsets.only(bottom: AppSpacing.sm),
           child: Column(
@@ -215,6 +246,11 @@ class _ChatScreenState extends State<ChatScreen> {
               Row(
                 mainAxisAlignment: m.fromMe ? MainAxisAlignment.end : MainAxisAlignment.start,
                 children: [
+                  if (m.failed) IconButton(
+                    tooltip: 'Retry sending',
+                    onPressed: () => _retry(m),
+                    icon: const Icon(Icons.refresh_rounded, color: AppColors.error),
+                  ),
                   ConstrainedBox(
                     constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.72),
                     child: Container(
@@ -312,6 +348,8 @@ class _ChatScreenState extends State<ChatScreen> {
 class _Msg {
   final String text, time;
   final bool fromMe;
-  const _Msg({required this.text, required this.fromMe, required this.time});
+  final bool failed;
+  const _Msg({required this.text, required this.fromMe, required this.time,
+    this.failed = false});
 }
 

@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/constants.dart';
+import '../../core/form_validation.dart';
 import '../../services/proposal_service.dart';
 import '../../services/api_service.dart';
 import '../../widgets/app_background.dart';
@@ -27,6 +29,16 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
   int _timelineWeeks = 3;
   int _step = 0; // 0=write, 1=preview, 2=sent
   bool _loading = false;
+  int? _attachedProjectId;
+  late final Future<List<Map<String, dynamic>>> _projects = _loadProjects();
+
+  Future<List<Map<String, dynamic>>> _loadProjects() async {
+    final client = Supabase.instance.client;
+    final userId = client.auth.currentUser?.id;
+    if (userId == null) return [];
+    return client.from('portfolio_projects').select('id,title')
+        .eq('student_id', userId).order('created_at', ascending: false);
+  }
 
   @override
   void dispose() {
@@ -45,6 +57,7 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
         coverLetter: _coverCtrl.text,
         rate: _rateCtrl.text,
         estimatedTimelineWeeks: _timelineWeeks,
+        attachedProjectId: _attachedProjectId,
       );
 
       if (!mounted) return;
@@ -52,7 +65,8 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
-      final msg = e is ApiException ? e.message : e.toString();
+      final msg = e is PostgrestException ? e.message
+          : e is ApiException ? e.message : e.toString();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('❌ $msg'), backgroundColor: AppColors.error),
       );
@@ -137,9 +151,9 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
             const SizedBox(height: AppSpacing.md),
 
             AppButton(
-              label: 'Back to Jobs',
+              label: 'Back to Job',
               outlined: true,
-              onPressed: () => context.go('/student/jobs'),
+              onPressed: () => context.go('/student/jobs/${widget.jobId}'),
             ).animate().fadeIn(delay: 880.ms),
           ],
         ),
@@ -243,11 +257,7 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
               controller: _coverCtrl,
               maxLines: 7,
               accentColor: AppColors.studentPrimary,
-              validator: (v) {
-                if (v == null || v.isEmpty) return 'A cover letter is required';
-                if (v.length < 80) return 'Write at least 80 characters';
-                return null;
-              },
+              validator: FormValidation.proposalPitch,
             ),
 
             Align(
@@ -272,11 +282,7 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
                 padding: EdgeInsets.all(AppSpacing.md),
                 child: Text('₱', style: TextStyle(color: AppColors.studentPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
               ),
-              validator: (v) {
-                if (v == null || v.isEmpty) return 'Enter your proposed rate';
-                if (int.tryParse(v) == null) return 'Enter a valid number';
-                return null;
-              },
+              validator: FormValidation.proposalRate,
             ),
 
             const SizedBox(height: AppSpacing.xl),
@@ -346,8 +352,28 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
 
             const SizedBox(height: AppSpacing.md),
 
-            Text('Portfolio attachments will be available after projects are saved.',
-                style: GoogleFonts.inter(fontSize: 12, color: AppColors.textMuted)),
+            FutureBuilder<List<Map<String, dynamic>>>(
+              future: _projects,
+              builder: (context, snapshot) {
+                if (snapshot.hasError) return const Text('Could not load portfolio projects');
+                if (!snapshot.hasData) return const CircularProgressIndicator();
+                final projects = snapshot.data!;
+                if (projects.isEmpty) return const Text('Save a portfolio project to attach it here.');
+                return DropdownButtonFormField<int>(
+                  initialValue: _attachedProjectId,
+                  decoration: const InputDecoration(labelText: 'Attach Project'),
+                  hint: const Text('Choose a saved project'),
+                  items: [
+                    for (final project in projects)
+                      DropdownMenuItem<int>(
+                        value: project['id'] as int,
+                        child: Text(project['title'] as String),
+                      ),
+                  ],
+                  onChanged: (id) => setState(() => _attachedProjectId = id),
+                );
+              },
+            ),
 
             const SizedBox(height: AppSpacing.xxl),
           ],

@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/constants.dart';
 import '../../widgets/app_background.dart';
 import '../../widgets/app_button.dart';
-import '../../services/auth_service.dart';
+import '../../widgets/confirm_sign_out.dart';
 
 class SettingsScreen extends StatefulWidget {
   final UserRole role;
@@ -24,6 +25,61 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool get _isStudent => widget.role == UserRole.student;
   Color get _primary => _isStudent ? AppColors.studentPrimary : AppColors.businessPrimary;
   Color get _accent  => _isStudent ? AppColors.studentAccent  : AppColors.businessAccent;
+
+  Future<void> _editBusinessLocation() async {
+    final client = Supabase.instance.client;
+    final userId = client.auth.currentUser?.id;
+    if (userId == null) return;
+    final profile = await client.from('business_profiles')
+        .select('address,latitude,longitude').eq('user_id', userId).single();
+    if (!mounted) return;
+    final address = TextEditingController(text: profile['address']?.toString() ?? '');
+    final latitude = TextEditingController(text: profile['latitude']?.toString() ?? '');
+    final longitude = TextEditingController(text: profile['longitude']?.toString() ?? '');
+    try {
+      await showDialog<void>(context: context, builder: (dialogContext) => AlertDialog(
+        title: const Text('Business map location'),
+        content: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
+          TextField(controller: address, decoration: const InputDecoration(labelText: 'Address')),
+          TextField(controller: latitude, keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+              decoration: const InputDecoration(labelText: 'Latitude')),
+          TextField(controller: longitude, keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+              decoration: const InputDecoration(labelText: 'Longitude')),
+        ])),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancel')),
+          FilledButton(onPressed: () async {
+            final lat = double.tryParse(latitude.text.trim());
+            final lon = double.tryParse(longitude.text.trim());
+            if (lat == null || lon == null || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                content: Text('Enter valid latitude (-90 to 90) and longitude (-180 to 180).')));
+              return;
+            }
+            try {
+              await client.from('business_profiles').update({
+                'address': address.text.trim(), 'latitude': lat, 'longitude': lon,
+              }).eq('user_id', userId);
+              if (dialogContext.mounted) {
+                Navigator.pop(dialogContext);
+              }
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Map location saved.')));
+              }
+            } catch (error) {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Could not save location: $error')));
+              }
+            }
+          }, child: const Text('Save')),
+        ],
+      ));
+    } finally {
+      address.dispose(); latitude.dispose(); longitude.dispose();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,6 +112,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       const SizedBox(height: AppSpacing.xl),
                       _buildSectionLabel('Account'),
                       const SizedBox(height: AppSpacing.md),
+                      if (!_isStudent) _buildTile(icon: Icons.location_on_outlined,
+                        label: 'Business Map Location', color: _primary,
+                        onTap: _editBusinessLocation),
                       _buildTile(icon: Icons.edit_outlined, label: 'Edit Profile', color: _primary, onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('✏️ Edit Profile — coming soon!')))),
                       _buildTile(icon: Icons.lock_outline_rounded, label: 'Change Password', color: _primary, onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('🔒 Change Password — coming soon!')))),
                       _buildTile(icon: Icons.help_outline_rounded, label: 'Help & Support', color: AppColors.info, onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('🆘 Help & Support — coming soon!')))),
@@ -65,10 +124,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         label: 'Sign Out',
                         outlined: true,
                         icon: Icons.logout_rounded,
-                        onPressed: () async {
-                          await AuthService().logout();
-                          if (context.mounted) context.go('/onboarding');
-                        },
+                        onPressed: () => confirmSignOut(context),
                       ),
                       const SizedBox(height: AppSpacing.md),
                       Center(

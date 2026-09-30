@@ -56,15 +56,14 @@ class ProposalService {
   }) async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) throw StateError('Sign in to submit a proposal');
-    final budget = double.tryParse(rate.replaceAll(RegExp(r'[^\d.]'), ''));
+    final budget = double.tryParse(rate.replaceAll(',', '').trim());
     if (budget == null || budget <= 0) throw FormatException('Enter a valid rate.');
-    await _client.from('proposals').insert({
+    await _client.rpc('submit_proposal', params: {
       'job_id': jobId,
-      'student_id': userId,
       'pitch_text': coverLetter.trim(),
       'proposed_budget': budget,
       'estimated_timeline_weeks': estimatedTimelineWeeks,
-      'attached_project_id': ?attachedProjectId,
+      'attached_project_id': attachedProjectId,
     });
   }
 

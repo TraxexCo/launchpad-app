@@ -3,6 +3,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants.dart';
+import '../../core/form_validation.dart';
 import '../../widgets/app_background.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_text_field.dart';
@@ -32,7 +33,7 @@ class _PostJobScreenState extends State<PostJobScreen> with TickerProviderStateM
 
   final List<GlobalKey<FormState>> _keys = List.generate(3, (_) => GlobalKey<FormState>());
 
-  static const _categories = ['Mobile App', 'Web App', 'E-Commerce', 'POS', 'Digital Menu', 'Inventory', 'Other'];
+  static const _categories = ['Mobile App', 'Web Dev', 'Web App', 'E-Commerce', 'POS', 'Digital Menu', 'Inventory', 'Other'];
   static const _urgencies = ['Urgent', 'Open'];
   static const _skillOptions = ['Flutter', 'Dart', 'React', 'Next.js', 'Vue.js', 'Angular', 'Laravel',
     'PHP', 'Node.js', 'MySQL', 'Firebase', 'MongoDB', 'Figma', 'Python', 'Swift', 'Kotlin'];
@@ -218,7 +219,7 @@ class _PostJobScreenState extends State<PostJobScreen> with TickerProviderStateM
               controller: _descCtrl,
               maxLines: 5,
               accentColor: _primary,
-              validator: (v) => (v == null || v.length < 50) ? 'Write at least 50 characters' : null,
+              validator: FormValidation.jobDescription,
             ),
             const SizedBox(height: AppSpacing.xl),
             _SectionLabel(label: 'Category', color: _primary),
@@ -258,11 +259,7 @@ class _PostJobScreenState extends State<PostJobScreen> with TickerProviderStateM
                 padding: const EdgeInsets.all(AppSpacing.md),
                 child: Text('₱', style: TextStyle(color: _primary, fontSize: 16, fontWeight: FontWeight.w700)),
               ),
-              validator: (v) {
-                if (v == null || v.isEmpty) return 'Budget is required';
-                if (int.tryParse(v) == null) return 'Enter a valid number';
-                return null;
-              },
+              validator: FormValidation.jobBudget,
             ),
             const SizedBox(height: AppSpacing.xl),
             _SectionLabel(label: 'Urgency', color: _primary),

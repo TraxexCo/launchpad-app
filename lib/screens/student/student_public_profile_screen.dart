@@ -400,9 +400,14 @@ class _StudentPublicProfileScreenState extends State<StudentPublicProfileScreen>
             AppCard(
               child: Row(
                 children: [
-                  const Icon(Icons.error_outline, color: AppColors.error),
+                  Icon(_error == 'No repositories found or user not found'
+                      ? Icons.info_outline : Icons.error_outline,
+                      color: _error == 'No repositories found or user not found'
+                          ? AppColors.textMuted : AppColors.error),
                   const SizedBox(width: AppSpacing.md),
-                  Expanded(child: Text(_error!, style: GoogleFonts.inter(color: AppColors.error, fontSize: 12))),
+                  Expanded(child: Text(_error!, style: GoogleFonts.inter(
+                      color: _error == 'No repositories found or user not found'
+                          ? AppColors.textSecondary : AppColors.error, fontSize: 12))),
                 ],
               ),
             )

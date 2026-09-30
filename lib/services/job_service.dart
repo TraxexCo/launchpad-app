@@ -127,12 +127,12 @@ class JobService {
   }
 
   Future<void> deleteJob(int id) async {
-    await _client.from('jobs').delete().eq('id', id);
+    await _client.rpc('delete_job', params: {'job_id': id});
   }
 
   double _parseBudget(String value) {
-    final amount = double.tryParse(value.replaceAll(RegExp(r'[^\d.]'), ''));
-    if (amount == null || amount <= 0) throw FormatException('Enter a valid budget.');
+    final amount = double.tryParse(value.replaceAll(',', '').trim());
+    if (amount == null || amount <= 0) throw FormatException('Budget must be greater than zero');
     return amount;
   }
 }

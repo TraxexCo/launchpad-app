@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/constants.dart';
+import '../../core/form_validation.dart';
 import '../../widgets/app_background.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_text_field.dart';
@@ -25,6 +27,8 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
   final _emailCtrl   = TextEditingController();
   final _passCtrl    = TextEditingController();
   final _bioCtrl     = TextEditingController();
+  final _schoolCtrl  = TextEditingController();
+  final _courseCtrl  = TextEditingController();
   final _githubCtrl  = TextEditingController();
   final _bizNameCtrl = TextEditingController();
   final _addressCtrl = TextEditingController();
@@ -42,6 +46,7 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
   void dispose() {
     _pageCtrl.dispose(); _nameCtrl.dispose(); _emailCtrl.dispose();
     _passCtrl.dispose(); _bioCtrl.dispose(); _githubCtrl.dispose();
+    _schoolCtrl.dispose(); _courseCtrl.dispose();
     _bizNameCtrl.dispose(); _addressCtrl.dispose();
     super.dispose();
   }
@@ -73,6 +78,8 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
     try {
       final role = _isStudent ? 'student' : 'business';
       final extraFields = _isStudent ? {
+        'school': _schoolCtrl.text,
+        'course': _courseCtrl.text,
         'bio': _bioCtrl.text,
         'github_url': _githubCtrl.text,
         'skills': _selectedSkills.toList(),
@@ -102,7 +109,10 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
-      final msg = e is ApiException ? e.message : e.toString();
+      final raw = e is AuthException ? e.message : e is ApiException ? e.message : e.toString();
+      final msg = raw.toLowerCase().contains('already registered') ||
+              raw.toLowerCase().contains('already exists')
+          ? 'This email is already registered.' : raw;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('❌ $msg'), backgroundColor: AppColors.error),
       );
@@ -140,7 +150,7 @@ class _RegisterScreenState extends State<RegisterScreen> with TickerProviderStat
                       title: _isStudent ? 'Tell us\nabout you.' : 'Your business\ndetails.',
                       subtitle: _isStudent ? 'Your public developer profile.' : 'How clients will find you.',
                       child: _isStudent
-                          ? _StudentProfileStep(bioCtrl: _bioCtrl, githubCtrl: _githubCtrl, accentColor: _primary)
+                          ? _StudentProfileStep(schoolCtrl: _schoolCtrl, courseCtrl: _courseCtrl, bioCtrl: _bioCtrl, githubCtrl: _githubCtrl, accentColor: _primary)
                           : _BusinessProfileStep(bizNameCtrl: _bizNameCtrl, addressCtrl: _addressCtrl, accentColor: _primary),
                     ),
                     _buildStep(
@@ -296,11 +306,7 @@ class _AccountStep extends StatelessWidget {
           label: 'Password', controller: passCtrl, obscureText: true,
           accentColor: accentColor, textInputAction: TextInputAction.done,
           prefixIcon: Icon(Icons.lock_outline_rounded, color: AppColors.textMuted, size: 18),
-          validator: (v) {
-            if (v == null || v.isEmpty) return 'Password is required';
-            if (v.length < 8) return 'At least 8 characters';
-            return null;
-          },
+          validator: FormValidation.password,
         ),
       ],
     );
@@ -308,14 +314,24 @@ class _AccountStep extends StatelessWidget {
 }
 
 class _StudentProfileStep extends StatelessWidget {
-  final TextEditingController bioCtrl, githubCtrl;
+  final TextEditingController schoolCtrl, courseCtrl, bioCtrl, githubCtrl;
   final Color accentColor;
-  const _StudentProfileStep({required this.bioCtrl, required this.githubCtrl, required this.accentColor});
+  const _StudentProfileStep({required this.schoolCtrl, required this.courseCtrl, required this.bioCtrl, required this.githubCtrl, required this.accentColor});
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
+        AppTextField(
+          label: 'School', controller: schoolCtrl, accentColor: accentColor,
+          validator: (v) => (v == null || v.trim().isEmpty) ? 'School is required' : null,
+        ),
+        const SizedBox(height: AppSpacing.md),
+        AppTextField(
+          label: 'Course', controller: courseCtrl, accentColor: accentColor,
+          validator: (v) => (v == null || v.trim().isEmpty) ? 'Course is required' : null,
+        ),
+        const SizedBox(height: AppSpacing.md),
         AppTextField(
           label: 'Short Bio', hint: 'Flutter dev @ PUP, passionate about mobile UX...',
           controller: bioCtrl, maxLines: 3, accentColor: accentColor,

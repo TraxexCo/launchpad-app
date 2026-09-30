@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:app_links/app_links.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class UserSession {
@@ -21,11 +22,30 @@ class AuthService extends ChangeNotifier {
   static final AuthService _instance = AuthService._internal();
   factory AuthService() => _instance;
   AuthService._internal() {
-    _subscription = _client.auth.onAuthStateChange.listen((_) => notifyListeners());
+    _subscription = _client.auth.onAuthStateChange.listen((state) {
+      if (state.event == AuthChangeEvent.passwordRecovery) {
+        isRecoveringPassword = true;
+      }
+      notifyListeners();
+    });
   }
 
   final SupabaseClient _client = Supabase.instance.client;
   late final StreamSubscription<AuthState> _subscription;
+  bool isRecoveringPassword = false;
+  static const mobileAuthRedirect = 'launchpad://auth-callback/';
+  String get authRedirect => kIsWeb ? Uri.base.origin : mobileAuthRedirect;
+
+  Future<void> restoreInitialRecoveryState() async {
+    if (kIsWeb) return;
+    final uri = await AppLinks().getInitialLink();
+    if (uri == null) return;
+    final fragment = Uri.splitQueryString(uri.fragment);
+    if (uri.queryParameters['type'] == 'recovery' || fragment['type'] == 'recovery') {
+      isRecoveringPassword = true;
+      notifyListeners();
+    }
+  }
 
   Future<UserSession> login(String email, String password) async {
     final response = await _client.auth.signInWithPassword(
@@ -57,10 +77,13 @@ class AuthService extends ChangeNotifier {
         : githubInput;
     final response = await _client.auth.signUp(
       email: email.trim(), password: password,
+      emailRedirectTo: authRedirect,
       data: {
         'role': role,
         'full_name': name.trim(),
         if (role == 'student') ...{
+          'school': (extraFields['school'] ?? '').toString().trim(),
+          'course': (extraFields['course'] ?? '').toString().trim(),
           'bio': (extraFields['bio'] ?? '').toString().trim(),
           'github_username': githubUsername,
           'skills': extraFields['skills'] ?? <String>[],
@@ -77,10 +100,18 @@ class AuthService extends ChangeNotifier {
   }
 
   Future<void> resetPassword(String email) =>
-      _client.auth.resetPasswordForEmail(email.trim());
+      _client.auth.resetPasswordForEmail(email.trim(), redirectTo: authRedirect);
+
+  Future<void> updateRecoveredPassword(String password) async {
+    if (!isRecoveringPassword) throw StateError('Open a valid password reset link first.');
+    await _client.auth.updateUser(UserAttributes(password: password));
+    isRecoveringPassword = false;
+    notifyListeners();
+  }
 
   Future<void> logout() async {
     await _client.auth.signOut();
+    isRecoveringPassword = false;
     notifyListeners();
   }
 

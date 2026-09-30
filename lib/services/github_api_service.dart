@@ -3,6 +3,9 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class GithubApiService {
+  GithubApiService({this.client});
+
+  final http.Client? client;
   static final _cache = <String, _CachedRepos>{};
   static const _lifetime = Duration(minutes: 15);
 
@@ -18,21 +21,32 @@ class GithubApiService {
     final uri = Uri.https('api.github.com', '/users/$cleaned/repos', {
       'sort': 'updated', 'per_page': '10',
     });
-    final response = await http.get(uri, headers: {'Accept': 'application/vnd.github+json'});
-    if (response.statusCode == 404) throw StateError('GitHub account not found.');
+    final response = await (client?.get(uri, headers: {'Accept': 'application/vnd.github+json'})
+        ?? http.get(uri, headers: {'Accept': 'application/vnd.github+json'}));
+    if (response.statusCode == 404) {
+      throw const GithubApiException('No repositories found or user not found');
+    }
     if (response.statusCode == 403 || response.statusCode == 429) {
       if (cached != null) return cached.repos;
-      throw StateError('GitHub is temporarily limiting requests. Try again later.');
+      throw const GithubApiException('GitHub API rate limit reached. Please check back shortly.');
     }
     if (response.statusCode != 200) {
       if (cached != null) return cached.repos;
-      throw StateError('Could not load GitHub repositories.');
+      throw const GithubApiException('Could not load GitHub repositories.');
     }
     final data = jsonDecode(response.body) as List<dynamic>;
     final repos = data.cast<Map<String, dynamic>>();
     _cache[cacheKey] = _CachedRepos(repos, DateTime.now());
     return repos;
   }
+}
+
+class GithubApiException implements Exception {
+  final String message;
+  const GithubApiException(this.message);
+
+  @override
+  String toString() => message;
 }
 
 class _CachedRepos {

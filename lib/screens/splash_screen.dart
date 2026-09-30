@@ -21,9 +21,6 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _checkAuth() async {
-    await Future.delayed(const Duration(milliseconds: 2000));
-    if (!mounted) return;
-    
     final user = await AuthService().getCurrentUser();
     if (!mounted) return;
     if (user != null) {
