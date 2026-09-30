@@ -4,19 +4,29 @@ import 'package:google_fonts/google_fonts.dart';
 import '../core/constants.dart';
 import 'app_button.dart';
 import 'app_text_field.dart';
+import '../services/report_service.dart';
 
 class ReportModal extends StatefulWidget {
   final String targetName;
   final String targetType; // 'student' | 'business' | 'job' | 'proposal'
 
-  const ReportModal({super.key, required this.targetName, required this.targetType});
+  const ReportModal({
+    super.key,
+    required this.targetName,
+    required this.targetType,
+  });
 
-  static void show(BuildContext context, {required String targetName, required String targetType}) {
+  static void show(
+    BuildContext context, {
+    required String targetName,
+    required String targetType,
+  }) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => ReportModal(targetName: targetName, targetType: targetType),
+      builder: (context) =>
+          ReportModal(targetName: targetName, targetType: targetType),
     );
   }
 
@@ -45,23 +55,50 @@ class _ReportModalState extends State<ReportModal> {
 
   void _submit() async {
     if (_selectedReason == null) return;
+    if (_selectedReason == 'Other' && _detailsCtrl.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please describe the reason for this report.'),
+        ),
+      );
+      return;
+    }
     setState(() => _submitting = true);
-    await Future.delayed(const Duration(seconds: 1)); // Mock API delay
-    if (!mounted) return;
-    context.pop();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Report submitted. Our Trust & Safety team will review this shortly.'),
-        backgroundColor: AppColors.success,
-      ),
-    );
+    try {
+      await ReportService.submit(
+        targetType: widget.targetType,
+        targetLabel: widget.targetName,
+        reason: _selectedReason!,
+        details: _detailsCtrl.text,
+      );
+      if (!mounted) return;
+      context.pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Report submitted for review.'),
+          backgroundColor: AppColors.success,
+        ),
+      );
+    } catch (error) {
+      if (mounted) {
+        setState(() => _submitting = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Could not submit report: $error')),
+        );
+      }
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final keyboard = MediaQuery.of(context).viewInsets.bottom;
     return Container(
-      padding: EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.xl + keyboard),
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.xl + keyboard,
+      ),
       decoration: const BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
@@ -73,9 +110,15 @@ class _ReportModalState extends State<ReportModal> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Report ${widget.targetName}', style: Theme.of(context).textTheme.titleLarge),
+              Text(
+                'Report ${widget.targetName}',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
               IconButton(
-                icon: const Icon(Icons.close_rounded, color: AppColors.textMuted),
+                icon: const Icon(
+                  Icons.close_rounded,
+                  color: AppColors.textMuted,
+                ),
                 onPressed: () => context.pop(),
               ),
             ],
@@ -83,7 +126,10 @@ class _ReportModalState extends State<ReportModal> {
           const SizedBox(height: AppSpacing.sm),
           Text(
             'Please let us know why you are reporting this ${widget.targetType}. Your report will be kept anonymous.',
-            style: GoogleFonts.inter(color: AppColors.textSecondary, fontSize: 13),
+            style: GoogleFonts.inter(
+              color: AppColors.textSecondary,
+              fontSize: 13,
+            ),
           ),
           const SizedBox(height: AppSpacing.md),
           ..._reasons.map((reason) {
@@ -94,20 +140,29 @@ class _ReportModalState extends State<ReportModal> {
                 onTap: () => setState(() => _selectedReason = reason),
                 borderRadius: BorderRadius.circular(AppRadius.md),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.sm,
+                  ),
                   decoration: BoxDecoration(
                     border: Border.all(
                       color: isSelected ? AppColors.error : AppColors.border,
                       width: isSelected ? 2 : 1,
                     ),
                     borderRadius: BorderRadius.circular(AppRadius.md),
-                    color: isSelected ? AppColors.error.withValues(alpha: 0.05) : Colors.transparent,
+                    color: isSelected
+                        ? AppColors.error.withValues(alpha: 0.05)
+                        : Colors.transparent,
                   ),
                   child: Row(
                     children: [
                       Icon(
-                        isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
-                        color: isSelected ? AppColors.error : AppColors.textMuted,
+                        isSelected
+                            ? Icons.radio_button_checked
+                            : Icons.radio_button_unchecked,
+                        color: isSelected
+                            ? AppColors.error
+                            : AppColors.textMuted,
                         size: 20,
                       ),
                       const SizedBox(width: AppSpacing.md),
@@ -116,8 +171,12 @@ class _ReportModalState extends State<ReportModal> {
                           reason,
                           style: GoogleFonts.inter(
                             fontSize: 14,
-                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                            color: isSelected ? AppColors.textPrimary : AppColors.textSecondary,
+                            fontWeight: isSelected
+                                ? FontWeight.w600
+                                : FontWeight.w400,
+                            color: isSelected
+                                ? AppColors.textPrimary
+                                : AppColors.textSecondary,
                           ),
                         ),
                       ),

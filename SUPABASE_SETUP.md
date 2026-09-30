@@ -10,6 +10,8 @@ Project dashboard: https://supabase.com/dashboard/project/oboyvpcziyjydyfguucs
 
 The SQL files through `202609220005_contract_lifecycle.sql` were run in this project's SQL Editor on 22 September 2026. They create the tables, row level security policies, signup triggers, proposal and job RPCs, contract snapshots, conversations, and realtime publications. Do not paste and run them again in this same project. Keep them as the repeatable schema for a **new** project; a future CLI setup will need to mark these existing changes as applied before using CLI migrations.
 
+`202610010006_reports.sql` was added later and still needs to be run once in **SQL Editor**. It creates the protected reports table used by the Report action. Until it is applied, report submission will show a database error instead of claiming that a report was saved.
+
 To inspect your data, open **Database → Tables**. To inspect user accounts, open **Authentication → Users**. To inspect or change policies, open **Database → Policies**. The database password is for direct database administration; it never belongs in Flutter.
 
 ## Run the Flutter app

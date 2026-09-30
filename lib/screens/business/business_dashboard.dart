@@ -1214,7 +1214,6 @@ class _IncomingProposalCard extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// MOCK DATA
 
 
 

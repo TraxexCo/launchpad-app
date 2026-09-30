@@ -37,31 +37,61 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _loadConversation() async {
     try {
       final proposalId = int.parse(widget.chatId);
-      final contract = await Supabase.instance.client.from('contracts')
-          .select('id').eq('proposal_id', proposalId).maybeSingle();
-      if (contract == null) throw StateError('Chat is available after a proposal is accepted.');
+      final contract = await Supabase.instance.client
+          .from('contracts')
+          .select('id')
+          .eq('proposal_id', proposalId)
+          .maybeSingle();
+      if (contract == null) {
+        throw StateError('Chat is available after a proposal is accepted.');
+      }
       final contractId = contract['id'] as int;
-      _subscription = Supabase.instance.client.from('messages')
-          .stream(primaryKey: ['id']).eq('contract_id', contractId)
-          .order('created_at').listen((rows) {
-        if (!mounted) return;
-        final userId = Supabase.instance.client.auth.currentUser?.id;
+      _subscription = Supabase.instance.client
+          .from('messages')
+          .stream(primaryKey: ['id'])
+          .eq('contract_id', contractId)
+          .order('created_at')
+          .listen(
+            (rows) {
+              if (!mounted) return;
+              final userId = Supabase.instance.client.auth.currentUser?.id;
+              setState(() {
+                _messages
+                  ..clear()
+                  ..addAll(
+                    rows.map(
+                      (row) => _Msg(
+                        text: row['body'] as String,
+                        fromMe: row['sender_id'] == userId,
+                        time: _formatTime(row['created_at'] as String),
+                      ),
+                    ),
+                  );
+                _loading = false;
+              });
+            },
+            onError: (Object error) {
+              if (mounted) {
+                setState(() {
+                  _error = '$error';
+                  _loading = false;
+                });
+              }
+            },
+          );
+      if (mounted) {
         setState(() {
-          _messages
-            ..clear()
-            ..addAll(rows.map((row) => _Msg(
-              text: row['body'] as String,
-              fromMe: row['sender_id'] == userId,
-              time: _formatTime(row['created_at'] as String),
-            )));
+          _contractId = contractId;
           _loading = false;
         });
-      }, onError: (Object error) {
-        if (mounted) setState(() { _error = '$error'; _loading = false; });
-      });
-      if (mounted) setState(() { _contractId = contractId; _loading = false; });
+      }
     } catch (error) {
-      if (mounted) setState(() { _error = '$error'; _loading = false; });
+      if (mounted) {
+        setState(() {
+          _error = '$error';
+          _loading = false;
+        });
+      }
     }
   }
 
@@ -84,22 +114,30 @@ class _ChatScreenState extends State<ChatScreen> {
     final contractId = _contractId;
     final userId = Supabase.instance.client.auth.currentUser?.id;
     final body = _msgCtrl.text.trim();
-    if (body.isEmpty || contractId == null || userId == null || _sending) return;
+    if (body.isEmpty || contractId == null || userId == null || _sending) {
+      return;
+    }
     setState(() => _sending = true);
     try {
       await Supabase.instance.client.from('messages').insert({
-        'contract_id': contractId, 'sender_id': userId, 'body': body,
+        'contract_id': contractId,
+        'sender_id': userId,
+        'body': body,
       });
       _msgCtrl.clear();
     } catch (_) {
       if (mounted) {
-        setState(() => _failedMessages.add(_Msg(
-          text: body, fromMe: true, time: 'Not sent', failed: true,
-        )));
+        setState(
+          () => _failedMessages.add(
+            _Msg(text: body, fromMe: true, time: 'Not sent', failed: true),
+          ),
+        );
         _msgCtrl.clear();
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Network error: unable to send message'),
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Network error: unable to send message'),
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _sending = false);
@@ -122,14 +160,18 @@ class _ChatScreenState extends State<ChatScreen> {
     setState(() => _sending = true);
     try {
       await Supabase.instance.client.from('messages').insert({
-        'contract_id': contractId, 'sender_id': userId, 'body': message.text,
+        'contract_id': contractId,
+        'sender_id': userId,
+        'body': message.text,
       });
       if (mounted) setState(() => _failedMessages.remove(message));
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Network error: unable to send message'),
-        ));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Network error: unable to send message'),
+          ),
+        );
       }
     } finally {
       if (mounted) setState(() => _sending = false);
@@ -145,13 +187,15 @@ class _ChatScreenState extends State<ChatScreen> {
           child: Column(
             children: [
               _buildAppBar(context),
-              Expanded(child: _loading
-                  ? const Center(child: CircularProgressIndicator())
-                  : _error != null
-                      ? Center(child: Text(_error!))
-                      : _messages.isEmpty && _failedMessages.isEmpty
-                          ? const Center(child: Text('No messages yet. Say hello!'))
-                          : _buildMessages()),
+              Expanded(
+                child: _loading
+                    ? const Center(child: CircularProgressIndicator())
+                    : _error != null
+                    ? Center(child: Text(_error!))
+                    : _messages.isEmpty && _failedMessages.isEmpty
+                    ? const Center(child: Text('No messages yet. Say hello!'))
+                    : _buildMessages(),
+              ),
               if (_contractId != null) _buildInput(),
             ],
           ),
@@ -162,38 +206,60 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Widget _buildAppBar(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.sm),
-      decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: AppColors.border))),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.sm,
+        AppSpacing.md,
+        AppSpacing.sm,
+      ),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: AppColors.border)),
+      ),
       child: Row(
         children: [
           GestureDetector(
-            onTap: () => context.canPop() ? context.pop() : context.go('/student'),
+            onTap: () =>
+                context.canPop() ? context.pop() : context.go('/student'),
             child: Container(
-              width: 38, height: 38,
+              width: 38,
+              height: 38,
               decoration: BoxDecoration(
                 color: AppColors.surfaceHigh,
                 borderRadius: BorderRadius.circular(AppRadius.md),
                 border: Border.all(color: AppColors.border),
               ),
-              child: const Icon(Icons.arrow_back_ios_new_rounded,
-                  color: AppColors.textSecondary, size: 13),
+              child: const Icon(
+                Icons.arrow_back_ios_new_rounded,
+                color: AppColors.textSecondary,
+                size: 13,
+              ),
             ),
           ),
           const SizedBox(width: AppSpacing.sm),
           Container(
-            width: 42, height: 42,
+            width: 42,
+            height: 42,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
                 colors: [AppColors.businessPrimary, AppColors.businessAccent],
-                begin: Alignment.topLeft, end: Alignment.bottomRight,
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
               shape: BoxShape.circle,
             ),
             child: Center(
               child: Text(
-                widget.peerName.split(' ').map((w) => w[0]).take(2).join(),
+                widget.peerName
+                    .split(RegExp(r'\s+'))
+                    .where((word) => word.isNotEmpty)
+                    .map((word) => word[0].toUpperCase())
+                    .take(2)
+                    .join(),
                 style: GoogleFonts.plusJakartaSans(
-                    fontSize: 14, fontWeight: FontWeight.w800, color: AppColors.textPrimary),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                ),
               ),
             ),
           ),
@@ -202,21 +268,23 @@ class _ChatScreenState extends State<ChatScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(widget.peerName,
-                    style: GoogleFonts.plusJakartaSans(
-                        fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-                Text('Project conversation',
-                    style: GoogleFonts.inter(fontSize: 11, color: AppColors.textMuted)),
+                Text(
+                  widget.peerName,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                Text(
+                  'Project conversation',
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    color: AppColors.textMuted,
+                  ),
+                ),
               ],
             ),
-          ),
-          GestureDetector(
-            onTap: () {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('🔔 Chat options coming soon.'), duration: Duration(seconds: 2)),
-              );
-            },
-            child: const Icon(Icons.more_vert_rounded, color: AppColors.textMuted),
           ),
         ],
       ).animate().fadeIn(duration: 400.ms),
@@ -235,67 +303,116 @@ class _ChatScreenState extends State<ChatScreen> {
         return Padding(
           padding: const EdgeInsets.only(bottom: AppSpacing.sm),
           child: Column(
-            crossAxisAlignment: m.fromMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+            crossAxisAlignment: m.fromMe
+                ? CrossAxisAlignment.end
+                : CrossAxisAlignment.start,
             children: [
               if (showTime)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 4),
-                  child: Text(m.time,
-                      style: GoogleFonts.jetBrainsMono(fontSize: 9, color: AppColors.textMuted)),
+                  child: Text(
+                    m.time,
+                    style: GoogleFonts.jetBrainsMono(
+                      fontSize: 9,
+                      color: AppColors.textMuted,
+                    ),
+                  ),
                 ),
               Row(
-                mainAxisAlignment: m.fromMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+                mainAxisAlignment: m.fromMe
+                    ? MainAxisAlignment.end
+                    : MainAxisAlignment.start,
                 children: [
-                  if (m.failed) IconButton(
-                    tooltip: 'Retry sending',
-                    onPressed: () => _retry(m),
-                    icon: const Icon(Icons.refresh_rounded, color: AppColors.error),
-                  ),
+                  if (m.failed)
+                    IconButton(
+                      tooltip: 'Retry sending',
+                      onPressed: () => _retry(m),
+                      icon: const Icon(
+                        Icons.refresh_rounded,
+                        color: AppColors.error,
+                      ),
+                    ),
                   ConstrainedBox(
-                    constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.72),
+                    constraints: BoxConstraints(
+                      maxWidth: MediaQuery.of(context).size.width * 0.72,
+                    ),
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.md, vertical: AppSpacing.sm + 2),
+                        horizontal: AppSpacing.md,
+                        vertical: AppSpacing.sm + 2,
+                      ),
                       decoration: BoxDecoration(
                         gradient: m.fromMe
                             ? const LinearGradient(
-                                colors: [AppColors.studentPrimary, AppColors.studentAccent],
-                                begin: Alignment.topLeft, end: Alignment.bottomRight,
+                                colors: [
+                                  AppColors.studentPrimary,
+                                  AppColors.studentAccent,
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
                               )
                             : null,
                         color: m.fromMe ? null : AppColors.surfaceHigh,
                         borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(m.fromMe ? AppRadius.lg : AppRadius.sm),
-                          topRight: Radius.circular(m.fromMe ? AppRadius.sm : AppRadius.lg),
+                          topLeft: Radius.circular(
+                            m.fromMe ? AppRadius.lg : AppRadius.sm,
+                          ),
+                          topRight: Radius.circular(
+                            m.fromMe ? AppRadius.sm : AppRadius.lg,
+                          ),
                           bottomLeft: const Radius.circular(AppRadius.lg),
                           bottomRight: const Radius.circular(AppRadius.lg),
                         ),
-                        border: m.fromMe ? null
+                        border: m.fromMe
+                            ? null
                             : Border.all(color: AppColors.border),
                         boxShadow: m.fromMe
-                            ? [BoxShadow(color: AppColors.studentPrimary.withValues(alpha: 0.3), blurRadius: 12, offset: const Offset(0, 4))]
+                            ? [
+                                BoxShadow(
+                                  color: AppColors.studentPrimary.withValues(
+                                    alpha: 0.3,
+                                  ),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ]
                             : null,
                       ),
-                      child: Text(m.text,
-                          style: GoogleFonts.inter(
-                              fontSize: 14,
-                              color: m.fromMe ? Colors.white : AppColors.textPrimary,
-                              height: 1.45)),
+                      child: Text(
+                        m.text,
+                        style: GoogleFonts.inter(
+                          fontSize: 14,
+                          color: m.fromMe
+                              ? Colors.white
+                              : AppColors.textPrimary,
+                          height: 1.45,
+                        ),
+                      ),
                     ),
                   ),
                 ],
               ),
             ],
           ),
-        ).animate().fadeIn(duration: 300.ms, delay: Duration(milliseconds: i * 40));
+        ).animate().fadeIn(
+          duration: 300.ms,
+          delay: Duration(milliseconds: i * 40),
+        );
       },
     );
   }
 
   Widget _buildInput() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.lg),
-      decoration: const BoxDecoration(border: Border(top: BorderSide(color: AppColors.border))),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.sm,
+        AppSpacing.md,
+        AppSpacing.lg,
+      ),
+      decoration: const BoxDecoration(
+        border: Border(top: BorderSide(color: AppColors.border)),
+      ),
       child: Row(
         children: [
           Expanded(
@@ -310,13 +427,21 @@ class _ChatScreenState extends State<ChatScreen> {
                 controller: _msgCtrl,
                 maxLines: null,
                 textInputAction: TextInputAction.newline,
-                style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 14),
+                style: GoogleFonts.inter(
+                  color: AppColors.textPrimary,
+                  fontSize: 14,
+                ),
                 decoration: InputDecoration(
                   hintText: 'Type a message…',
-                  hintStyle: GoogleFonts.inter(color: AppColors.textDisabled, fontSize: 14),
+                  hintStyle: GoogleFonts.inter(
+                    color: AppColors.textDisabled,
+                    fontSize: 14,
+                  ),
                   border: InputBorder.none,
                   contentPadding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.md, vertical: AppSpacing.sm + 2),
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.sm + 2,
+                  ),
                 ),
               ),
             ),
@@ -325,18 +450,28 @@ class _ChatScreenState extends State<ChatScreen> {
           GestureDetector(
             onTap: _sending ? null : _send,
             child: Container(
-              width: 48, height: 48,
+              width: 48,
+              height: 48,
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
                   colors: [AppColors.studentPrimary, AppColors.studentAccent],
-                  begin: Alignment.topLeft, end: Alignment.bottomRight,
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(AppRadius.lg),
-                boxShadow: [BoxShadow(
+                boxShadow: [
+                  BoxShadow(
                     color: AppColors.studentPrimary.withValues(alpha: 0.35),
-                    blurRadius: 16, offset: const Offset(0, 4))],
+                    blurRadius: 16,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-              child: const Icon(Icons.send_rounded, color: AppColors.textPrimary, size: 20),
+              child: const Icon(
+                Icons.send_rounded,
+                color: AppColors.textPrimary,
+                size: 20,
+              ),
             ),
           ),
         ],
@@ -349,7 +484,10 @@ class _Msg {
   final String text, time;
   final bool fromMe;
   final bool failed;
-  const _Msg({required this.text, required this.fromMe, required this.time,
-    this.failed = false});
+  const _Msg({
+    required this.text,
+    required this.fromMe,
+    required this.time,
+    this.failed = false,
+  });
 }
-
