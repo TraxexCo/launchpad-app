@@ -245,19 +245,22 @@ class _MyProposalsScreenState extends State<MyProposalsScreen>
     return TabBarView(
       controller: _tab,
       children: [
-        _ProposalList(proposals: _allProposals),
+        _ProposalList(proposals: _allProposals, onChanged: _loadProposals),
         _ProposalList(
           proposals: _allProposals.where((p) => p.status == 'pending').toList(),
+          onChanged: _loadProposals,
         ),
         _ProposalList(
           proposals: _allProposals
               .where((p) => p.status == 'accepted')
               .toList(),
+          onChanged: _loadProposals,
         ),
         _ProposalList(
           proposals: _allProposals
               .where((p) => p.status == 'rejected')
               .toList(),
+          onChanged: _loadProposals,
         ),
       ],
     );
@@ -266,7 +269,8 @@ class _MyProposalsScreenState extends State<MyProposalsScreen>
 
 class _ProposalList extends StatelessWidget {
   final List<Proposal> proposals;
-  const _ProposalList({required this.proposals});
+  final Future<void> Function() onChanged;
+  const _ProposalList({required this.proposals, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
@@ -298,24 +302,69 @@ class _ProposalList extends StatelessWidget {
       ),
       itemCount: proposals.length,
       separatorBuilder: (context, idx) => const SizedBox(height: AppSpacing.md),
-      itemBuilder: (context, i) => _ProposalCard(proposal: proposals[i])
-          .animate()
-          .fadeIn(
-            duration: 350.ms,
-            delay: Duration(milliseconds: i * 60),
-          )
-          .slideY(
-            begin: 0.08,
-            duration: 300.ms,
-            delay: Duration(milliseconds: i * 60),
-          ),
+      itemBuilder: (context, i) =>
+          _ProposalCard(proposal: proposals[i], onChanged: onChanged)
+              .animate()
+              .fadeIn(
+                duration: 350.ms,
+                delay: Duration(milliseconds: i * 60),
+              )
+              .slideY(
+                begin: 0.08,
+                duration: 300.ms,
+                delay: Duration(milliseconds: i * 60),
+              ),
     );
   }
 }
 
 class _ProposalCard extends StatelessWidget {
   final Proposal proposal;
-  const _ProposalCard({required this.proposal});
+  final Future<void> Function() onChanged;
+  const _ProposalCard({required this.proposal, required this.onChanged});
+
+  Future<void> _withdraw(BuildContext context) async {
+    final confirmed =
+        await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: const Text('Withdraw proposal?'),
+            content: const Text(
+              'The business will no longer be able to accept this proposal.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext, false),
+                child: const Text('Keep proposal'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(dialogContext, true),
+                child: const Text('Withdraw'),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+    if (!confirmed) return;
+    try {
+      await ProposalService().withdrawProposal(proposal.id);
+      await onChanged();
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Proposal withdrawn.')));
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Could not withdraw this proposal. Refresh and try again.',
+          ),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
 
   String _timeAgo(DateTime dt) {
     final diff = DateTime.now().difference(dt);
@@ -437,6 +486,17 @@ class _ProposalCard extends StatelessWidget {
                     ),
                   ),
                 ],
+              ),
+            ),
+          ],
+          if (proposal.status == 'pending') ...[
+            const SizedBox(height: AppSpacing.sm),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: () => _withdraw(context),
+                icon: const Icon(Icons.undo_rounded, size: 17),
+                label: const Text('Withdraw proposal'),
               ),
             ),
           ],

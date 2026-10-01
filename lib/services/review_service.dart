@@ -68,8 +68,9 @@ class ReviewService {
           .inFilter('proposal_id', proposalIds);
 
       final contractIds = contracts.map((c) => c['id'] as int).toList();
-      final completedContractsCount =
-          contracts.where((c) => c['status'] == 'completed').length;
+      final completedContractsCount = contracts
+          .where((c) => c['status'] == 'completed')
+          .length;
 
       if (contractIds.isEmpty) {
         return StudentReviewSummary(
@@ -84,6 +85,7 @@ class ReviewService {
       final reviewRows = await _client
           .from('reviews')
           .select()
+          .eq('reviewee_id', studentId)
           .inFilter('contract_id', contractIds)
           .order('created_at', ascending: false);
 
@@ -98,11 +100,9 @@ class ReviewService {
 
       // Build lookups for business names and job titles
       final contractToProposalMap = {
-        for (final c in contracts) c['id'] as int: c['proposal_id'] as int
+        for (final c in contracts) c['id'] as int: c['proposal_id'] as int,
       };
-      final proposalMap = {
-        for (final p in proposals) p['id'] as int: p
-      };
+      final proposalMap = {for (final p in proposals) p['id'] as int: p};
 
       final businessIds = <String>{};
       for (final p in proposals) {
@@ -113,14 +113,14 @@ class ReviewService {
 
       final bizRows = businessIds.isNotEmpty
           ? await _client
-              .from('business_profiles')
-              .select('user_id, business_name')
-              .inFilter('user_id', businessIds.toList())
+                .from('business_profiles')
+                .select('user_id, business_name')
+                .inFilter('user_id', businessIds.toList())
           : <Map<String, dynamic>>[];
 
       final bizNameMap = {
         for (final b in bizRows)
-          b['user_id'] as String: b['business_name'] as String
+          b['user_id'] as String: b['business_name'] as String,
       };
 
       final items = <ReviewItem>[];
@@ -136,16 +136,20 @@ class ReviewService {
         final rating = (row['rating'] as num).toInt();
         sumRatings += rating;
 
-        items.add(ReviewItem(
-          id: row['id'] as int,
-          contractId: cId,
-          rating: rating,
-          body: row['body'] as String? ?? '',
-          createdAt: DateTime.tryParse(row['created_at'] as String? ?? '') ??
-              DateTime.now(),
-          reviewerName: (bId != null ? bizNameMap[bId] : null) ?? 'Verified Business',
-          jobTitle: job?['title'] as String? ?? 'Completed Project',
-        ));
+        items.add(
+          ReviewItem(
+            id: row['id'] as int,
+            contractId: cId,
+            rating: rating,
+            body: row['body'] as String? ?? '',
+            createdAt:
+                DateTime.tryParse(row['created_at'] as String? ?? '') ??
+                DateTime.now(),
+            reviewerName:
+                (bId != null ? bizNameMap[bId] : null) ?? 'Verified Business',
+            jobTitle: job?['title'] as String? ?? 'Completed Project',
+          ),
+        );
       }
 
       final avg = items.isNotEmpty ? (sumRatings / items.length) : 0.0;
@@ -157,12 +161,7 @@ class ReviewService {
         reviews: items,
       );
     } catch (_) {
-      return const StudentReviewSummary(
-        averageRating: 0.0,
-        totalReviews: 0,
-        completedJobsCount: 0,
-        reviews: [],
-      );
+      rethrow;
     }
   }
 }

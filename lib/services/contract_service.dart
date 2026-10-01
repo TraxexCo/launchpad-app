@@ -14,6 +14,7 @@ class ContractItem {
   final String studentName;
   final String businessId;
   final String businessName;
+  final bool reviewedByMe;
 
   const ContractItem({
     required this.id,
@@ -29,6 +30,7 @@ class ContractItem {
     required this.studentName,
     required this.businessId,
     required this.businessName,
+    this.reviewedByMe = false,
   });
 }
 
@@ -43,7 +45,9 @@ class ContractService {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) return [];
 
-    final rows = await _client.from('contracts').select('''
+    final rows = await _client
+        .from('contracts')
+        .select('''
       id,
       proposal_id,
       status,
@@ -61,7 +65,8 @@ class ContractService {
           business_id
         )
       )
-    ''').order('agreed_at', ascending: false);
+    ''')
+        .order('agreed_at', ascending: false);
 
     if (rows.isEmpty) return [];
 
@@ -81,14 +86,36 @@ class ContractService {
     }
 
     final studentProfiles = studentIds.isNotEmpty
-        ? await _client.from('profiles').select('id, full_name').inFilter('id', studentIds.toList())
+        ? await _client
+              .from('profiles')
+              .select('id, full_name')
+              .inFilter('id', studentIds.toList())
         : <Map<String, dynamic>>[];
     final businessProfiles = businessIds.isNotEmpty
-        ? await _client.from('business_profiles').select('user_id, business_name').inFilter('user_id', businessIds.toList())
+        ? await _client
+              .from('business_profiles')
+              .select('user_id, business_name')
+              .inFilter('user_id', businessIds.toList())
         : <Map<String, dynamic>>[];
 
-    final studentNameMap = {for (final s in studentProfiles) s['id'] as String: s['full_name'] as String};
-    final businessNameMap = {for (final b in businessProfiles) b['user_id'] as String: b['business_name'] as String};
+    final contractIds = rows.map((row) => row['id'] as int).toList();
+    final reviewRows = await _client
+        .from('reviews')
+        .select('contract_id')
+        .eq('reviewer_id', userId)
+        .inFilter('contract_id', contractIds);
+    final reviewedContractIds = {
+      for (final review in reviewRows) review['contract_id'] as int,
+    };
+
+    final studentNameMap = {
+      for (final s in studentProfiles)
+        s['id'] as String: s['full_name'] as String,
+    };
+    final businessNameMap = {
+      for (final b in businessProfiles)
+        b['user_id'] as String: b['business_name'] as String,
+    };
 
     final items = <ContractItem>[];
     for (final row in rows) {
@@ -98,23 +125,68 @@ class ContractService {
       final sId = prop?['student_id'] as String? ?? '';
       final bId = job?['business_id'] as String? ?? '';
 
-      items.add(ContractItem(
-        id: row['id'] as int,
-        proposalId: row['proposal_id'] as int,
-        status: row['status'] as String? ?? 'in_progress',
-        agreedAt: DateTime.tryParse(row['agreed_at'] as String? ?? '') ?? DateTime.now(),
-        completedAt: row['completed_at'] != null ? DateTime.tryParse(row['completed_at'] as String) : null,
-        jobTitle: job?['title'] as String? ?? 'Project Contract',
-        jobCategory: job?['category'] as String? ?? 'Contract',
-        budget: double.tryParse(prop?['proposed_budget']?.toString() ?? '0') ?? 0.0,
-        timelineWeeks: int.tryParse(prop?['estimated_timeline_weeks']?.toString() ?? '1') ?? 1,
-        studentId: sId,
-        studentName: studentNameMap[sId] ?? 'Student',
-        businessId: bId,
-        businessName: businessNameMap[bId] ?? 'Business',
-      ));
+      items.add(
+        ContractItem(
+          id: row['id'] as int,
+          proposalId: row['proposal_id'] as int,
+          status: row['status'] as String? ?? 'in_progress',
+          agreedAt:
+              DateTime.tryParse(row['agreed_at'] as String? ?? '') ??
+              DateTime.now(),
+          completedAt: row['completed_at'] != null
+              ? DateTime.tryParse(row['completed_at'] as String)
+              : null,
+          jobTitle: job?['title'] as String? ?? 'Project Contract',
+          jobCategory: job?['category'] as String? ?? 'Contract',
+          budget:
+              double.tryParse(prop?['proposed_budget']?.toString() ?? '0') ??
+              0.0,
+          timelineWeeks:
+              int.tryParse(
+                prop?['estimated_timeline_weeks']?.toString() ?? '1',
+              ) ??
+              1,
+          studentId: sId,
+          studentName: studentNameMap[sId] ?? 'Student',
+          businessId: bId,
+          businessName: businessNameMap[bId] ?? 'Business',
+          reviewedByMe: reviewedContractIds.contains(row['id'] as int),
+        ),
+      );
     }
 
     return items;
+  }
+
+  Future<void> requestCompletion(int contractId) async {
+    await _client.rpc(
+      'request_contract_completion',
+      params: {'contract_key': contractId},
+    );
+  }
+
+  Future<void> respondToCompletion(
+    int contractId, {
+    required bool approve,
+  }) async {
+    await _client.rpc(
+      'respond_contract_completion',
+      params: {'contract_key': contractId, 'approve_completion': approve},
+    );
+  }
+
+  Future<void> submitReview({
+    required int contractId,
+    required int rating,
+    required String body,
+  }) async {
+    await _client.rpc(
+      'submit_contract_review',
+      params: {
+        'contract_key': contractId,
+        'rating_value': rating,
+        'review_body': body.trim(),
+      },
+    );
   }
 }

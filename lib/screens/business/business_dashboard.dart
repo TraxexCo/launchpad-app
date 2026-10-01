@@ -16,6 +16,8 @@ import '../../services/contract_service.dart';
 import '../../models/job_post.dart';
 import '../../models/proposal.dart';
 import '../../widgets/confirm_sign_out.dart';
+import '../../widgets/contract_action_panel.dart';
+import '../../widgets/dashboard_load_error.dart';
 
 class BusinessDashboard extends StatefulWidget {
   const BusinessDashboard({super.key});
@@ -32,9 +34,13 @@ class _BusinessDashboardState extends State<BusinessDashboard> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && GoRouterState.of(context).uri.queryParameters['unauthorized'] == '1') {
+      if (mounted &&
+          GoRouterState.of(context).uri.queryParameters['unauthorized'] ==
+              '1') {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Unauthorized: this area is for student accounts.')),
+          const SnackBar(
+            content: Text('Unauthorized: this area is for student accounts.'),
+          ),
         );
       }
     });
@@ -57,8 +63,10 @@ class _BusinessDashboardState extends State<BusinessDashboard> {
         child: SafeArea(
           child: Column(
             children: [
-              _BizAppBar(businessName: _businessName,
-                  onLogout: () => confirmSignOut(context)),
+              _BizAppBar(
+                businessName: _businessName,
+                onLogout: () => confirmSignOut(context),
+              ),
               Expanded(
                 child: IndexedStack(
                   index: _navIndex,
@@ -94,7 +102,11 @@ class _BizAppBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
-          AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.sm),
+        AppSpacing.lg,
+        AppSpacing.md,
+        AppSpacing.lg,
+        AppSpacing.sm,
+      ),
       child: Row(
         children: [
           // Business avatar
@@ -111,7 +123,11 @@ class _BizAppBar extends StatelessWidget {
                 ),
               ],
             ),
-            child: const Icon(Icons.storefront_rounded, color: Colors.white, size: 20),
+            child: const Icon(
+              Icons.storefront_rounded,
+              color: Colors.white,
+              size: 20,
+            ),
           ),
 
           const SizedBox(width: AppSpacing.sm + 2),
@@ -119,20 +135,31 @@ class _BizAppBar extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(businessName,
-                  style: GoogleFonts.plusJakartaSans(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary,
-                      letterSpacing: -0.5)),
-              Text('Business account', style: GoogleFonts.inter(
-                  fontSize: 11, color: AppColors.textMuted)),
+              Text(
+                businessName,
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                  letterSpacing: -0.5,
+                ),
+              ),
+              Text(
+                'Business account',
+                style: GoogleFonts.inter(
+                  fontSize: 11,
+                  color: AppColors.textMuted,
+                ),
+              ),
             ],
           ),
 
           const Spacer(),
 
-          _BizIconBtn(icon: Icons.notifications_none_rounded, onTap: () => context.go('/notifications?role=business')),
+          _BizIconBtn(
+            icon: Icons.notifications_none_rounded,
+            onTap: () => context.go('/notifications?role=business'),
+          ),
           const SizedBox(width: AppSpacing.sm),
           _BizIconBtn(icon: Icons.logout_rounded, onTap: onLogout),
         ],
@@ -200,7 +227,9 @@ class _BizBottomNav extends StatelessWidget {
                 child: AnimatedContainer(
                   duration: AppDurations.normal,
                   padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.md, vertical: AppSpacing.xs + 2),
+                    horizontal: AppSpacing.md,
+                    vertical: AppSpacing.xs + 2,
+                  ),
                   decoration: BoxDecoration(
                     color: isActive
                         ? AppColors.businessPrimary.withValues(alpha: 0.12)
@@ -218,14 +247,18 @@ class _BizBottomNav extends StatelessWidget {
                         size: 22,
                       ),
                       const SizedBox(height: 2),
-                      Text(e.value.$3,
-                          style: GoogleFonts.inter(
-                            fontSize: 10,
-                            fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
-                            color: isActive
-                                ? AppColors.businessPrimary
-                                : AppColors.textMuted,
-                          )),
+                      Text(
+                        e.value.$3,
+                        style: GoogleFonts.inter(
+                          fontSize: 10,
+                          fontWeight: isActive
+                              ? FontWeight.w600
+                              : FontWeight.w400,
+                          color: isActive
+                              ? AppColors.businessPrimary
+                              : AppColors.textMuted,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -254,15 +287,21 @@ class _BizHomeTabState extends State<_BizHomeTab> {
   List<ContractItem> _contracts = [];
   String _businessName = 'Business';
   bool _loading = true;
+  bool _loadFailed = false;
   RealtimeChannel? _proposalChannel;
 
   @override
   void initState() {
     super.initState();
     _loadData();
-    _proposalChannel = Supabase.instance.client.channel('business-home-proposals')
-        .onPostgresChanges(event: PostgresChangeEvent.all, schema: 'public',
-            table: 'proposals', callback: (_) => _loadData())
+    _proposalChannel = Supabase.instance.client
+        .channel('business-home-proposals')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'proposals',
+          callback: (_) => _loadData(),
+        )
         .subscribe();
   }
 
@@ -275,6 +314,12 @@ class _BizHomeTabState extends State<_BizHomeTab> {
   }
 
   Future<void> _loadData() async {
+    if (mounted) {
+      setState(() {
+        _loading = true;
+        _loadFailed = false;
+      });
+    }
     try {
       final user = await AuthService().getCurrentUser();
       if (user != null) {
@@ -285,11 +330,13 @@ class _BizHomeTabState extends State<_BizHomeTab> {
         ]);
         final jobs = futures[0] as List<JobPost>;
         final contracts = futures[1] as List<ContractItem>;
-        
+
         // Fetch proposals for all jobs
         final allProposals = <Proposal>[];
         for (var job in jobs) {
-          final p = await ProposalService().getProposalsByJob(int.parse(job.id));
+          final p = await ProposalService().getProposalsByJob(
+            int.parse(job.id),
+          );
           for (var prop in p) {
             prop = prop.copyWith(jobTitle: job.title, jobBudget: job.budget);
             allProposals.add(prop);
@@ -305,9 +352,19 @@ class _BizHomeTabState extends State<_BizHomeTab> {
             _loading = false;
           });
         }
+      } else if (mounted) {
+        setState(() {
+          _loading = false;
+          _loadFailed = true;
+        });
       }
-    } catch (e) {
-      if (mounted) setState(() => _loading = false);
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _loadFailed = true;
+        });
+      }
     }
   }
 
@@ -319,104 +376,173 @@ class _BizHomeTabState extends State<_BizHomeTab> {
         const SizedBox(height: AppSpacing.sm),
 
         // ── Welcome
-        Text('Welcome back,',
-            style: Theme.of(context).textTheme.bodyLarge)
-            .animate().fadeIn(duration: 400.ms),
-        Text('$_businessName 👋',
-            style: Theme.of(context).textTheme.headlineMedium)
-            .animate().fadeIn(duration: 500.ms, delay: 80.ms)
-            .slideY(begin: 0.15),
+        Text(
+          'Welcome back,',
+          style: Theme.of(context).textTheme.bodyLarge,
+        ).animate().fadeIn(duration: 400.ms),
+        Text(
+          '$_businessName 👋',
+          style: Theme.of(context).textTheme.headlineMedium,
+        ).animate().fadeIn(duration: 500.ms, delay: 80.ms).slideY(begin: 0.15),
+
+        if (_loadFailed) ...[
+          const SizedBox(height: AppSpacing.md),
+          DashboardLoadError(onRetry: _loadData),
+        ],
 
         const SizedBox(height: AppSpacing.lg),
 
         // ── Stats row
         Row(
-          children: [
-            _BizStatCard(label: 'Active Jobs', value: '${_jobs.length}', color: AppColors.businessPrimary),
-            const SizedBox(width: AppSpacing.sm),
-            _BizStatCard(label: 'Proposals', value: '${_proposals.length}', color: AppColors.businessAccent),
-            const SizedBox(width: AppSpacing.sm),
-            _BizStatCard(label: 'Hired', value: '${_contracts.length}', color: AppColors.success),
-          ],
-        )
+              children: [
+                _BizStatCard(
+                  label: 'Active Jobs',
+                  value:
+                      '${_jobs.where((job) => job.status == 'open' || job.status == 'in_progress').length}',
+                  color: AppColors.businessPrimary,
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                _BizStatCard(
+                  label: 'Proposals',
+                  value: '${_proposals.length}',
+                  color: AppColors.businessAccent,
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                _BizStatCard(
+                  label: 'Hired',
+                  value: '${_contracts.length}',
+                  color: AppColors.success,
+                ),
+              ],
+            )
             .animate()
             .fadeIn(duration: 500.ms, delay: 200.ms)
             .slideY(begin: 0.1, duration: 400.ms, delay: 200.ms),
 
-        // ── Active Contracts Section
+        // ── Project contracts
         if (_contracts.isNotEmpty) ...[
           const SizedBox(height: AppSpacing.xl),
           _BizSectionHeader(
-            title: 'Active Contracts',
-            action: '${_contracts.length} ongoing',
+            title: 'Project Contracts',
+            action: '${_contracts.length} total',
             onAction: () {},
           ),
           const SizedBox(height: AppSpacing.md),
-          ..._contracts.map((c) => Padding(
-                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                child: AppCard(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              c.jobTitle,
-                              style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.textPrimary),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
+          ..._contracts.map(
+            (c) => Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              child: AppCard(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            c.jobTitle,
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.textPrimary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: contractStatusColor(
+                              c.status,
+                            ).withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(AppRadius.full),
+                            border: Border.all(
+                              color: contractStatusColor(
+                                c.status,
+                              ).withValues(alpha: 0.3),
                             ),
                           ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          child: Text(
+                            contractStatusLabel(c.status),
+                            style: GoogleFonts.jetBrainsMono(
+                              fontSize: 10,
+                              color: contractStatusColor(c.status),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Assigned Student: ${c.studentName} · ₱${c.budget.toStringAsFixed(0)}',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    Row(
+                      children: [
+                        const Spacer(),
+                        GestureDetector(
+                          onTap: () => context.push(
+                            '/chat/${c.proposalId}?name=${c.studentName}',
+                          ),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.md,
+                              vertical: AppSpacing.xs + 2,
+                            ),
                             decoration: BoxDecoration(
-                              color: AppColors.success.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(AppRadius.full),
-                              border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
-                            ),
-                            child: Text('In Progress',
-                                style: GoogleFonts.jetBrainsMono(fontSize: 10, color: AppColors.success, fontWeight: FontWeight.w600)),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 4),
-                      Text('Assigned Student: ${c.studentName} · ₱${c.budget.toStringAsFixed(0)}',
-                          style: GoogleFonts.inter(fontSize: 12, color: AppColors.textMuted)),
-                      const SizedBox(height: AppSpacing.md),
-                      Row(
-                        children: [
-                          const Spacer(),
-                          GestureDetector(
-                            onTap: () => context.push('/chat/${c.proposalId}?name=${c.studentName}'),
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.xs + 2),
-                              decoration: BoxDecoration(
-                                color: AppColors.businessPrimary.withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(AppRadius.md),
-                                border: Border.all(color: AppColors.businessPrimary.withValues(alpha: 0.4)),
+                              color: AppColors.businessPrimary.withValues(
+                                alpha: 0.12,
                               ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(Icons.chat_bubble_outline_rounded, size: 14, color: AppColors.businessPrimary),
-                                  const SizedBox(width: 6),
-                                  Text('Open Project Chat',
-                                      style: GoogleFonts.inter(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.businessPrimary)),
-                                ],
+                              borderRadius: BorderRadius.circular(AppRadius.md),
+                              border: Border.all(
+                                color: AppColors.businessPrimary.withValues(
+                                  alpha: 0.4,
+                                ),
                               ),
                             ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.chat_bubble_outline_rounded,
+                                  size: 14,
+                                  color: AppColors.businessPrimary,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  'Open Project Chat',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.businessPrimary,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                        ],
-                      ),
-                    ],
-                  ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    ContractActionPanel(
+                      contract: c,
+                      studentView: false,
+                      onChanged: _loadData,
+                    ),
+                  ],
                 ),
-              )),
+              ),
+            ),
+          ),
         ],
 
         const SizedBox(height: AppSpacing.xl),
@@ -431,49 +557,108 @@ class _BizHomeTabState extends State<_BizHomeTab> {
 
         // ── Active jobs section
         _BizSectionHeader(
-            title: 'Active Jobs', action: 'View all', onAction: () {
-               final state = context.findAncestorStateOfType<_BusinessDashboardState>();
-               if (state != null) state.setState(() => state._navIndex = 1);
-            }),
+          title: 'Active Jobs',
+          action: 'View all',
+          onAction: () {
+            final state = context
+                .findAncestorStateOfType<_BusinessDashboardState>();
+            if (state != null) state.setState(() => state._navIndex = 1);
+          },
+        ),
         const SizedBox(height: AppSpacing.md),
-        
-        if (_loading) const Center(child: Padding(padding: EdgeInsets.all(AppSpacing.md), child: CircularProgressIndicator(color: AppColors.businessPrimary))),
-        if (!_loading && _jobs.isEmpty) Center(child: Padding(padding: const EdgeInsets.all(AppSpacing.md), child: Text('No active jobs', style: Theme.of(context).textTheme.bodyMedium))),
 
-        ..._jobs.take(3).toList().asMap().entries.map((e) => Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-              child: _JobCard(job: e.value)
-                  .animate()
-                  .fadeIn(
+        if (_loading)
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.all(AppSpacing.md),
+              child: CircularProgressIndicator(
+                color: AppColors.businessPrimary,
+              ),
+            ),
+          ),
+        if (!_loading && _jobs.isEmpty)
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Text(
+                'No active jobs',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ),
+          ),
+
+        ..._jobs
+            .take(3)
+            .toList()
+            .asMap()
+            .entries
+            .map(
+              (e) => Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                child: _JobCard(job: e.value)
+                    .animate()
+                    .fadeIn(
                       duration: 400.ms,
-                      delay: Duration(milliseconds: 450 + e.key * 100))
-                  .slideY(
+                      delay: Duration(milliseconds: 450 + e.key * 100),
+                    )
+                    .slideY(
                       begin: 0.1,
                       duration: 350.ms,
-                      delay: Duration(milliseconds: 450 + e.key * 100)),
-            )),
+                      delay: Duration(milliseconds: 450 + e.key * 100),
+                    ),
+              ),
+            ),
 
         const SizedBox(height: AppSpacing.xl),
 
         // ── Recent proposals
         _BizSectionHeader(
-            title: 'Recent Proposals', action: 'See all', onAction: () {
-               final state = context.findAncestorStateOfType<_BusinessDashboardState>();
-               if (state != null) state.setState(() => state._navIndex = 2);
-            }),
+          title: 'Recent Proposals',
+          action: 'See all',
+          onAction: () {
+            final state = context
+                .findAncestorStateOfType<_BusinessDashboardState>();
+            if (state != null) state.setState(() => state._navIndex = 2);
+          },
+        ),
         const SizedBox(height: AppSpacing.md),
-        
-        if (_loading) const Center(child: Padding(padding: EdgeInsets.all(AppSpacing.md), child: CircularProgressIndicator(color: AppColors.businessPrimary))),
-        if (!_loading && _proposals.isEmpty) Center(child: Padding(padding: const EdgeInsets.all(AppSpacing.md), child: Text('No recent proposals', style: Theme.of(context).textTheme.bodyMedium))),
 
-        ..._proposals.take(3).toList().asMap().entries.map((e) => Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-              child: _IncomingProposalCard(proposal: e.value)
-                  .animate()
-                  .fadeIn(
+        if (_loading)
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.all(AppSpacing.md),
+              child: CircularProgressIndicator(
+                color: AppColors.businessPrimary,
+              ),
+            ),
+          ),
+        if (!_loading && _proposals.isEmpty)
+          Center(
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Text(
+                'No recent proposals',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ),
+          ),
+
+        ..._proposals
+            .take(3)
+            .toList()
+            .asMap()
+            .entries
+            .map(
+              (e) => Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                child: _IncomingProposalCard(proposal: e.value)
+                    .animate()
+                    .fadeIn(
                       duration: 400.ms,
-                      delay: Duration(milliseconds: 700 + e.key * 80)),
-            )),
+                      delay: Duration(milliseconds: 700 + e.key * 80),
+                    ),
+              ),
+            ),
 
         const SizedBox(height: AppSpacing.xl),
       ],
@@ -505,7 +690,12 @@ class _BizJobsTabState extends State<_BizJobsTab> {
     final user = await AuthService().getCurrentUser();
     if (user != null) {
       final jobs = await JobService().getJobsByBusiness(user.id);
-      if (mounted) setState(() { _jobs = jobs; _loading = false; });
+      if (mounted) {
+        setState(() {
+          _jobs = jobs;
+          _loading = false;
+        });
+      }
     } else {
       if (mounted) setState(() => _loading = false);
     }
@@ -515,13 +705,25 @@ class _BizJobsTabState extends State<_BizJobsTab> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (_) => AlertDialog(
-        title: Text('Delete Job', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
-        content: Text('Delete "${job.title}"? This cannot be undone.', style: GoogleFonts.inter()),
+        title: Text(
+          'Delete Job',
+          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
+        ),
+        content: Text(
+          'Delete "${job.title}"? This cannot be undone.',
+          style: GoogleFonts.inter(),
+        ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Delete', style: TextStyle(color: AppColors.error)),
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: AppColors.error),
+            ),
           ),
         ],
       ),
@@ -530,7 +732,10 @@ class _BizJobsTabState extends State<_BizJobsTab> {
       await JobService().deleteJob(int.parse(job.id));
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('🗑️ Job deleted.'), backgroundColor: AppColors.error),
+          const SnackBar(
+            content: Text('🗑️ Job deleted.'),
+            backgroundColor: AppColors.error,
+          ),
         );
         _loadJobs();
       }
@@ -551,8 +756,17 @@ class _BizJobsTabState extends State<_BizJobsTab> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('My Job Posts', style: Theme.of(context).textTheme.headlineMedium),
-                    Text('${_jobs.length} job(s) posted', style: GoogleFonts.inter(fontSize: 12, color: AppColors.textMuted)),
+                    Text(
+                      'My Job Posts',
+                      style: Theme.of(context).textTheme.headlineMedium,
+                    ),
+                    Text(
+                      '${_jobs.length} job(s) posted',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -568,18 +782,41 @@ class _BizJobsTabState extends State<_BizJobsTab> {
           ),
           const SizedBox(height: AppSpacing.md),
           if (_loading)
-            const Expanded(child: Center(child: CircularProgressIndicator(color: AppColors.businessPrimary)))
+            const Expanded(
+              child: Center(
+                child: CircularProgressIndicator(
+                  color: AppColors.businessPrimary,
+                ),
+              ),
+            )
           else if (_jobs.isEmpty)
             Expanded(
               child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.work_off_outlined, size: 56, color: AppColors.textDisabled),
+                    const Icon(
+                      Icons.work_off_outlined,
+                      size: 56,
+                      color: AppColors.textDisabled,
+                    ),
                     const SizedBox(height: AppSpacing.md),
-                    Text('No jobs posted yet', style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.textMuted)),
+                    Text(
+                      'No jobs posted yet',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
                     const SizedBox(height: AppSpacing.sm),
-                    Text('Tap "+ Post Job" to create your first listing.', style: GoogleFonts.inter(fontSize: 13, color: AppColors.textDisabled)),
+                    Text(
+                      'Tap "+ Post Job" to create your first listing.',
+                      style: GoogleFonts.inter(
+                        fontSize: 13,
+                        color: AppColors.textDisabled,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -592,113 +829,220 @@ class _BizJobsTabState extends State<_BizJobsTab> {
                   final job = _jobs[i];
                   return Padding(
                     padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                    child: AppCard(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
+                    child:
+                        AppCard(
+                          child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(job.title,
-                                        style: GoogleFonts.plusJakartaSans(
-                                            fontSize: 15, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
-                                    const SizedBox(height: 4),
-                                    Row(
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                          decoration: BoxDecoration(
-                                            color: AppColors.businessPrimary.withValues(alpha: 0.1),
-                                            borderRadius: BorderRadius.circular(AppRadius.full),
+                                        Text(
+                                          job.title,
+                                          style: GoogleFonts.plusJakartaSans(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w700,
+                                            color: AppColors.textPrimary,
                                           ),
-                                          child: Text(job.category, style: GoogleFonts.inter(fontSize: 10, color: AppColors.businessPrimary, fontWeight: FontWeight.w600)),
                                         ),
-                                        const SizedBox(width: 6),
-                                        if (job.urgency == 'Urgent')
-                                          Container(
-                                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                            decoration: BoxDecoration(
-                                              color: AppColors.error.withValues(alpha: 0.1),
-                                              borderRadius: BorderRadius.circular(AppRadius.full),
+                                        const SizedBox(height: 4),
+                                        Row(
+                                          children: [
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                    horizontal: 8,
+                                                    vertical: 2,
+                                                  ),
+                                              decoration: BoxDecoration(
+                                                color: AppColors.businessPrimary
+                                                    .withValues(alpha: 0.1),
+                                                borderRadius:
+                                                    BorderRadius.circular(
+                                                      AppRadius.full,
+                                                    ),
+                                              ),
+                                              child: Text(
+                                                job.category,
+                                                style: GoogleFonts.inter(
+                                                  fontSize: 10,
+                                                  color:
+                                                      AppColors.businessPrimary,
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
                                             ),
-                                            child: Text('Urgent', style: GoogleFonts.inter(fontSize: 10, color: AppColors.error, fontWeight: FontWeight.w600)),
-                                          ),
+                                            const SizedBox(width: 6),
+                                            if (job.urgency == 'Urgent')
+                                              Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 2,
+                                                    ),
+                                                decoration: BoxDecoration(
+                                                  color: AppColors.error
+                                                      .withValues(alpha: 0.1),
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                        AppRadius.full,
+                                                      ),
+                                                ),
+                                                child: Text(
+                                                  'Urgent',
+                                                  style: GoogleFonts.inter(
+                                                    fontSize: 10,
+                                                    color: AppColors.error,
+                                                    fontWeight: FontWeight.w600,
+                                                  ),
+                                                ),
+                                              ),
+                                          ],
+                                        ),
                                       ],
                                     ),
-                                  ],
-                                ),
+                                  ),
+                                  Text(
+                                    '₱${job.budget}',
+                                    style: GoogleFonts.jetBrainsMono(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.businessPrimary,
+                                    ),
+                                  ),
+                                ],
                               ),
-                              Text('₱${job.budget}',
-                                  style: GoogleFonts.jetBrainsMono(
-                                      fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.businessPrimary)),
+                              if (job.description.isNotEmpty) ...[
+                                const SizedBox(height: AppSpacing.sm),
+                                Text(
+                                  job.description,
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    color: AppColors.textMuted,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                              const SizedBox(height: AppSpacing.sm),
+                              Row(
+                                children: [
+                                  const Icon(
+                                    Icons.access_time_rounded,
+                                    size: 12,
+                                    color: AppColors.textDisabled,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    job.timeline,
+                                    style: GoogleFonts.inter(
+                                      fontSize: 11,
+                                      color: AppColors.textDisabled,
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  // UPDATE button
+                                  GestureDetector(
+                                    onTap: () async {
+                                      await context.push(
+                                        '/business/jobs/${job.id}/edit',
+                                        extra: job,
+                                      );
+                                      _loadJobs();
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 5,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.businessPrimary
+                                            .withValues(alpha: 0.08),
+                                        borderRadius: BorderRadius.circular(
+                                          AppRadius.sm,
+                                        ),
+                                        border: Border.all(
+                                          color: AppColors.businessPrimary
+                                              .withValues(alpha: 0.25),
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(
+                                            Icons.edit_rounded,
+                                            size: 11,
+                                            color: AppColors.businessPrimary,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            'Edit',
+                                            style: GoogleFonts.inter(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w600,
+                                              color: AppColors.businessPrimary,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: AppSpacing.sm),
+                                  // DELETE button
+                                  GestureDetector(
+                                    onTap: () => _deleteJob(job),
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 5,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.error.withValues(
+                                          alpha: 0.08,
+                                        ),
+                                        borderRadius: BorderRadius.circular(
+                                          AppRadius.sm,
+                                        ),
+                                        border: Border.all(
+                                          color: AppColors.error.withValues(
+                                            alpha: 0.25,
+                                          ),
+                                        ),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(
+                                            Icons.delete_rounded,
+                                            size: 11,
+                                            color: AppColors.error,
+                                          ),
+                                          const SizedBox(width: 4),
+                                          Text(
+                                            'Delete',
+                                            style: GoogleFonts.inter(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w600,
+                                              color: AppColors.error,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ],
                           ),
-                          if (job.description.isNotEmpty) ...[
-                            const SizedBox(height: AppSpacing.sm),
-                            Text(job.description,
-                                style: GoogleFonts.inter(fontSize: 12, color: AppColors.textMuted),
-                                maxLines: 2, overflow: TextOverflow.ellipsis),
-                          ],
-                          const SizedBox(height: AppSpacing.sm),
-                          Row(
-                            children: [
-                              const Icon(Icons.access_time_rounded, size: 12, color: AppColors.textDisabled),
-                              const SizedBox(width: 4),
-                              Text(job.timeline, style: GoogleFonts.inter(fontSize: 11, color: AppColors.textDisabled)),
-                              const Spacer(),
-                              // UPDATE button
-                              GestureDetector(
-                                onTap: () async {
-                                  await context.push('/business/jobs/${job.id}/edit', extra: job);
-                                  _loadJobs();
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.businessPrimary.withValues(alpha: 0.08),
-                                    borderRadius: BorderRadius.circular(AppRadius.sm),
-                                    border: Border.all(color: AppColors.businessPrimary.withValues(alpha: 0.25)),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(Icons.edit_rounded, size: 11, color: AppColors.businessPrimary),
-                                      const SizedBox(width: 4),
-                                      Text('Edit', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.businessPrimary)),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: AppSpacing.sm),
-                              // DELETE button
-                              GestureDetector(
-                                onTap: () => _deleteJob(job),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.error.withValues(alpha: 0.08),
-                                    borderRadius: BorderRadius.circular(AppRadius.sm),
-                                    border: Border.all(color: AppColors.error.withValues(alpha: 0.25)),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(Icons.delete_rounded, size: 11, color: AppColors.error),
-                                      const SizedBox(width: 4),
-                                      Text('Delete', style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: AppColors.error)),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ).animate().fadeIn(duration: 300.ms, delay: Duration(milliseconds: i * 80)),
+                        ).animate().fadeIn(
+                          duration: 300.ms,
+                          delay: Duration(milliseconds: i * 80),
+                        ),
                   );
                 },
               ),
@@ -708,7 +1052,6 @@ class _BizJobsTabState extends State<_BizJobsTab> {
     );
   }
 }
-
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TAB 2 — Proposals inbox
@@ -728,9 +1071,14 @@ class _BizProposalsTabState extends State<_BizProposalsTab> {
   void initState() {
     super.initState();
     _loadProposals();
-    _proposalChannel = Supabase.instance.client.channel('business-inbox-proposals')
-        .onPostgresChanges(event: PostgresChangeEvent.all, schema: 'public',
-            table: 'proposals', callback: (_) => _loadProposals())
+    _proposalChannel = Supabase.instance.client
+        .channel('business-inbox-proposals')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'proposals',
+          callback: (_) => _loadProposals(),
+        )
         .subscribe();
   }
 
@@ -747,19 +1095,26 @@ class _BizProposalsTabState extends State<_BizProposalsTab> {
     try {
       final user = await AuthService().getCurrentUser();
       if (user == null) throw Exception('Not logged in');
-      
+
       final jobs = await JobService().getJobsByBusiness(user.id);
-      
+
       List<Proposal> allProposals = [];
       for (final job in jobs) {
-        final jobProposals = await ProposalService().getProposalsByJob(int.parse(job.id));
+        final jobProposals = await ProposalService().getProposalsByJob(
+          int.parse(job.id),
+        );
         for (var p in jobProposals) {
           p = p.copyWith(jobTitle: job.title, jobBudget: job.budget);
           allProposals.add(p);
         }
       }
       allProposals.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-      if (mounted) setState(() { _proposals = allProposals; _loading = false; });
+      if (mounted) {
+        setState(() {
+          _proposals = allProposals;
+          _loading = false;
+        });
+      }
     } catch (e) {
       if (mounted) setState(() => _loading = false);
     }
@@ -773,16 +1128,33 @@ class _BizProposalsTabState extends State<_BizProposalsTab> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const SizedBox(height: AppSpacing.sm),
-          Text('Proposals Inbox',
-              style: Theme.of(context).textTheme.headlineMedium),
+          Text(
+            'Proposals Inbox',
+            style: Theme.of(context).textTheme.headlineMedium,
+          ),
           const SizedBox(height: AppSpacing.xs),
-          Text('${_proposals.length} proposals received',
-              style: Theme.of(context).textTheme.bodyMedium),
+          Text(
+            '${_proposals.length} proposals received',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
           const SizedBox(height: AppSpacing.md),
           if (_loading)
-            const Expanded(child: Center(child: CircularProgressIndicator(color: AppColors.businessPrimary)))
+            const Expanded(
+              child: Center(
+                child: CircularProgressIndicator(
+                  color: AppColors.businessPrimary,
+                ),
+              ),
+            )
           else if (_proposals.isEmpty)
-            Expanded(child: Center(child: Text('No proposals yet', style: Theme.of(context).textTheme.bodyMedium)))
+            Expanded(
+              child: Center(
+                child: Text(
+                  'No proposals yet',
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ),
+            )
           else
             Expanded(
               child: ListView.separated(
@@ -815,8 +1187,11 @@ class _BizProfileTabState extends State<_BizProfileTab> {
   Future<Map<String, dynamic>> _loadProfile() async {
     final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId == null) throw StateError('Sign in to view your profile');
-    return Supabase.instance.client.from('business_profiles').select()
-        .eq('user_id', userId).single();
+    return Supabase.instance.client
+        .from('business_profiles')
+        .select()
+        .eq('user_id', userId)
+        .single();
   }
 
   @override
@@ -825,45 +1200,71 @@ class _BizProfileTabState extends State<_BizProfileTab> {
       future: _profile,
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
-          return Center(child: snapshot.hasError
-              ? Text('Could not load profile: ${snapshot.error}')
-              : const CircularProgressIndicator());
+          return Center(
+            child: snapshot.hasError
+                ? Text('Could not load profile: ${snapshot.error}')
+                : const CircularProgressIndicator(),
+          );
         }
         final profile = snapshot.data!;
-        final status = profile['verification_status'] as String? ?? 'unverified';
+        final status =
+            profile['verification_status'] as String? ?? 'unverified';
         return SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-          child: Column(children: [
-            const SizedBox(height: AppSpacing.md),
-            Container(
-              width: 90, height: 90,
-              decoration: BoxDecoration(
-                gradient: AppTheme.businessGradient(),
-                borderRadius: BorderRadius.circular(AppRadius.xxl),
+          child: Column(
+            children: [
+              const SizedBox(height: AppSpacing.md),
+              Container(
+                width: 90,
+                height: 90,
+                decoration: BoxDecoration(
+                  gradient: AppTheme.businessGradient(),
+                  borderRadius: BorderRadius.circular(AppRadius.xxl),
+                ),
+                child: const Icon(
+                  Icons.storefront_rounded,
+                  color: AppColors.textPrimary,
+                  size: 40,
+                ),
               ),
-              child: const Icon(Icons.storefront_rounded,
-                  color: AppColors.textPrimary, size: 40),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Text(profile['business_name'] as String,
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                profile['business_name'] as String,
                 style: Theme.of(context).textTheme.headlineSmall,
-                textAlign: TextAlign.center),
-            const SizedBox(height: AppSpacing.xs),
-            Text((profile['address'] as String?)?.isNotEmpty == true
-                ? profile['address'] as String : 'No address added',
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                (profile['address'] as String?)?.isNotEmpty == true
+                    ? profile['address'] as String
+                    : 'No address added',
                 style: Theme.of(context).textTheme.bodyMedium,
-                textAlign: TextAlign.center),
-            const SizedBox(height: AppSpacing.sm),
-            Text('Verification: $status', style: GoogleFonts.inter(
-                color: status == 'verified' ? AppColors.success : AppColors.warning)),
-            const SizedBox(height: AppSpacing.xl),
-            _BizInfoRow(icon: Icons.category_outlined, label: 'Category',
-                value: profile['category'] as String? ?? 'Not added'),
-            const SizedBox(height: AppSpacing.sm),
-            _BizInfoRow(icon: Icons.phone_outlined, label: 'Contact',
-                value: profile['phone'] as String? ?? 'Not added'),
-            const SizedBox(height: AppSpacing.xl),
-          ]),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                'Verification: $status',
+                style: GoogleFonts.inter(
+                  color: status == 'verified'
+                      ? AppColors.success
+                      : AppColors.warning,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xl),
+              _BizInfoRow(
+                icon: Icons.category_outlined,
+                label: 'Category',
+                value: profile['category'] as String? ?? 'Not added',
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              _BizInfoRow(
+                icon: Icons.phone_outlined,
+                label: 'Contact',
+                value: profile['phone'] as String? ?? 'Not added',
+              ),
+              const SizedBox(height: AppSpacing.xl),
+            ],
+          ),
         );
       },
     );
@@ -874,7 +1275,11 @@ class _BizInfoRow extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
-  const _BizInfoRow({required this.icon, required this.label, required this.value});
+  const _BizInfoRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -892,14 +1297,21 @@ class _BizInfoRow extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label,
-                  style: GoogleFonts.jetBrainsMono(
-                      fontSize: 10, color: AppColors.textMuted)),
-              Text(value,
-                  style: GoogleFonts.inter(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w500,
-                      color: AppColors.textPrimary)),
+              Text(
+                label,
+                style: GoogleFonts.jetBrainsMono(
+                  fontSize: 10,
+                  color: AppColors.textMuted,
+                ),
+              ),
+              Text(
+                value,
+                style: GoogleFonts.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.textPrimary,
+                ),
+              ),
             ],
           ),
         ],
@@ -908,7 +1320,6 @@ class _BizInfoRow extends StatelessWidget {
   }
 }
 
-
 // ─────────────────────────────────────────────────────────────────────────────
 // SHARED SUB-WIDGETS
 // ─────────────────────────────────────────────────────────────────────────────
@@ -916,7 +1327,11 @@ class _BizSectionHeader extends StatelessWidget {
   final String title;
   final String action;
   final VoidCallback onAction;
-  const _BizSectionHeader({required this.title, required this.action, required this.onAction});
+  const _BizSectionHeader({
+    required this.title,
+    required this.action,
+    required this.onAction,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -926,11 +1341,14 @@ class _BizSectionHeader extends StatelessWidget {
         const Spacer(),
         GestureDetector(
           onTap: onAction,
-          child: Text(action,
-              style: GoogleFonts.inter(
-                  fontSize: 13,
-                  color: AppColors.businessPrimary,
-                  fontWeight: FontWeight.w500)),
+          child: Text(
+            action,
+            style: GoogleFonts.inter(
+              fontSize: 13,
+              color: AppColors.businessPrimary,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ),
       ],
     );
@@ -941,14 +1359,20 @@ class _BizStatCard extends StatelessWidget {
   final String label;
   final String value;
   final Color color;
-  const _BizStatCard({required this.label, required this.value, required this.color});
+  const _BizStatCard({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
       child: Container(
         padding: const EdgeInsets.symmetric(
-            vertical: AppSpacing.md, horizontal: AppSpacing.sm),
+          vertical: AppSpacing.md,
+          horizontal: AppSpacing.sm,
+        ),
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: BorderRadius.circular(AppRadius.lg),
@@ -959,14 +1383,23 @@ class _BizStatCard extends StatelessWidget {
         ),
         child: Column(
           children: [
-            Text(value,
-                style: GoogleFonts.plusJakartaSans(
-                    fontSize: 28, fontWeight: FontWeight.w800, color: color)),
+            Text(
+              value,
+              style: GoogleFonts.plusJakartaSans(
+                fontSize: 28,
+                fontWeight: FontWeight.w800,
+                color: color,
+              ),
+            ),
             const SizedBox(height: 2),
-            Text(label,
-                style: GoogleFonts.jetBrainsMono(
-                    fontSize: 9, color: AppColors.textMuted),
-                textAlign: TextAlign.center),
+            Text(
+              label,
+              style: GoogleFonts.jetBrainsMono(
+                fontSize: 9,
+                color: AppColors.textMuted,
+              ),
+              textAlign: TextAlign.center,
+            ),
           ],
         ),
       ),
@@ -989,84 +1422,101 @@ class _PostJobCard extends StatelessWidget {
         }
       },
       child: Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppColors.businessPrimary, AppColors.businessAccent],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [AppColors.businessPrimary, AppColors.businessAccent],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(AppRadius.xl),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.businessPrimary.withValues(alpha: 0.4),
+              blurRadius: 28,
+              offset: const Offset(0, 8),
+            ),
+          ],
         ),
-        borderRadius: BorderRadius.circular(AppRadius.xl),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.businessPrimary.withValues(alpha: 0.4),
-            blurRadius: 28,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('Post a New Job',
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Post a New Job',
                     style: GoogleFonts.plusJakartaSans(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textPrimary)),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  'Connect with student developers\nready to build for your business.',
-                  style: GoogleFonts.inter(
-                      fontSize: 12, color: AppColors.textSecondary, height: 1.45),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.md, vertical: AppSpacing.sm),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                    border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.3)),
+                      fontSize: 18,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.add_rounded,
-                          color: AppColors.textPrimary, size: 16),
-                      const SizedBox(width: 6),
-                      Text('Post Job Now',
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    'Connect with student developers\nready to build for your business.',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                      height: 1.45,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: AppSpacing.sm,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.add_rounded,
+                          color: AppColors.textPrimary,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Post Job Now',
                           style: GoogleFonts.plusJakartaSans(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.textPrimary)),
-                    ],
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Container(
-            width: 72,
-            height: 72,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(AppRadius.xl),
+            const SizedBox(width: AppSpacing.md),
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(AppRadius.xl),
+              ),
+              child: const Icon(
+                Icons.work_rounded,
+                color: Colors.white,
+                size: 34,
+              ),
             ),
-            child: const Icon(Icons.work_rounded,
-                color: Colors.white, size: 34),
-          ),
-        ],
-      ),
-    ),  // Container
-    );  // GestureDetector
+          ],
+        ),
+      ), // Container
+    ); // GestureDetector
   }
 }
-
 
 class _JobCard extends StatelessWidget {
   final JobPost job;
@@ -1088,48 +1538,66 @@ class _JobCard extends StatelessWidget {
                   color: AppColors.businessPrimary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
-                child: const Icon(Icons.work_outline_rounded,
-                    color: AppColors.businessPrimary, size: 20),
+                child: const Icon(
+                  Icons.work_outline_rounded,
+                  color: AppColors.businessPrimary,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(job.title,
-                        style: GoogleFonts.plusJakartaSans(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary)),
-                    Text('Tap to view proposals',
-                        style: GoogleFonts.jetBrainsMono(
-                            fontSize: 10, color: AppColors.textMuted)),
+                    Text(
+                      job.title,
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      'Tap to view proposals',
+                      style: GoogleFonts.jetBrainsMono(
+                        fontSize: 10,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
                   ],
                 ),
               ),
               // Budget badge
               Container(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm, vertical: 4),
+                  horizontal: AppSpacing.sm,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.businessPrimary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(AppRadius.full),
                   border: Border.all(
-                      color: AppColors.businessPrimary.withValues(alpha: 0.3)),
+                    color: AppColors.businessPrimary.withValues(alpha: 0.3),
+                  ),
                 ),
-                child: Text(job.budget,
-                    style: GoogleFonts.jetBrainsMono(
-                        fontSize: 11,
-                        color: AppColors.businessPrimary,
-                        fontWeight: FontWeight.w600)),
+                child: Text(
+                  job.budget,
+                  style: GoogleFonts.jetBrainsMono(
+                    fontSize: 11,
+                    color: AppColors.businessPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
             ],
           ),
           const SizedBox(height: AppSpacing.sm),
-          Text(job.description,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodySmall),
+          Text(
+            job.description,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
         ],
       ),
     );
@@ -1151,7 +1619,8 @@ class _IncomingProposalCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppCard(
-      onTap: () => context.go('/business/proposals/${proposal.id}', extra: proposal),
+      onTap: () =>
+          context.go('/business/proposals/${proposal.id}', extra: proposal),
       child: Row(
         children: [
           // Avatar
@@ -1167,11 +1636,16 @@ class _IncomingProposalCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(AppRadius.md),
             ),
             child: Center(
-              child: Text(proposal.studentName != null && proposal.studentName!.isNotEmpty ? proposal.studentName![0] : 'S',
-                  style: GoogleFonts.plusJakartaSans(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary)),
+              child: Text(
+                proposal.studentName != null && proposal.studentName!.isNotEmpty
+                    ? proposal.studentName![0]
+                    : 'S',
+                style: GoogleFonts.plusJakartaSans(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.textPrimary,
+                ),
+              ),
             ),
           ),
           const SizedBox(width: AppSpacing.md),
@@ -1182,18 +1656,26 @@ class _IncomingProposalCard extends StatelessWidget {
                 Row(
                   children: [
                     Flexible(
-                      child: Text(proposal.studentName ?? 'Student',
-                          style: GoogleFonts.plusJakartaSans(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textPrimary),
-                          maxLines: 1, overflow: TextOverflow.ellipsis),
+                      child: Text(
+                        proposal.studentName ?? 'Student',
+                        style: GoogleFonts.plusJakartaSans(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ],
                 ),
-                Text('${proposal.jobTitle ?? 'Job'} • ₱${proposal.proposedBudget}',
-                    style: GoogleFonts.jetBrainsMono(
-                        fontSize: 10, color: AppColors.textMuted)),
+                Text(
+                  '${proposal.jobTitle ?? 'Job'} • ₱${proposal.proposedBudget}',
+                  style: GoogleFonts.jetBrainsMono(
+                    fontSize: 10,
+                    color: AppColors.textMuted,
+                  ),
+                ),
               ],
             ),
           ),
@@ -1202,9 +1684,13 @@ class _IncomingProposalCard extends StatelessWidget {
             children: [
               StatusBadge.fromApiStatus(proposal.status),
               const SizedBox(height: 4),
-              Text(_timeAgo(proposal.createdAt),
-                  style: GoogleFonts.inter(
-                      fontSize: 10, color: AppColors.textMuted)),
+              Text(
+                _timeAgo(proposal.createdAt),
+                style: GoogleFonts.inter(
+                  fontSize: 10,
+                  color: AppColors.textMuted,
+                ),
+              ),
             ],
           ),
         ],
@@ -1214,8 +1700,3 @@ class _IncomingProposalCard extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-
-
-
-
-

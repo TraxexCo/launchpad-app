@@ -20,6 +20,8 @@ import '../../widgets/app_card.dart';
 import '../../widgets/skill_chip.dart';
 import '../../widgets/status_badge.dart';
 import '../../widgets/confirm_sign_out.dart';
+import '../../widgets/contract_action_panel.dart';
+import '../../widgets/dashboard_load_error.dart';
 
 class StudentDashboard extends StatefulWidget {
   const StudentDashboard({super.key});
@@ -304,6 +306,7 @@ class _HomeTabState extends State<_HomeTab> {
   List<ContractItem> _contracts = [];
   int _projectCount = 0;
   bool _loading = true;
+  bool _loadFailed = false;
 
   @override
   void initState() {
@@ -312,6 +315,12 @@ class _HomeTabState extends State<_HomeTab> {
   }
 
   Future<void> _loadData() async {
+    if (mounted) {
+      setState(() {
+        _loading = true;
+        _loadFailed = false;
+      });
+    }
     try {
       final userId = Supabase.instance.client.auth.currentUser?.id;
       final futures = await Future.wait([
@@ -335,8 +344,13 @@ class _HomeTabState extends State<_HomeTab> {
           _loading = false;
         });
       }
-    } catch (e) {
-      if (mounted) setState(() => _loading = false);
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _loadFailed = true;
+        });
+      }
     }
   }
 
@@ -358,6 +372,11 @@ class _HomeTabState extends State<_HomeTab> {
           style: Theme.of(context).textTheme.bodyLarge,
         ).animate().fadeIn(duration: 400.ms, delay: 100.ms),
 
+        if (_loadFailed) ...[
+          const SizedBox(height: AppSpacing.md),
+          DashboardLoadError(onRetry: _loadData),
+        ],
+
         const SizedBox(height: AppSpacing.lg),
 
         // ── Stats row
@@ -378,7 +397,7 @@ class _HomeTabState extends State<_HomeTab> {
                 _StatCard(
                   label: 'Active Jobs',
                   value:
-                      '${_contracts.where((c) => c.status == 'in_progress').length}',
+                      '${_contracts.where((c) => c.status != 'completed').length}',
                   color: AppColors.success,
                 ),
               ],
@@ -387,12 +406,12 @@ class _HomeTabState extends State<_HomeTab> {
             .fadeIn(duration: 500.ms, delay: 200.ms)
             .slideY(begin: 0.1, duration: 400.ms, delay: 200.ms),
 
-        // ── Active Contracts / Workspaces
+        // ── Project workspaces
         if (_contracts.isNotEmpty) ...[
           const SizedBox(height: AppSpacing.xl),
           _SectionHeader(
-            title: 'Active Workspaces',
-            action: '${_contracts.length} active',
+            title: 'Project Workspaces',
+            action: '${_contracts.length} total',
             onAction: () {},
           ),
           const SizedBox(height: AppSpacing.md),
@@ -424,17 +443,21 @@ class _HomeTabState extends State<_HomeTab> {
                             vertical: 3,
                           ),
                           decoration: BoxDecoration(
-                            color: AppColors.success.withValues(alpha: 0.12),
+                            color: contractStatusColor(
+                              c.status,
+                            ).withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(AppRadius.full),
                             border: Border.all(
-                              color: AppColors.success.withValues(alpha: 0.3),
+                              color: contractStatusColor(
+                                c.status,
+                              ).withValues(alpha: 0.3),
                             ),
                           ),
                           child: Text(
-                            'In Progress',
+                            contractStatusLabel(c.status),
                             style: GoogleFonts.jetBrainsMono(
                               fontSize: 10,
-                              color: AppColors.success,
+                              color: contractStatusColor(c.status),
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -495,6 +518,12 @@ class _HomeTabState extends State<_HomeTab> {
                           ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    ContractActionPanel(
+                      contract: c,
+                      studentView: true,
+                      onChanged: _loadData,
                     ),
                   ],
                 ),

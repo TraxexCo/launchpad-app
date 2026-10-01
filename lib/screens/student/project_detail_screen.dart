@@ -52,7 +52,10 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     await launchUrl(uri);
   }
 
-  Future<void> _editProject(Map<String, dynamic> project) async {
+  Future<void> _editProject(
+    Map<String, dynamic> project,
+    List<String> currentSkills,
+  ) async {
     final title = TextEditingController(
       text: project['title']?.toString() ?? '',
     );
@@ -66,6 +69,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
       text: project['demo_url']?.toString() ?? '',
     );
     var type = project['project_type']?.toString() ?? 'Other';
+    final selectedSkills = currentSkills.toSet();
     const types = [
       'Mobile App',
       'Web App',
@@ -76,6 +80,11 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
     ];
     if (!types.contains(type)) type = 'Other';
     try {
+      final skillRows = await Supabase.instance.client
+          .from('skills')
+          .select('id, name')
+          .order('name');
+      if (!mounted) return;
       await showDialog<void>(
         context: context,
         builder: (dialogContext) => StatefulBuilder(
@@ -121,6 +130,31 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                     decoration: const InputDecoration(
                       labelText: 'Live demo URL',
                     ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Skills',
+                      style: Theme.of(context).textTheme.titleSmall,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Wrap(
+                    spacing: AppSpacing.xs,
+                    runSpacing: AppSpacing.xs,
+                    children: skillRows.map((skill) {
+                      final name = skill['name'] as String;
+                      return FilterChip(
+                        label: Text(name),
+                        selected: selectedSkills.contains(name),
+                        onSelected: (selected) => setDialogState(() {
+                          selected
+                              ? selectedSkills.add(name)
+                              : selectedSkills.remove(name);
+                        }),
+                      );
+                    }).toList(),
                   ),
                 ],
               ),
@@ -168,6 +202,14 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                           'demo_url': urls[1].isEmpty ? null : urls[1],
                         })
                         .eq('id', int.parse(widget.projectId));
+                    final projectId = int.parse(widget.projectId);
+                    await Supabase.instance.client.rpc(
+                      'replace_portfolio_project_skills',
+                      params: {
+                        'project_key': projectId,
+                        'selected_skill_names': selectedSkills.toList(),
+                      },
+                    );
                     if (dialogContext.mounted) Navigator.pop(dialogContext);
                     _refresh();
                     if (mounted) {
@@ -299,7 +341,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                         children: [
                           Expanded(
                             child: OutlinedButton.icon(
-                              onPressed: () => _editProject(project),
+                              onPressed: () => _editProject(project, skills),
                               icon: const Icon(Icons.edit_outlined),
                               label: const Text('Edit'),
                             ),

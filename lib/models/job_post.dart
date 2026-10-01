@@ -7,6 +7,7 @@ class JobPost {
   final String budget;
   final String category;
   final String urgency;
+  final String status;
   final List<String> skills;
   final String timeline;
   final String location;
@@ -22,6 +23,7 @@ class JobPost {
     required this.budget,
     required this.category,
     required this.urgency,
+    this.status = 'open',
     required this.skills,
     required this.timeline,
     required this.location,
@@ -50,10 +52,15 @@ class JobPost {
       budget: json['budget'].toString(),
       category: json['category'] as String,
       urgency: json['urgency'] as String,
+      status: json['status'] as String? ?? 'open',
       skills: parsedSkills,
       timeline: json['timeline'] as String,
       location: json['location'] as String,
-      createdAt: DateTime.tryParse((json['created_at'] ?? json['createdAt'] ?? '').toString()) ?? DateTime.now(),
+      createdAt:
+          DateTime.tryParse(
+            (json['created_at'] ?? json['createdAt'] ?? '').toString(),
+          ) ??
+          DateTime.now(),
       businessProfileId: json['business_profile_id']?.toString(),
       businessName: json['business_name'] as String?,
       verificationStatus: json['verification_status'] as String?,
@@ -61,20 +68,21 @@ class JobPost {
   }
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'title': title,
-        'description': description,
-        'budget': budget,
-        'category': category,
-        'urgency': urgency,
-        'skills': skills,
-        'timeline': timeline,
-        'location': location,
-        'created_at': createdAt.toIso8601String(),
-        'business_profile_id': businessProfileId,
-        'business_name': businessName,
-        'verification_status': verificationStatus,
-      };
+    'id': id,
+    'title': title,
+    'description': description,
+    'budget': budget,
+    'category': category,
+    'urgency': urgency,
+    'status': status,
+    'skills': skills,
+    'timeline': timeline,
+    'location': location,
+    'created_at': createdAt.toIso8601String(),
+    'business_profile_id': businessProfileId,
+    'business_name': businessName,
+    'verification_status': verificationStatus,
+  };
 
   JobPost copyWith({
     String? title,
@@ -82,23 +90,24 @@ class JobPost {
     String? budget,
     String? category,
     String? urgency,
+    String? status,
     List<String>? skills,
     String? timeline,
     String? location,
-  }) =>
-      JobPost(
-        id: id,
-        createdAt: createdAt,
-        businessProfileId: businessProfileId,
-        businessName: businessName,
-        verificationStatus: verificationStatus,
-        title: title ?? this.title,
-        description: description ?? this.description,
-        budget: budget ?? this.budget,
-        category: category ?? this.category,
-        urgency: urgency ?? this.urgency,
-        skills: skills ?? this.skills,
-        timeline: timeline ?? this.timeline,
-        location: location ?? this.location,
-      );
+  }) => JobPost(
+    id: id,
+    createdAt: createdAt,
+    businessProfileId: businessProfileId,
+    businessName: businessName,
+    verificationStatus: verificationStatus,
+    title: title ?? this.title,
+    description: description ?? this.description,
+    budget: budget ?? this.budget,
+    category: category ?? this.category,
+    urgency: urgency ?? this.urgency,
+    status: status ?? this.status,
+    skills: skills ?? this.skills,
+    timeline: timeline ?? this.timeline,
+    location: location ?? this.location,
+  );
 }

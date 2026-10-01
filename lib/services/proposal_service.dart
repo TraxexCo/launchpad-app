@@ -116,4 +116,11 @@ class ProposalService {
       throw ArgumentError.value(status, 'status');
     }
   }
+
+  Future<void> withdrawProposal(int proposalId) async {
+    await _client.rpc(
+      'withdraw_proposal',
+      params: {'proposal_key': proposalId},
+    );
+  }
 }
