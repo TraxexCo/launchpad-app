@@ -6,8 +6,8 @@ This list records work that remains after the 1 October 2026 enhancement pass. I
 
 | Priority | Action | Acceptance check |
 |---|---|---|
-| P0 | Run `supabase/migrations/202610010006_reports.sql` once in Supabase SQL Editor. | A signed-in user submits a report; it appears in `public.reports`; another ordinary user cannot read it. |
-| P0 | Run `supabase/migrations/202610010007_marketplace_lifecycle.sql` once after migration 006. | Run `supabase/tests/marketplace_lifecycle_rollback.sql`; it reports that all lifecycle assertions passed. |
+| Applied 2 Oct 2026 | `supabase/migrations/202610010006_reports.sql` was run in Supabase SQL Editor. | The protected `public.reports` table is active. App-level report submission still needs a signed-in device check. |
+| Passed 2 Oct 2026 | `supabase/migrations/202610010007_marketplace_lifecycle.sql` and its rollback test were run. | The test reported that all marketplace lifecycle assertions passed and its rows were rolled back. |
 | P0 | Add `launchpad://auth-callback/` to Supabase Authentication redirect URLs. | A new confirmation email and reset email open the installed app. |
 | P0 | Decide a permanent Android application ID and iOS bundle ID. | Release builds no longer use `com.example.launchpad_app`. |
 | P0 | Create production signing credentials and store them outside Git. | A signed release APK or App Bundle installs and upgrades successfully. |

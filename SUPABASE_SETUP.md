@@ -10,12 +10,12 @@ Project dashboard: https://supabase.com/dashboard/project/oboyvpcziyjydyfguucs
 
 The SQL files through `202609220005_contract_lifecycle.sql` were run in this project's SQL Editor on 22 September 2026. They create the tables, row level security policies, signup triggers, proposal and job RPCs, contract snapshots, conversations, and realtime publications. Do not paste and run them again in this same project. Keep them as the repeatable schema for a **new** project; a future CLI setup will need to mark these existing changes as applied before using CLI migrations.
 
-Two migrations were added later and still need to be run once in **SQL Editor**, in this order:
+Two later migrations were applied in **SQL Editor** on 2 October 2026, in this order:
 
 1. `202610010006_reports.sql` creates the protected reports table used by the Report action.
 2. `202610010007_marketplace_lifecycle.sql` completes contract approval and two-sided reviews, adds project notifications, and corrects notification permissions.
 
-Until both are applied, the latest app build cannot load its contract review state and report submission will fail.
+Do not run either migration again in this project. The rollback verification script was run after migration 007 and returned `marketplace lifecycle assertions passed; test rows rolled back`.
 
 To inspect your data, open **Database → Tables**. To inspect user accounts, open **Authentication → Users**. To inspect or change policies, open **Database → Policies**. The database password is for direct database administration; it never belongs in Flutter.
 
@@ -61,6 +61,6 @@ The signup form can select only `student` or `business`; a client cannot request
 
 ## Current development state
 
-Supabase backs authentication, jobs, proposals, acceptance, profiles, portfolios, saved jobs, contract chat, notifications, reports, completion approval, and reviews for both contract participants. Reports and the completed marketplace lifecycle require migrations 006 and 007 above. Document verification remains intentionally unavailable until a private Storage bucket and a restricted reviewer workflow exist; accounts are never auto-verified.
+Supabase backs authentication, jobs, proposals, acceptance, profiles, portfolios, saved jobs, contract chat, notifications, reports, completion approval, and reviews for both contract participants. Migrations 006 and 007 are active in the hosted project. Document verification remains intentionally unavailable until a private Storage bucket and a restricted reviewer workflow exist; accounts are never auto-verified.
 
 Email confirmation and password reset have a mobile deep link and reset-password screen, but still need a real device test after the Redirect URL is allowlisted. Before a defense, test signup, email confirmation, roles, job posting, bidding, acceptance, chat, completion, reviews, notifications, and direct route protection on two devices or browsers. After migration 007, `supabase/tests/marketplace_lifecycle_rollback.sql` can verify the database lifecycle without retaining its test rows.
