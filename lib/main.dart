@@ -10,7 +10,9 @@ Future<void> main() async {
   const url = String.fromEnvironment('SUPABASE_URL');
   const publishableKey = String.fromEnvironment('SUPABASE_PUBLISHABLE_KEY');
   if (url.isEmpty || publishableKey.isEmpty) {
-    throw StateError('Set SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY with --dart-define.');
+    throw StateError(
+      'Set SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY with --dart-define.',
+    );
   }
   await Supabase.initialize(url: url, publishableKey: publishableKey);
   await AuthService().restoreInitialRecoveryState();

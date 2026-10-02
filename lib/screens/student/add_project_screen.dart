@@ -75,6 +75,11 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
             .from('skills')
             .select('id,name')
             .inFilter('name', _selectedSkills.toList());
+        if (skills.length != _selectedSkills.length) {
+          final found = skills.map((skill) => skill['name'] as String).toSet();
+          final missing = _selectedSkills.difference(found).join(', ');
+          throw StateError('These skills are unavailable: $missing');
+        }
         await client.from('portfolio_project_skills').insert([
           for (final skill in skills)
             {'project_id': row['id'], 'skill_id': skill['id']},

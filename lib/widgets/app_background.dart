@@ -21,10 +21,8 @@ class _AppBackgroundState extends State<AppBackground>
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: AppDurations.orbCycle,
-    )..repeat();
+    _ctrl = AnimationController(vsync: this, duration: AppDurations.orbCycle)
+      ..repeat();
   }
 
   @override
@@ -42,7 +40,10 @@ class _AppBackgroundState extends State<AppBackground>
           child: AnimatedBuilder(
             animation: _ctrl,
             builder: (context, child) => CustomPaint(
-              painter: _MeshPainter(t: _ctrl.value, tintColor: widget.tintColor),
+              painter: _MeshPainter(
+                t: _ctrl.value,
+                tintColor: widget.tintColor,
+              ),
               size: Size.infinite,
             ),
           ),
@@ -71,8 +72,14 @@ class _MeshPainter extends CustomPainter {
 
     final x2 = w * (0.78 + 0.14 * math.cos(t * tau * 1.1));
     final y2 = h * (0.75 + 0.16 * math.sin(t * tau * 0.9));
-    _drawOrb(canvas, Offset(x2, y2), w * 0.6,
-        tintColor != null ? tintColor!.withValues(alpha: 0.07) : AppColors.meshAmber);
+    _drawOrb(
+      canvas,
+      Offset(x2, y2),
+      w * 0.6,
+      tintColor != null
+          ? tintColor!.withValues(alpha: 0.07)
+          : AppColors.meshAmber,
+    );
 
     final x3 = w * (0.52 + 0.22 * math.sin(t * tau * 1.3 + 1.2));
     final y3 = h * (0.48 + 0.18 * math.cos(t * tau * 0.8 + 2.1));
@@ -88,5 +95,6 @@ class _MeshPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(_MeshPainter old) => old.t != t || old.tintColor != tintColor;
+  bool shouldRepaint(_MeshPainter old) =>
+      old.t != t || old.tintColor != tintColor;
 }

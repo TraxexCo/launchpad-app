@@ -19,7 +19,8 @@ class _VerificationScreenState extends State<VerificationScreen> {
   bool _uploaded = false;
 
   bool get _isStudent => widget.role == UserRole.student;
-  Color get _primary => _isStudent ? AppColors.studentPrimary : AppColors.businessPrimary;
+  Color get _primary =>
+      _isStudent ? AppColors.studentPrimary : AppColors.businessPrimary;
 
   void _handleUpload() async {
     setState(() => _isLoading = true);
@@ -38,10 +39,7 @@ class _VerificationScreenState extends State<VerificationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Verify Identity'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('Verify Identity'), centerTitle: true),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.lg),
@@ -76,52 +74,60 @@ class _VerificationScreenState extends State<VerificationScreen> {
                     child: _isLoading
                         ? CircularProgressIndicator(color: _primary)
                         : _uploaded
-                            ? Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.check_circle_rounded, color: AppColors.success, size: 64),
-                                  const SizedBox(height: AppSpacing.md),
-                                  Text(
-                                    'Document Uploaded',
-                                    style: GoogleFonts.plusJakartaSans(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppColors.textPrimary,
-                                    ),
-                                  ),
-                                  const SizedBox(height: AppSpacing.xs),
-                                  Text(
-                                    'Our team will review this shortly.',
-                                    style: GoogleFonts.inter(
-                                      fontSize: 14,
-                                      color: AppColors.textSecondary,
-                                    ),
-                                  ),
-                                ],
-                              )
-                            : Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(Icons.cloud_upload_rounded, color: _primary, size: 64),
-                                  const SizedBox(height: AppSpacing.md),
-                                  Text(
-                                    'Tap to Upload Document',
-                                    style: GoogleFonts.plusJakartaSans(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w700,
-                                      color: _primary,
-                                    ),
-                                  ),
-                                  const SizedBox(height: AppSpacing.xs),
-                                  Text(
-                                    'JPG, PNG, or PDF (Max 5MB)',
-                                    style: GoogleFonts.inter(
-                                      fontSize: 14,
-                                      color: AppColors.textSecondary,
-                                    ),
-                                  ),
-                                ],
+                        ? Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.check_circle_rounded,
+                                color: AppColors.success,
+                                size: 64,
                               ),
+                              const SizedBox(height: AppSpacing.md),
+                              Text(
+                                'Document Uploaded',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: AppSpacing.xs),
+                              Text(
+                                'Our team will review this shortly.',
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          )
+                        : Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.cloud_upload_rounded,
+                                color: _primary,
+                                size: 64,
+                              ),
+                              const SizedBox(height: AppSpacing.md),
+                              Text(
+                                'Tap to Upload Document',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w700,
+                                  color: _primary,
+                                ),
+                              ),
+                              const SizedBox(height: AppSpacing.xs),
+                              Text(
+                                'JPG, PNG, or PDF (Max 5MB)',
+                                style: GoogleFonts.inter(
+                                  fontSize: 14,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
+                          ),
                   ),
                 ),
               ),
@@ -130,7 +136,9 @@ class _VerificationScreenState extends State<VerificationScreen> {
                 label: _uploaded ? 'Continue to Dashboard' : 'Skip for Now',
                 onPressed: _handleFinish,
                 backgroundColor: _uploaded ? _primary : AppColors.surfaceHigh,
-                foregroundColor: _uploaded ? Colors.white : AppColors.textPrimary,
+                foregroundColor: _uploaded
+                    ? Colors.white
+                    : AppColors.textPrimary,
               ),
             ],
           ),

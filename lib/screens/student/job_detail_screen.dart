@@ -35,23 +35,40 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
   }
 
   Future<void> _loadJob() async {
-    setState(() { _loading = true; _error = null; });
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       final id = int.parse(widget.jobId);
       final job = await JobService().getJobById(id);
       final saved = await SavedJobService().isJobSaved(id);
       final client = Supabase.instance.client;
       final userId = client.auth.currentUser?.id;
-      final applied = userId != null &&
-          await client.from('proposals').select('id')
-              .eq('job_id', id).eq('student_id', userId).maybeSingle() != null;
+      final applied =
+          userId != null &&
+          await client
+                  .from('proposals')
+                  .select('id')
+                  .eq('job_id', id)
+                  .eq('student_id', userId)
+                  .maybeSingle() !=
+              null;
       if (mounted) {
         setState(() {
-          _job = job; _bookmarked = saved; _hasApplied = applied; _loading = false;
+          _job = job;
+          _bookmarked = saved;
+          _hasApplied = applied;
+          _loading = false;
         });
       }
     } catch (e) {
-      if (mounted) setState(() { _error = e.toString(); _loading = false; });
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _loading = false;
+        });
+      }
     }
   }
 
@@ -62,29 +79,38 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
       body: AppBackground(
         tintColor: AppColors.studentPrimary.withValues(alpha: 0.04),
         child: _loading
-            ? const Center(child: CircularProgressIndicator(color: AppColors.studentPrimary))
+            ? const Center(
+                child: CircularProgressIndicator(
+                  color: AppColors.studentPrimary,
+                ),
+              )
             : _error != null
-                ? Center(child: Text(_error!, style: const TextStyle(color: AppColors.error)))
-                : _job == null
-                    ? const Center(child: Text('Job not found'))
-                    : Column(
-                        children: [
-                          Expanded(
-                            child: CustomScrollView(
-                              slivers: [
-                                _buildAppBar(context),
-                                SliverToBoxAdapter(child: _buildBusinessCard()),
-                                SliverToBoxAdapter(child: _buildJobMeta()),
-                                SliverToBoxAdapter(child: _buildDescription()),
-                                SliverToBoxAdapter(child: _buildSkillsSection()),
-                                SliverToBoxAdapter(child: _buildTimeline()),
-                                const SliverToBoxAdapter(child: SizedBox(height: 120)),
-                              ],
-                            ),
-                          ),
-                          _buildBottomCTA(context),
-                        ],
-                      ),
+            ? Center(
+                child: Text(
+                  _error!,
+                  style: const TextStyle(color: AppColors.error),
+                ),
+              )
+            : _job == null
+            ? const Center(child: Text('Job not found'))
+            : Column(
+                children: [
+                  Expanded(
+                    child: CustomScrollView(
+                      slivers: [
+                        _buildAppBar(context),
+                        SliverToBoxAdapter(child: _buildBusinessCard()),
+                        SliverToBoxAdapter(child: _buildJobMeta()),
+                        SliverToBoxAdapter(child: _buildDescription()),
+                        SliverToBoxAdapter(child: _buildSkillsSection()),
+                        SliverToBoxAdapter(child: _buildTimeline()),
+                        const SliverToBoxAdapter(child: SizedBox(height: 120)),
+                      ],
+                    ),
+                  ),
+                  _buildBottomCTA(context),
+                ],
+              ),
       ),
     );
   }
@@ -96,7 +122,8 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
       pinned: true,
       expandedHeight: 0,
       leading: GestureDetector(
-        onTap: () => context.canPop() ? context.pop() : context.go('/student/jobs'),
+        onTap: () =>
+            context.canPop() ? context.pop() : context.go('/student/jobs'),
         child: Container(
           margin: const EdgeInsets.all(8),
           decoration: BoxDecoration(
@@ -104,25 +131,42 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
             borderRadius: BorderRadius.circular(AppRadius.md),
             border: Border.all(color: AppColors.border),
           ),
-          child: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textSecondary, size: 14),
+          child: const Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: AppColors.textSecondary,
+            size: 14,
+          ),
         ),
       ),
       actions: [
         IconButton(
-          icon: const Icon(Icons.outlined_flag_rounded, color: AppColors.textSecondary),
+          icon: const Icon(
+            Icons.outlined_flag_rounded,
+            color: AppColors.textSecondary,
+          ),
           tooltip: 'Report Job',
-          onPressed: () => ReportModal.show(context, targetName: _job!.title, targetType: 'job'),
+          onPressed: () => ReportModal.show(
+            context,
+            targetName: _job!.title,
+            targetType: 'job',
+          ),
         ),
         GestureDetector(
           onTap: () async {
             final messenger = ScaffoldMessenger.of(context);
             try {
-              final isSaved = await SavedJobService().toggleSave(int.parse(widget.jobId));
+              final isSaved = await SavedJobService().toggleSave(
+                int.parse(widget.jobId),
+              );
               if (!mounted) return;
               setState(() => _bookmarked = isSaved);
               messenger.showSnackBar(
                 SnackBar(
-                  content: Text(isSaved ? '📌 Job saved to bookmarks!' : 'Removed from bookmarks.'),
+                  content: Text(
+                    isSaved
+                        ? '📌 Job saved to bookmarks!'
+                        : 'Removed from bookmarks.',
+                  ),
                   duration: const Duration(seconds: 2),
                 ),
               );
@@ -142,8 +186,12 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
               border: Border.all(color: AppColors.border),
             ),
             child: Icon(
-              _bookmarked ? Icons.bookmark_rounded : Icons.bookmark_border_rounded,
-              color: _bookmarked ? AppColors.studentPrimary : AppColors.textSecondary,
+              _bookmarked
+                  ? Icons.bookmark_rounded
+                  : Icons.bookmark_border_rounded,
+              color: _bookmarked
+                  ? AppColors.studentPrimary
+                  : AppColors.textSecondary,
               size: 16,
             ),
           ),
@@ -154,21 +202,37 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
 
   Widget _buildBusinessCard() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, AppSpacing.md),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.sm,
+        AppSpacing.lg,
+        AppSpacing.md,
+      ),
       child: AppCard(
         child: Row(
           children: [
             Container(
-              width: 60, height: 60,
+              width: 60,
+              height: 60,
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
                   colors: [AppColors.businessPrimary, AppColors.businessAccent],
-                  begin: Alignment.topLeft, end: Alignment.bottomRight,
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
                 borderRadius: BorderRadius.circular(AppRadius.lg),
-                boxShadow: [BoxShadow(color: AppColors.businessPrimary.withValues(alpha: 0.4), blurRadius: 16)],
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.businessPrimary.withValues(alpha: 0.4),
+                    blurRadius: 16,
+                  ),
+                ],
               ),
-              child: const Icon(Icons.storefront_rounded, color: Colors.white, size: 28),
+              child: const Icon(
+                Icons.storefront_rounded,
+                color: Colors.white,
+                size: 28,
+              ),
             ),
             const SizedBox(width: AppSpacing.md),
             Expanded(
@@ -176,29 +240,62 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.businessPrimary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(AppRadius.full),
                     ),
-                    child: Text('// ${_job!.category}',
-                        style: GoogleFonts.jetBrainsMono(fontSize: 9, color: AppColors.businessPrimary)),
+                    child: Text(
+                      '// ${_job!.category}',
+                      style: GoogleFonts.jetBrainsMono(
+                        fontSize: 9,
+                        color: AppColors.businessPrimary,
+                      ),
+                    ),
                   ),
                   const SizedBox(height: 5),
-                  Text(_job!.businessName ?? 'Business',
-                      style: GoogleFonts.plusJakartaSans(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.textPrimary)),
+                  Text(
+                    _job!.businessName ?? 'Business',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
                   const SizedBox(height: 2),
                   Row(
                     children: [
-                      const Icon(Icons.location_on_outlined, color: AppColors.textMuted, size: 12),
+                      const Icon(
+                        Icons.location_on_outlined,
+                        color: AppColors.textMuted,
+                        size: 12,
+                      ),
                       const SizedBox(width: 3),
-                      Text(_job!.location,
-                          style: GoogleFonts.inter(fontSize: 12, color: AppColors.textMuted)),
+                      Text(
+                        _job!.location,
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
                       if (_job!.verificationStatus == 'verified') ...[
                         const SizedBox(width: AppSpacing.sm),
-                        const Icon(Icons.verified_rounded, color: AppColors.success, size: 12),
+                        const Icon(
+                          Icons.verified_rounded,
+                          color: AppColors.success,
+                          size: 12,
+                        ),
                         const SizedBox(width: 3),
-                        Text('Verified', style: GoogleFonts.inter(fontSize: 12, color: AppColors.success)),
+                        Text(
+                          'Verified',
+                          style: GoogleFonts.inter(
+                            fontSize: 12,
+                            color: AppColors.success,
+                          ),
+                        ),
                       ],
                     ],
                   ),
@@ -217,16 +314,24 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(_job!.title,
-              style: Theme.of(context).textTheme.displaySmall),
+          Text(_job!.title, style: Theme.of(context).textTheme.displaySmall),
           const SizedBox(height: AppSpacing.md),
           Row(
             children: [
-              _MetaTile(icon: Icons.payments_outlined, label: 'Budget',
-                  value: _job!.budget, accent: AppColors.studentPrimary, mono: true),
+              _MetaTile(
+                icon: Icons.payments_outlined,
+                label: 'Budget',
+                value: _job!.budget,
+                accent: AppColors.studentPrimary,
+                mono: true,
+              ),
               const SizedBox(width: AppSpacing.sm),
-              _MetaTile(icon: Icons.access_time_rounded, label: 'Urgency',
-                  value: _job!.urgency, accent: AppColors.studentAccent),
+              _MetaTile(
+                icon: Icons.access_time_rounded,
+                label: 'Urgency',
+                value: _job!.urgency,
+                accent: AppColors.studentAccent,
+              ),
             ],
           ),
         ],
@@ -236,14 +341,23 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
 
   Widget _buildDescription() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.xl, AppSpacing.lg, AppSpacing.md),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.xl,
+        AppSpacing.lg,
+        AppSpacing.md,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _SectionLabel(label: 'Job Description'),
           const SizedBox(height: AppSpacing.md),
-          Text(_job!.description,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.7)),
+          Text(
+            _job!.description,
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(height: 1.7),
+          ),
         ],
       ).animate().fadeIn(duration: 500.ms, delay: 180.ms),
     );
@@ -252,7 +366,12 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
   Widget _buildSkillsSection() {
     final skills = _job!.skills;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.xl, AppSpacing.lg, AppSpacing.md),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.xl,
+        AppSpacing.lg,
+        AppSpacing.md,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -261,9 +380,15 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
           Wrap(
             spacing: AppSpacing.sm,
             runSpacing: AppSpacing.sm,
-            children: skills.map((s) => SkillChip(
-              label: s, selected: true, accentColor: AppColors.studentPrimary,
-            )).toList(),
+            children: skills
+                .map(
+                  (s) => SkillChip(
+                    label: s,
+                    selected: true,
+                    accentColor: AppColors.studentPrimary,
+                  ),
+                )
+                .toList(),
           ),
         ],
       ).animate().fadeIn(duration: 500.ms, delay: 350.ms),
@@ -290,26 +415,51 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                 color: AppColors.studentAccent.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(AppRadius.md),
               ),
-              child: const Icon(Icons.calendar_month_outlined, color: AppColors.studentAccent, size: 20),
+              child: const Icon(
+                Icons.calendar_month_outlined,
+                color: AppColors.studentAccent,
+                size: 20,
+              ),
             ),
             const SizedBox(width: AppSpacing.md),
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Expected Timeline',
-                    style: GoogleFonts.inter(fontSize: 12, color: AppColors.textMuted)),
-                Text(_job!.timeline,
-                    style: GoogleFonts.plusJakartaSans(fontSize: 14, fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary)),
+                Text(
+                  'Expected Timeline',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+                Text(
+                  _job!.timeline,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
               ],
             ),
             const Spacer(),
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text('Posted', style: GoogleFonts.inter(fontSize: 12, color: AppColors.textMuted)),
-                Text(_timeAgo(_job!.createdAt),
-                    style: GoogleFonts.jetBrainsMono(fontSize: 12, color: AppColors.textSecondary)),
+                Text(
+                  'Posted',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+                Text(
+                  _timeAgo(_job!.createdAt),
+                  style: GoogleFonts.jetBrainsMono(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
               ],
             ),
           ],
@@ -320,7 +470,12 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
 
   Widget _buildBottomCTA(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.xl),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.md,
+        AppSpacing.lg,
+        AppSpacing.xl,
+      ),
       decoration: BoxDecoration(
         color: AppColors.background.withValues(alpha: 0.95),
         border: const Border(top: BorderSide(color: AppColors.border)),
@@ -332,7 +487,9 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
             child: AppButton(
               label: 'Save',
               outlined: true,
-              icon: _bookmarked ? Icons.bookmark_rounded : Icons.bookmark_outline_rounded,
+              icon: _bookmarked
+                  ? Icons.bookmark_rounded
+                  : Icons.bookmark_outline_rounded,
               onPressed: () => setState(() => _bookmarked = !_bookmarked),
             ),
           ),
@@ -342,9 +499,11 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
             child: AppButton(
               label: _hasApplied ? 'Proposal Submitted' : 'Submit Proposal',
               icon: Icons.rocket_launch_rounded,
-              onPressed: _hasApplied ? null : () => context.push(
-                '/student/jobs/${widget.jobId}/pitch?title=${Uri.encodeComponent(_job!.title)}',
-              ),
+              onPressed: _hasApplied
+                  ? null
+                  : () => context.push(
+                      '/student/jobs/${widget.jobId}/pitch?title=${Uri.encodeComponent(_job!.title)}',
+                    ),
             ),
           ),
         ],
@@ -361,7 +520,13 @@ class _MetaTile extends StatelessWidget {
   final String label, value;
   final Color accent;
   final bool mono;
-  const _MetaTile({required this.icon, required this.label, required this.value, required this.accent, this.mono = false});
+  const _MetaTile({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.accent,
+    this.mono = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -378,12 +543,29 @@ class _MetaTile extends StatelessWidget {
           children: [
             Icon(icon, color: accent, size: 14),
             const SizedBox(height: 4),
-            Text(mono ? value : value,
-                style: mono
-                    ? GoogleFonts.jetBrainsMono(fontSize: 13, fontWeight: FontWeight.w700, color: accent)
-                    : GoogleFonts.plusJakartaSans(fontSize: 12, fontWeight: FontWeight.w600, color: AppColors.textPrimary),
-                maxLines: 1, overflow: TextOverflow.ellipsis),
-            Text(label, style: GoogleFonts.inter(fontSize: 10, color: AppColors.textMuted)),
+            Text(
+              mono ? value : value,
+              style: mono
+                  ? GoogleFonts.jetBrainsMono(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: accent,
+                    )
+                  : GoogleFonts.plusJakartaSans(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            Text(
+              label,
+              style: GoogleFonts.inter(
+                fontSize: 10,
+                color: AppColors.textMuted,
+              ),
+            ),
           ],
         ),
       ),
@@ -399,11 +581,14 @@ class _SectionLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Container(width: 3, height: 16,
-            decoration: BoxDecoration(
-              color: AppColors.studentPrimary,
-              borderRadius: BorderRadius.circular(AppRadius.full),
-            )),
+        Container(
+          width: 3,
+          height: 16,
+          decoration: BoxDecoration(
+            color: AppColors.studentPrimary,
+            borderRadius: BorderRadius.circular(AppRadius.full),
+          ),
+        ),
         const SizedBox(width: AppSpacing.sm),
         Text(label, style: Theme.of(context).textTheme.titleMedium),
       ],

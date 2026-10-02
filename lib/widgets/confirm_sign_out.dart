@@ -10,10 +10,14 @@ Future<void> confirmSignOut(BuildContext context) async {
       title: const Text('Sign out?'),
       content: const Text('You will need to sign in again to use LaunchPad.'),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Cancel')),
-        TextButton(onPressed: () => Navigator.pop(dialogContext, true),
-            child: const Text('Sign out')),
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext, false),
+          child: const Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(dialogContext, true),
+          child: const Text('Sign out'),
+        ),
       ],
     ),
   );

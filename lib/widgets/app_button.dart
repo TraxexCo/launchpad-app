@@ -35,17 +35,16 @@ class AppButton extends StatefulWidget {
     bool isExpanded = true,
     bool outlined = false,
     IconData? icon,
-  }) =>
-      AppButton(
-        label: label,
-        onPressed: onPressed,
-        backgroundColor: AppColors.studentPrimary,
-        foregroundColor: outlined ? AppColors.studentPrimary : Colors.white,
-        isLoading: isLoading,
-        isExpanded: isExpanded,
-        outlined: outlined,
-        icon: icon,
-      );
+  }) => AppButton(
+    label: label,
+    onPressed: onPressed,
+    backgroundColor: AppColors.studentPrimary,
+    foregroundColor: outlined ? AppColors.studentPrimary : Colors.white,
+    isLoading: isLoading,
+    isExpanded: isExpanded,
+    outlined: outlined,
+    icon: icon,
+  );
 
   factory AppButton.business({
     required String label,
@@ -54,17 +53,16 @@ class AppButton extends StatefulWidget {
     bool isExpanded = true,
     bool outlined = false,
     IconData? icon,
-  }) =>
-      AppButton(
-        label: label,
-        onPressed: onPressed,
-        backgroundColor: AppColors.businessPrimary,
-        foregroundColor: outlined ? AppColors.businessPrimary : Colors.white,
-        isLoading: isLoading,
-        isExpanded: isExpanded,
-        outlined: outlined,
-        icon: icon,
-      );
+  }) => AppButton(
+    label: label,
+    onPressed: onPressed,
+    backgroundColor: AppColors.businessPrimary,
+    foregroundColor: outlined ? AppColors.businessPrimary : Colors.white,
+    isLoading: isLoading,
+    isExpanded: isExpanded,
+    outlined: outlined,
+    icon: icon,
+  );
 
   @override
   State<AppButton> createState() => _AppButtonState();
@@ -78,10 +76,14 @@ class _AppButtonState extends State<AppButton>
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 100));
-    _scale = Tween<double>(begin: 1.0, end: 0.96).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeIn),
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
     );
+    _scale = Tween<double>(
+      begin: 1.0,
+      end: 0.96,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeIn));
   }
 
   @override
@@ -95,17 +97,30 @@ class _AppButtonState extends State<AppButton>
   @override
   Widget build(BuildContext context) {
     Widget button = GestureDetector(
-      onTapDown: _enabled ? (_) { HapticFeedback.lightImpact(); _ctrl.forward(); } : null,
-      onTapUp: _enabled ? (_) { _ctrl.reverse(); widget.onPressed!(); } : null,
+      onTapDown: _enabled
+          ? (_) {
+              HapticFeedback.lightImpact();
+              _ctrl.forward();
+            }
+          : null,
+      onTapUp: _enabled
+          ? (_) {
+              _ctrl.reverse();
+              widget.onPressed!();
+            }
+          : null,
       onTapCancel: _enabled ? () => _ctrl.reverse() : null,
       child: AnimatedBuilder(
         animation: _scale,
-        builder: (_, child) => Transform.scale(scale: _scale.value, child: child),
+        builder: (_, child) =>
+            Transform.scale(scale: _scale.value, child: child),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           height: widget.height,
           decoration: BoxDecoration(
-            color: widget.outlined ? Colors.transparent : (!_enabled ? AppColors.border : widget.backgroundColor),
+            color: widget.outlined
+                ? Colors.transparent
+                : (!_enabled ? AppColors.border : widget.backgroundColor),
             borderRadius: BorderRadius.circular(AppRadius.lg),
             border: widget.outlined
                 ? Border.all(color: widget.backgroundColor, width: 1.5)
@@ -123,18 +138,28 @@ class _AppButtonState extends State<AppButton>
           child: Center(
             child: widget.isLoading
                 ? SizedBox(
-                    width: 22, height: 22,
+                    width: 22,
+                    height: 22,
                     child: CircularProgressIndicator(
                       strokeWidth: 2.5,
-                      valueColor: AlwaysStoppedAnimation<Color>(widget.foregroundColor),
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        widget.foregroundColor,
+                      ),
                     ),
                   )
                 : Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       if (widget.icon != null) ...[
-                        Icon(widget.icon,
-                            color: widget.outlined ? widget.backgroundColor : (!_enabled ? AppColors.textMuted : widget.foregroundColor), size: 18),
+                        Icon(
+                          widget.icon,
+                          color: widget.outlined
+                              ? widget.backgroundColor
+                              : (!_enabled
+                                    ? AppColors.textMuted
+                                    : widget.foregroundColor),
+                          size: 18,
+                        ),
                         const SizedBox(width: AppSpacing.sm),
                       ],
                       Text(
@@ -144,7 +169,9 @@ class _AppButtonState extends State<AppButton>
                           fontWeight: FontWeight.w700,
                           color: widget.outlined
                               ? widget.backgroundColor
-                              : (_enabled ? widget.foregroundColor : AppColors.textMuted),
+                              : (_enabled
+                                    ? widget.foregroundColor
+                                    : AppColors.textMuted),
                           letterSpacing: 0.1,
                         ),
                       ),
@@ -155,6 +182,8 @@ class _AppButtonState extends State<AppButton>
       ),
     );
 
-    return widget.isExpanded ? SizedBox(width: double.infinity, child: button) : button;
+    return widget.isExpanded
+        ? SizedBox(width: double.infinity, child: button)
+        : button;
   }
 }

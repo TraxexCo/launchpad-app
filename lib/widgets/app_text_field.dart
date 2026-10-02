@@ -92,17 +92,23 @@ class _AppTextFieldState extends State<AppTextField>
         hintText: widget.hint,
         filled: true,
         fillColor: widget.enabled ? AppColors.surface : AppColors.surfaceHigh,
-        hintStyle: GoogleFonts.inter(color: AppColors.textDisabled, fontSize: 14),
+        hintStyle: GoogleFonts.inter(
+          color: AppColors.textDisabled,
+          fontSize: 14,
+        ),
         labelStyle: GoogleFonts.inter(
           color: _focus.hasFocus ? widget.accentColor : AppColors.textSecondary,
-          fontSize: 14, fontWeight: FontWeight.w500,
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
         ),
         prefixIcon: widget.prefixIcon,
         suffixIcon: widget.obscureText
             ? GestureDetector(
                 onTap: () => setState(() => _hide = !_hide),
                 child: Icon(
-                  _hide ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                  _hide
+                      ? Icons.visibility_off_rounded
+                      : Icons.visibility_rounded,
                   color: AppColors.textMuted,
                   size: 20,
                 ),
@@ -113,7 +119,10 @@ class _AppTextFieldState extends State<AppTextField>
         focusedBorder: focusedBorderStyle,
         errorBorder: errorBorderStyle,
         focusedErrorBorder: errorBorderStyle,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 18,
+        ),
       ),
     );
   }

@@ -9,7 +9,6 @@ import '../../widgets/app_button.dart';
 import '../../widgets/app_text_field.dart';
 import '../../widgets/skill_chip.dart';
 import '../../services/auth_service.dart';
-import '../../services/api_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   final UserRole role;
@@ -128,11 +127,7 @@ class _RegisterScreenState extends State<RegisterScreen>
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
-      final raw = e is AuthException
-          ? e.message
-          : e is ApiException
-          ? e.message
-          : e.toString();
+      final raw = e is AuthException ? e.message : e.toString();
       final msg =
           raw.toLowerCase().contains('already registered') ||
               raw.toLowerCase().contains('already exists')

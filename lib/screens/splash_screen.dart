@@ -44,29 +44,38 @@ class _SplashScreenState extends State<SplashScreen> {
             children: [
               // Logo icon
               Container(
-                width: 88,
-                height: 88,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AppColors.studentPrimary, AppColors.studentAccent],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(AppRadius.xxl),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.studentPrimary.withValues(alpha: 0.45),
-                      blurRadius: 40,
+                    width: 88,
+                    height: 88,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [
+                          AppColors.studentPrimary,
+                          AppColors.studentAccent,
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(AppRadius.xxl),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.studentPrimary.withValues(
+                            alpha: 0.45,
+                          ),
+                          blurRadius: 40,
+                        ),
+                        BoxShadow(
+                          color: AppColors.studentAccent.withValues(alpha: 0.2),
+                          blurRadius: 80,
+                          spreadRadius: 10,
+                        ),
+                      ],
                     ),
-                    BoxShadow(
-                      color: AppColors.studentAccent.withValues(alpha: 0.2),
-                      blurRadius: 80,
-                      spreadRadius: 10,
+                    child: const Icon(
+                      Icons.rocket_launch_rounded,
+                      color: Colors.white,
+                      size: 38,
                     ),
-                  ],
-                ),
-                child: const Icon(Icons.rocket_launch_rounded, color: Colors.white, size: 38),
-              )
+                  )
                   .animate()
                   .scale(
                     begin: const Offset(0.4, 0.4),
@@ -79,16 +88,21 @@ class _SplashScreenState extends State<SplashScreen> {
 
               // Wordmark
               Text(
-                'LaunchPad',
-                style: GoogleFonts.plusJakartaSans(
-                  fontSize: 42,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
-                  letterSpacing: -2,
-                ),
-              )
+                    'LaunchPad',
+                    style: GoogleFonts.plusJakartaSans(
+                      fontSize: 42,
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.textPrimary,
+                      letterSpacing: -2,
+                    ),
+                  )
                   .animate()
-                  .slideY(begin: 0.4, duration: 600.ms, delay: 250.ms, curve: Curves.easeOutCubic)
+                  .slideY(
+                    begin: 0.4,
+                    duration: 600.ms,
+                    delay: 250.ms,
+                    curve: Curves.easeOutCubic,
+                  )
                   .fadeIn(duration: 500.ms, delay: 250.ms),
 
               const SizedBox(height: AppSpacing.sm),
@@ -112,7 +126,9 @@ class _SplashScreenState extends State<SplashScreen> {
                   borderRadius: BorderRadius.circular(AppRadius.full),
                   child: const LinearProgressIndicator(
                     backgroundColor: AppColors.border,
-                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.studentPrimary),
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      AppColors.studentPrimary,
+                    ),
                     minHeight: 2,
                   ),
                 ),

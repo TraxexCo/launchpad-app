@@ -6,7 +6,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/constants.dart';
 import '../../core/form_validation.dart';
 import '../../services/proposal_service.dart';
-import '../../services/api_service.dart';
 import '../../widgets/app_background.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_text_field.dart';
@@ -15,7 +14,11 @@ import '../../widgets/app_card.dart';
 class SubmitProposalScreen extends StatefulWidget {
   final String jobId;
   final String jobTitle;
-  const SubmitProposalScreen({super.key, required this.jobId, required this.jobTitle});
+  const SubmitProposalScreen({
+    super.key,
+    required this.jobId,
+    required this.jobTitle,
+  });
 
   @override
   State<SubmitProposalScreen> createState() => _SubmitProposalScreenState();
@@ -36,8 +39,11 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
     final client = Supabase.instance.client;
     final userId = client.auth.currentUser?.id;
     if (userId == null) return [];
-    return client.from('portfolio_projects').select('id,title')
-        .eq('student_id', userId).order('created_at', ascending: false);
+    return client
+        .from('portfolio_projects')
+        .select('id,title')
+        .eq('student_id', userId)
+        .order('created_at', ascending: false);
   }
 
   @override
@@ -50,7 +56,7 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
   Future<void> _send() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _loading = true);
-    
+
     try {
       await ProposalService().submitProposal(
         jobId: int.parse(widget.jobId),
@@ -61,12 +67,14 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
       );
 
       if (!mounted) return;
-      setState(() { _loading = false; _step = 2; });
+      setState(() {
+        _loading = false;
+        _step = 2;
+      });
     } catch (e) {
       if (!mounted) return;
       setState(() => _loading = false);
-      final msg = e is PostgrestException ? e.message
-          : e is ApiException ? e.message : e.toString();
+      final msg = e is PostgrestException ? e.message : e.toString();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('❌ $msg'), backgroundColor: AppColors.error),
       );
@@ -98,25 +106,42 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 96, height: 96,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [AppColors.success, Color(0xFF34D399)],
-                  begin: Alignment.topLeft, end: Alignment.bottomRight,
-                ),
-                shape: BoxShape.circle,
-                boxShadow: [BoxShadow(color: AppColors.success.withValues(alpha: 0.4), blurRadius: 40)],
-              ),
-              child: const Icon(Icons.rocket_launch_rounded, color: Colors.white, size: 42),
-            )
+                  width: 96,
+                  height: 96,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [AppColors.success, Color(0xFF34D399)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.success.withValues(alpha: 0.4),
+                        blurRadius: 40,
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.rocket_launch_rounded,
+                    color: Colors.white,
+                    size: 42,
+                  ),
+                )
                 .animate()
-                .scale(begin: const Offset(0.4, 0.4), duration: 700.ms, curve: Curves.elasticOut)
+                .scale(
+                  begin: const Offset(0.4, 0.4),
+                  duration: 700.ms,
+                  curve: Curves.elasticOut,
+                )
                 .fadeIn(duration: 400.ms),
 
             const SizedBox(height: AppSpacing.xl),
 
-            Text('Pitch Sent!', style: Theme.of(context).textTheme.displaySmall)
-                .animate().fadeIn(delay: 400.ms).slideY(begin: 0.2, delay: 400.ms),
+            Text(
+              'Pitch Sent!',
+              style: Theme.of(context).textTheme.displaySmall,
+            ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.2, delay: 400.ms),
 
             const SizedBox(height: AppSpacing.sm),
 
@@ -131,11 +156,26 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
             AppCard(
               child: Column(
                 children: [
-                  _ConfirmRow(icon: Icons.payments_outlined, label: 'Your Rate', value: '₱${_rateCtrl.text}', accent: AppColors.studentPrimary),
+                  _ConfirmRow(
+                    icon: Icons.payments_outlined,
+                    label: 'Your Rate',
+                    value: '₱${_rateCtrl.text}',
+                    accent: AppColors.studentPrimary,
+                  ),
                   const SizedBox(height: AppSpacing.sm),
-                  _ConfirmRow(icon: Icons.timer_outlined, label: 'Timeline', value: '$_timelineWeeks weeks', accent: AppColors.studentAccent),
+                  _ConfirmRow(
+                    icon: Icons.timer_outlined,
+                    label: 'Timeline',
+                    value: '$_timelineWeeks weeks',
+                    accent: AppColors.studentAccent,
+                  ),
                   const SizedBox(height: AppSpacing.sm),
-                  _ConfirmRow(icon: Icons.hourglass_empty_rounded, label: 'Status', value: 'Under Review', accent: AppColors.warning),
+                  _ConfirmRow(
+                    icon: Icons.hourglass_empty_rounded,
+                    label: 'Status',
+                    value: 'Under Review',
+                    accent: AppColors.warning,
+                  ),
                 ],
               ),
             ).animate().fadeIn(delay: 650.ms).slideY(begin: 0.2, delay: 650.ms),
@@ -169,9 +209,7 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
         Expanded(
           child: AnimatedSwitcher(
             duration: const Duration(milliseconds: 350),
-            child: _step == 0
-                ? _buildWriteStep()
-                : _buildPreviewStep(context),
+            child: _step == 0 ? _buildWriteStep() : _buildPreviewStep(context),
           ),
         ),
         _buildBottomBar(context),
@@ -181,22 +219,36 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
 
   Widget _buildHeader(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.sm),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.md,
+        AppSpacing.lg,
+        AppSpacing.sm,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               GestureDetector(
-                onTap: () => _step == 0 ? (context.canPop() ? context.pop() : context.go('/student/jobs/${widget.jobId}')) : setState(() => _step = 0),
+                onTap: () => _step == 0
+                    ? (context.canPop()
+                          ? context.pop()
+                          : context.go('/student/jobs/${widget.jobId}'))
+                    : setState(() => _step = 0),
                 child: Container(
-                  width: 40, height: 40,
+                  width: 40,
+                  height: 40,
                   decoration: BoxDecoration(
                     color: AppColors.surfaceHigh,
                     borderRadius: BorderRadius.circular(AppRadius.md),
                     border: Border.all(color: AppColors.border),
                   ),
-                  child: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textSecondary, size: 14),
+                  child: const Icon(
+                    Icons.arrow_back_ios_new_rounded,
+                    color: AppColors.textSecondary,
+                    size: 14,
+                  ),
                 ),
               ),
               const SizedBox(width: AppSpacing.md),
@@ -204,12 +256,19 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(_step == 0 ? 'Write Your Pitch' : 'Preview Pitch',
-                        style: Theme.of(context).textTheme.headlineSmall),
-                    Text('// ${widget.jobTitle}',
-                        style: GoogleFonts.jetBrainsMono(
-                            fontSize: 10, color: AppColors.studentPrimary),
-                        maxLines: 1, overflow: TextOverflow.ellipsis),
+                    Text(
+                      _step == 0 ? 'Write Your Pitch' : 'Preview Pitch',
+                      style: Theme.of(context).textTheme.headlineSmall,
+                    ),
+                    Text(
+                      '// ${widget.jobTitle}',
+                      style: GoogleFonts.jetBrainsMono(
+                        fontSize: 10,
+                        color: AppColors.studentPrimary,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ],
                 ),
               ),
@@ -218,21 +277,24 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
           const SizedBox(height: AppSpacing.md),
           // Progress
           Row(
-            children: List.generate(2, (i) => Expanded(
-              child: Padding(
-                padding: const EdgeInsets.only(right: 6),
-                child: AnimatedContainer(
-                  duration: AppDurations.normal,
-                  height: 3,
-                  decoration: BoxDecoration(
-                    color: i <= _step
-                        ? AppColors.studentPrimary
-                        : AppColors.border,
-                    borderRadius: BorderRadius.circular(AppRadius.full),
+            children: List.generate(
+              2,
+              (i) => Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(right: 6),
+                  child: AnimatedContainer(
+                    duration: AppDurations.normal,
+                    height: 3,
+                    decoration: BoxDecoration(
+                      color: i <= _step
+                          ? AppColors.studentPrimary
+                          : AppColors.border,
+                      borderRadius: BorderRadius.circular(AppRadius.full),
+                    ),
                   ),
                 ),
               ),
-            )),
+            ),
           ),
         ],
       ).animate().fadeIn(duration: 400.ms),
@@ -253,7 +315,8 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
             // Cover letter
             AppTextField(
               label: 'Cover Letter',
-              hint: 'Hi! I\'m a 3rd year CS student at PUP with experience building Flutter apps...',
+              hint:
+                  'Hi! I\'m a 3rd year CS student at PUP with experience building Flutter apps...',
               controller: _coverCtrl,
               maxLines: 7,
               accentColor: AppColors.studentPrimary,
@@ -264,8 +327,13 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
               alignment: Alignment.centerRight,
               child: Padding(
                 padding: const EdgeInsets.only(top: 4),
-                child: Text('${_coverCtrl.text.length} chars',
-                    style: GoogleFonts.jetBrainsMono(fontSize: 10, color: AppColors.textMuted)),
+                child: Text(
+                  '${_coverCtrl.text.length} chars',
+                  style: GoogleFonts.jetBrainsMono(
+                    fontSize: 10,
+                    color: AppColors.textMuted,
+                  ),
+                ),
               ),
             ),
 
@@ -280,7 +348,14 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
               accentColor: AppColors.studentPrimary,
               prefixIcon: const Padding(
                 padding: EdgeInsets.all(AppSpacing.md),
-                child: Text('₱', style: TextStyle(color: AppColors.studentPrimary, fontSize: 16, fontWeight: FontWeight.w700)),
+                child: Text(
+                  '₱',
+                  style: TextStyle(
+                    color: AppColors.studentPrimary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ),
               validator: FormValidation.proposalRate,
             ),
@@ -291,17 +366,27 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
             Row(
               children: [
                 Container(
-                  width: 3, height: 16,
+                  width: 3,
+                  height: 16,
                   decoration: BoxDecoration(
                     color: AppColors.studentPrimary,
                     borderRadius: BorderRadius.circular(AppRadius.full),
                   ),
                 ),
                 const SizedBox(width: AppSpacing.sm),
-                Text('Estimated Timeline', style: Theme.of(context).textTheme.titleMedium),
+                Text(
+                  'Estimated Timeline',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
                 const Spacer(),
-                Text('$_timelineWeeks weeks',
-                    style: GoogleFonts.jetBrainsMono(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.studentPrimary)),
+                Text(
+                  '$_timelineWeeks weeks',
+                  style: GoogleFonts.jetBrainsMono(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.studentPrimary,
+                  ),
+                ),
               ],
             ),
 
@@ -315,7 +400,9 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
               ),
               child: Slider(
                 value: _timelineWeeks.toDouble(),
-                min: 1, max: 12, divisions: 11,
+                min: 1,
+                max: 12,
+                divisions: 11,
                 onChanged: (v) => setState(() => _timelineWeeks = v.round()),
               ),
             ),
@@ -323,8 +410,20 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('1 week', style: GoogleFonts.jetBrainsMono(fontSize: 10, color: AppColors.textMuted)),
-                Text('12 weeks', style: GoogleFonts.jetBrainsMono(fontSize: 10, color: AppColors.textMuted)),
+                Text(
+                  '1 week',
+                  style: GoogleFonts.jetBrainsMono(
+                    fontSize: 10,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+                Text(
+                  '12 weeks',
+                  style: GoogleFonts.jetBrainsMono(
+                    fontSize: 10,
+                    color: AppColors.textMuted,
+                  ),
+                ),
               ],
             ),
 
@@ -333,19 +432,36 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
             // Portfolio attachment
             Row(
               children: [
-                Container(width: 3, height: 16,
-                    decoration: BoxDecoration(color: AppColors.studentPrimary,
-                        borderRadius: BorderRadius.circular(AppRadius.full))),
+                Container(
+                  width: 3,
+                  height: 16,
+                  decoration: BoxDecoration(
+                    color: AppColors.studentPrimary,
+                    borderRadius: BorderRadius.circular(AppRadius.full),
+                  ),
+                ),
                 const SizedBox(width: AppSpacing.sm),
-                Text('Attach a Portfolio Project', style: Theme.of(context).textTheme.titleMedium),
+                Text(
+                  'Attach a Portfolio Project',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
                 const SizedBox(width: AppSpacing.sm),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSpacing.sm,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.textMuted.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(AppRadius.full),
                   ),
-                  child: Text('Optional', style: GoogleFonts.jetBrainsMono(fontSize: 9, color: AppColors.textMuted)),
+                  child: Text(
+                    'Optional',
+                    style: GoogleFonts.jetBrainsMono(
+                      fontSize: 9,
+                      color: AppColors.textMuted,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -355,13 +471,21 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
             FutureBuilder<List<Map<String, dynamic>>>(
               future: _projects,
               builder: (context, snapshot) {
-                if (snapshot.hasError) return const Text('Could not load portfolio projects');
+                if (snapshot.hasError) {
+                  return const Text('Could not load portfolio projects');
+                }
                 if (!snapshot.hasData) return const CircularProgressIndicator();
                 final projects = snapshot.data!;
-                if (projects.isEmpty) return const Text('Save a portfolio project to attach it here.');
+                if (projects.isEmpty) {
+                  return const Text(
+                    'Save a portfolio project to attach it here.',
+                  );
+                }
                 return DropdownButtonFormField<int>(
                   initialValue: _attachedProjectId,
-                  decoration: const InputDecoration(labelText: 'Attach Project'),
+                  decoration: const InputDecoration(
+                    labelText: 'Attach Project',
+                  ),
                   hint: const Text('Choose a saved project'),
                   items: [
                     for (final project in projects)
@@ -396,25 +520,57 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.sm,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.studentPrimary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(AppRadius.full),
                       ),
-                      child: Text('// your.pitch',
-                          style: GoogleFonts.jetBrainsMono(fontSize: 9, color: AppColors.studentPrimary)),
+                      child: Text(
+                        '// your.pitch',
+                        style: GoogleFonts.jetBrainsMono(
+                          fontSize: 9,
+                          color: AppColors.studentPrimary,
+                        ),
+                      ),
                     ),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.md),
-                Text('Cover Letter', style: Theme.of(context).textTheme.labelLarge?.copyWith(color: AppColors.textMuted)),
+                Text(
+                  'Cover Letter',
+                  style: Theme.of(
+                    context,
+                  ).textTheme.labelLarge?.copyWith(color: AppColors.textMuted),
+                ),
                 const SizedBox(height: AppSpacing.sm),
-                Text(_coverCtrl.text.isEmpty ? 'No cover letter written.' : _coverCtrl.text,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.7)),
-                const Divider(color: AppColors.border, height: AppSpacing.xl * 2),
-                _ConfirmRow(icon: Icons.payments_outlined, label: 'Your Rate', value: '₱${_rateCtrl.text}', accent: AppColors.studentPrimary),
+                Text(
+                  _coverCtrl.text.isEmpty
+                      ? 'No cover letter written.'
+                      : _coverCtrl.text,
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodyMedium?.copyWith(height: 1.7),
+                ),
+                const Divider(
+                  color: AppColors.border,
+                  height: AppSpacing.xl * 2,
+                ),
+                _ConfirmRow(
+                  icon: Icons.payments_outlined,
+                  label: 'Your Rate',
+                  value: '₱${_rateCtrl.text}',
+                  accent: AppColors.studentPrimary,
+                ),
                 const SizedBox(height: AppSpacing.sm),
-                _ConfirmRow(icon: Icons.timer_outlined, label: 'Timeline', value: '$_timelineWeeks weeks', accent: AppColors.studentAccent),
+                _ConfirmRow(
+                  icon: Icons.timer_outlined,
+                  label: 'Timeline',
+                  value: '$_timelineWeeks weeks',
+                  accent: AppColors.studentAccent,
+                ),
               ],
             ),
           ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1),
@@ -425,12 +581,22 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
             backgroundColor: AppColors.warning.withValues(alpha: 0.06),
             child: Row(
               children: [
-                const Icon(Icons.info_outline_rounded, color: AppColors.warning, size: 16),
+                const Icon(
+                  Icons.info_outline_rounded,
+                  color: AppColors.warning,
+                  size: 16,
+                ),
                 const SizedBox(width: AppSpacing.sm),
-                Expanded(child: Text(
-                  'Once sent, you cannot edit your pitch. The business will review and respond via in-app chat.',
-                  style: GoogleFonts.inter(fontSize: 12, color: AppColors.textSecondary, height: 1.5),
-                )),
+                Expanded(
+                  child: Text(
+                    'Once sent, you cannot edit your pitch. The business will review and respond via in-app chat.',
+                    style: GoogleFonts.inter(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                      height: 1.5,
+                    ),
+                  ),
+                ),
               ],
             ),
           ).animate().fadeIn(duration: 400.ms, delay: 150.ms),
@@ -441,7 +607,12 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
 
   Widget _buildBottomBar(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.xl),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.md,
+        AppSpacing.lg,
+        AppSpacing.xl,
+      ),
       decoration: const BoxDecoration(
         border: Border(top: BorderSide(color: AppColors.border)),
       ),
@@ -450,7 +621,9 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
               label: 'Preview Pitch',
               icon: Icons.visibility_outlined,
               onPressed: () {
-                if (_formKey.currentState!.validate()) setState(() => _step = 1);
+                if (_formKey.currentState!.validate()) {
+                  setState(() => _step = 1);
+                }
               },
             )
           : AppButton(
@@ -467,7 +640,12 @@ class _ConfirmRow extends StatelessWidget {
   final IconData icon;
   final String label, value;
   final Color accent;
-  const _ConfirmRow({required this.icon, required this.label, required this.value, required this.accent});
+  const _ConfirmRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.accent,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -475,13 +653,20 @@ class _ConfirmRow extends StatelessWidget {
       children: [
         Icon(icon, color: accent, size: 16),
         const SizedBox(width: AppSpacing.sm),
-        Text('$label:', style: GoogleFonts.inter(fontSize: 13, color: AppColors.textMuted)),
+        Text(
+          '$label:',
+          style: GoogleFonts.inter(fontSize: 13, color: AppColors.textMuted),
+        ),
         const Spacer(),
-        Text(value, style: GoogleFonts.plusJakartaSans(
-            fontSize: 13, fontWeight: FontWeight.w600, color: AppColors.textPrimary)),
+        Text(
+          value,
+          style: GoogleFonts.plusJakartaSans(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppColors.textPrimary,
+          ),
+        ),
       ],
     );
   }
 }
-
-

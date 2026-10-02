@@ -16,6 +16,9 @@ void main() {
     });
 
     expect(proposal.businessName, 'Sample Café');
-    expect(proposal.copyWith(jobTitle: 'Updated title').businessName, 'Sample Café');
+    expect(
+      proposal.copyWith(jobTitle: 'Updated title').businessName,
+      'Sample Café',
+    );
   });
 }

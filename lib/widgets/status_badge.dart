@@ -8,12 +8,20 @@ class StatusBadge extends StatelessWidget {
   final Color color;
   final bool pulsing;
 
-  const StatusBadge({super.key, required this.label, required this.color, this.pulsing = false});
+  const StatusBadge({
+    super.key,
+    required this.label,
+    required this.color,
+    this.pulsing = false,
+  });
 
   factory StatusBadge.verified() =>
       const StatusBadge(label: 'Verified', color: AppColors.success);
-  factory StatusBadge.pending() =>
-      const StatusBadge(label: 'Pending Review', color: AppColors.warning, pulsing: true);
+  factory StatusBadge.pending() => const StatusBadge(
+    label: 'Pending Review',
+    color: AppColors.warning,
+    pulsing: true,
+  );
   factory StatusBadge.unverified() =>
       const StatusBadge(label: 'Unverified', color: AppColors.error);
 
@@ -22,7 +30,11 @@ class StatusBadge extends StatelessWidget {
       case ProposalStatus.draft:
         return const StatusBadge(label: 'Draft', color: AppColors.textMuted);
       case ProposalStatus.sent:
-        return const StatusBadge(label: 'Sent', color: AppColors.info, pulsing: true);
+        return const StatusBadge(
+          label: 'Sent',
+          color: AppColors.info,
+          pulsing: true,
+        );
       case ProposalStatus.accepted:
         return const StatusBadge(label: 'Accepted', color: AppColors.success);
       case ProposalStatus.rejected:
@@ -33,7 +45,11 @@ class StatusBadge extends StatelessWidget {
   factory StatusBadge.fromApiStatus(String status) {
     switch (status.toLowerCase()) {
       case 'pending':
-        return const StatusBadge(label: 'Sent', color: AppColors.info, pulsing: true);
+        return const StatusBadge(
+          label: 'Sent',
+          color: AppColors.info,
+          pulsing: true,
+        );
       case 'accepted':
         return const StatusBadge(label: 'Accepted', color: AppColors.success);
       case 'rejected':
@@ -47,7 +63,9 @@ class StatusBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.sm + 2, vertical: AppSpacing.xs),
+        horizontal: AppSpacing.sm + 2,
+        vertical: AppSpacing.xs,
+      ),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(AppRadius.full),
@@ -61,7 +79,10 @@ class StatusBadge extends StatelessWidget {
           Text(
             label,
             style: GoogleFonts.jetBrainsMono(
-                fontSize: 10, fontWeight: FontWeight.w500, color: color),
+              fontSize: 10,
+              fontWeight: FontWeight.w500,
+              color: color,
+            ),
           ),
         ],
       ),
@@ -87,10 +108,13 @@ class _PulseDotState extends State<_PulseDot>
   void initState() {
     super.initState();
     _ctrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 1100));
-    _anim = Tween<double>(begin: 0.35, end: 1.0).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
+      vsync: this,
+      duration: const Duration(milliseconds: 1100),
     );
+    _anim = Tween<double>(
+      begin: 0.35,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut));
     if (widget.pulsing) _ctrl.repeat(reverse: true);
   }
 
@@ -105,10 +129,13 @@ class _PulseDotState extends State<_PulseDot>
     return AnimatedBuilder(
       animation: _anim,
       builder: (context, child) => Container(
-        width: 6, height: 6,
+        width: 6,
+        height: 6,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: widget.color.withValues(alpha: widget.pulsing ? _anim.value : 1.0),
+          color: widget.color.withValues(
+            alpha: widget.pulsing ? _anim.value : 1.0,
+          ),
         ),
       ),
     );

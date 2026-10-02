@@ -31,9 +31,9 @@ class _RecoverPasswordScreenState extends State<RecoverPasswordScreen> {
       final user = await AuthService().getCurrentUser();
       if (!mounted) return;
       context.go(user?.role == 'business' ? '/business' : '/student');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Password updated.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Password updated.')));
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -64,15 +64,18 @@ class _RecoverPasswordScreenState extends State<RecoverPasswordScreen> {
                 obscureText: true,
                 decoration: const InputDecoration(labelText: 'New password'),
                 validator: (value) => (value?.length ?? 0) < 6
-                    ? 'Use at least 6 characters.' : null,
+                    ? 'Use at least 6 characters.'
+                    : null,
               ),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _confirm,
                 obscureText: true,
-                decoration: const InputDecoration(labelText: 'Confirm password'),
-                validator: (value) => value != _password.text
-                    ? 'Passwords do not match.' : null,
+                decoration: const InputDecoration(
+                  labelText: 'Confirm password',
+                ),
+                validator: (value) =>
+                    value != _password.text ? 'Passwords do not match.' : null,
               ),
               const SizedBox(height: 24),
               FilledButton(

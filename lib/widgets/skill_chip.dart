@@ -25,16 +25,27 @@ class SkillChip extends StatelessWidget {
         duration: AppDurations.fast,
         curve: Curves.easeOut,
         padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md, vertical: AppSpacing.xs + 2),
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.xs + 2,
+        ),
         decoration: BoxDecoration(
-          color: selected ? accentColor.withValues(alpha: 0.15) : AppColors.surfaceHigh,
+          color: selected
+              ? accentColor.withValues(alpha: 0.15)
+              : AppColors.surfaceHigh,
           borderRadius: BorderRadius.circular(AppRadius.full),
           border: Border.all(
-            color: selected ? accentColor.withValues(alpha: 0.7) : AppColors.border,
+            color: selected
+                ? accentColor.withValues(alpha: 0.7)
+                : AppColors.border,
             width: 1,
           ),
           boxShadow: selected
-              ? [BoxShadow(color: accentColor.withValues(alpha: 0.15), blurRadius: 8)]
+              ? [
+                  BoxShadow(
+                    color: accentColor.withValues(alpha: 0.15),
+                    blurRadius: 8,
+                  ),
+                ]
               : null,
         ),
         child: Text(

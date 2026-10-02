@@ -41,7 +41,8 @@ class AuthService extends ChangeNotifier {
     final uri = await AppLinks().getInitialLink();
     if (uri == null) return;
     final fragment = Uri.splitQueryString(uri.fragment);
-    if (uri.queryParameters['type'] == 'recovery' || fragment['type'] == 'recovery') {
+    if (uri.queryParameters['type'] == 'recovery' ||
+        fragment['type'] == 'recovery') {
       isRecoveringPassword = true;
       notifyListeners();
     }
@@ -49,13 +50,16 @@ class AuthService extends ChangeNotifier {
 
   Future<UserSession> login(String email, String password) async {
     final response = await _client.auth.signInWithPassword(
-      email: email.trim(), password: password,
+      email: email.trim(),
+      password: password,
     );
     if (response.session == null) {
       throw const AuthException('Check your email to confirm your account.');
     }
     final session = await getCurrentUser();
-    if (session == null) throw StateError('Profile was not created. Check database logs.');
+    if (session == null) {
+      throw StateError('Profile was not created. Check database logs.');
+    }
     notifyListeners();
     return session;
   }
@@ -76,7 +80,8 @@ class AuthService extends ChangeNotifier {
         ? Uri.parse(githubInput).pathSegments.firstOrNull ?? ''
         : githubInput;
     final response = await _client.auth.signUp(
-      email: email.trim(), password: password,
+      email: email.trim(),
+      password: password,
       emailRedirectTo: authRedirect,
       data: {
         'role': role,
@@ -89,21 +94,27 @@ class AuthService extends ChangeNotifier {
           'skills': extraFields['skills'] ?? <String>[],
         },
         if (role == 'business') ...{
-          'business_name': (extraFields['business_name'] ?? '').toString().trim(),
+          'business_name': (extraFields['business_name'] ?? '')
+              .toString()
+              .trim(),
           'address': (extraFields['location'] ?? '').toString().trim(),
         },
       },
     );
-    if (response.user == null) throw StateError('Registration did not create an account.');
+    if (response.user == null) {
+      throw StateError('Registration did not create an account.');
+    }
     notifyListeners();
     return response.session == null;
   }
 
-  Future<void> resetPassword(String email) =>
-      _client.auth.resetPasswordForEmail(email.trim(), redirectTo: authRedirect);
+  Future<void> resetPassword(String email) => _client.auth
+      .resetPasswordForEmail(email.trim(), redirectTo: authRedirect);
 
   Future<void> updateRecoveredPassword(String password) async {
-    if (!isRecoveringPassword) throw StateError('Open a valid password reset link first.');
+    if (!isRecoveringPassword) {
+      throw StateError('Open a valid password reset link first.');
+    }
     await _client.auth.updateUser(UserAttributes(password: password));
     isRecoveringPassword = false;
     notifyListeners();
@@ -120,8 +131,11 @@ class AuthService extends ChangeNotifier {
   Future<UserSession?> getCurrentUser() async {
     final user = _client.auth.currentUser;
     if (user == null || _client.auth.currentSession == null) return null;
-    final row = await _client.from('profiles')
-        .select('id, role, full_name').eq('id', user.id).single();
+    final row = await _client
+        .from('profiles')
+        .select('id, role, full_name')
+        .eq('id', user.id)
+        .single();
     return UserSession(
       id: row['id'] as String,
       role: row['role'] as String,

@@ -24,6 +24,7 @@ import '../screens/shared/settings_screen.dart';
 import '../models/job_post.dart';
 import '../models/proposal.dart';
 import '../services/auth_service.dart';
+
 final appRouter = GoRouter(
   initialLocation: '/splash',
   refreshListenable: AuthService(),
@@ -32,27 +33,40 @@ final appRouter = GoRouter(
     if (AuthService().isRecoveringPassword) {
       return path == '/recover-password' ? null : '/recover-password';
     }
-    final publicRoute = path == '/splash' || path == '/onboarding' ||
-        path == '/login' || path == '/register';
+    final publicRoute =
+        path == '/splash' ||
+        path == '/onboarding' ||
+        path == '/login' ||
+        path == '/register';
     final user = await AuthService().getCurrentUser();
     if (user == null) return publicRoute ? null : '/onboarding';
     final home = user.role == 'business' ? '/business' : '/student';
-    if (path == '/splash' || path == '/onboarding' ||
-        path == '/login' || path == '/register') {
+    if (path == '/splash' ||
+        path == '/onboarding' ||
+        path == '/login' ||
+        path == '/register') {
       return home;
     }
-    if (path.startsWith('/student') && user.role != 'student') return '$home?unauthorized=1';
-    if (path.startsWith('/business') && user.role != 'business') return '$home?unauthorized=1';
+    if (path.startsWith('/student') && user.role != 'student') {
+      return '$home?unauthorized=1';
+    }
+    if (path.startsWith('/business') && user.role != 'business') {
+      return '$home?unauthorized=1';
+    }
     return null;
   },
   routes: [
-    GoRoute(path: '/splash',      builder: (context, state) => const SplashScreen()),
-    GoRoute(path: '/onboarding',  builder: (context, state) => const OnboardingScreen()),
+    GoRoute(path: '/splash', builder: (context, state) => const SplashScreen()),
+    GoRoute(
+      path: '/onboarding',
+      builder: (context, state) => const OnboardingScreen(),
+    ),
     GoRoute(
       path: '/login',
       builder: (context, state) {
         final role = state.uri.queryParameters['role'] == 'business'
-            ? UserRole.business : UserRole.student;
+            ? UserRole.business
+            : UserRole.student;
         return LoginScreen(role: role);
       },
     ),
@@ -60,15 +74,25 @@ final appRouter = GoRouter(
       path: '/register',
       builder: (context, state) {
         final role = state.uri.queryParameters['role'] == 'business'
-            ? UserRole.business : UserRole.student;
+            ? UserRole.business
+            : UserRole.student;
         return RegisterScreen(role: role);
       },
     ),
-    GoRoute(path: '/recover-password', builder: (context, state) => const RecoverPasswordScreen()),
+    GoRoute(
+      path: '/recover-password',
+      builder: (context, state) => const RecoverPasswordScreen(),
+    ),
 
     // ── Student routes
-    GoRoute(path: '/student',       builder: (context, state) => const StudentDashboard()),
-    GoRoute(path: '/student/jobs',  builder: (context, state) => const BrowseJobsScreen()),
+    GoRoute(
+      path: '/student',
+      builder: (context, state) => const StudentDashboard(),
+    ),
+    GoRoute(
+      path: '/student/jobs',
+      builder: (context, state) => const BrowseJobsScreen(),
+    ),
     GoRoute(
       path: '/student/jobs/:id',
       builder: (context, state) {
@@ -84,8 +108,14 @@ final appRouter = GoRouter(
         return SubmitProposalScreen(jobId: id, jobTitle: title);
       },
     ),
-    GoRoute(path: '/student/proposals', builder: (context, state) => const MyProposalsScreen()),
-    GoRoute(path: '/student/portfolio/add', builder: (context, state) => const AddProjectScreen()),
+    GoRoute(
+      path: '/student/proposals',
+      builder: (context, state) => const MyProposalsScreen(),
+    ),
+    GoRoute(
+      path: '/student/portfolio/add',
+      builder: (context, state) => const AddProjectScreen(),
+    ),
     GoRoute(
       path: '/student/portfolio/:id',
       builder: (context, state) {
@@ -102,8 +132,14 @@ final appRouter = GoRouter(
     ),
 
     // ── Business routes
-    GoRoute(path: '/business',          builder: (context, state) => const BusinessDashboard()),
-    GoRoute(path: '/business/post-job', builder: (context, state) => const PostJobScreen()),
+    GoRoute(
+      path: '/business',
+      builder: (context, state) => const BusinessDashboard(),
+    ),
+    GoRoute(
+      path: '/business/post-job',
+      builder: (context, state) => const PostJobScreen(),
+    ),
     GoRoute(
       path: '/business/jobs/:id/proposals',
       builder: (context, state) {
@@ -132,7 +168,8 @@ final appRouter = GoRouter(
       path: '/notifications',
       builder: (context, state) {
         final role = state.uri.queryParameters['role'] == 'business'
-            ? UserRole.business : UserRole.student;
+            ? UserRole.business
+            : UserRole.student;
         return NotificationsScreen(role: role);
       },
     ),
@@ -148,7 +185,8 @@ final appRouter = GoRouter(
       path: '/settings',
       builder: (context, state) {
         final role = state.uri.queryParameters['role'] == 'business'
-            ? UserRole.business : UserRole.student;
+            ? UserRole.business
+            : UserRole.student;
         return SettingsScreen(role: role);
       },
     ),

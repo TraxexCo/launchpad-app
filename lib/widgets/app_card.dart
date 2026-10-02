@@ -37,9 +37,10 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
       vsync: this,
       duration: const Duration(milliseconds: 110),
     );
-    _scale = Tween<double>(begin: 1.0, end: 0.98).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeIn),
-    );
+    _scale = Tween<double>(
+      begin: 1.0,
+      end: 0.98,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeIn));
   }
 
   @override
@@ -60,10 +61,7 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
         decoration: BoxDecoration(
           color: widget.backgroundColor ?? AppColors.surface,
           borderRadius: BorderRadius.circular(widget.borderRadius),
-          border: Border.all(
-            color: AppColors.border,
-            width: 1,
-          ),
+          border: Border.all(color: AppColors.border, width: 1),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.04),

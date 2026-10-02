@@ -7,8 +7,9 @@ class NotificationService {
   Future<List<Map<String, dynamic>>> getNotifications() async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) return [];
-    
-    return _client.from('notifications')
+
+    return _client
+        .from('notifications')
         .select()
         .eq('user_id', userId)
         .order('created_at', ascending: false);
@@ -23,7 +24,10 @@ class NotificationService {
   Future<void> markAllAsRead() async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) return;
-    await _client.from('notifications').update({'is_read': true}).eq('user_id', userId);
+    await _client
+        .from('notifications')
+        .update({'is_read': true})
+        .eq('user_id', userId);
   }
 
   /// Delete a notification
