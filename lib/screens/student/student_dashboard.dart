@@ -22,6 +22,8 @@ import '../../widgets/status_badge.dart';
 import '../../widgets/confirm_sign_out.dart';
 import '../../widgets/contract_action_panel.dart';
 import '../../widgets/dashboard_load_error.dart';
+import '../../widgets/notification_bell.dart';
+import '../../widgets/nearby_business_radar.dart';
 
 class StudentDashboard extends StatefulWidget {
   const StudentDashboard({super.key});
@@ -167,9 +169,9 @@ class _AppBar extends StatelessWidget {
           const Spacer(),
 
           // Notification bell
-          _IconBtn(
-            icon: Icons.notifications_none_rounded,
-            onTap: () => context.go('/notifications?role=student'),
+          const NotificationBell(
+            role: UserRole.student,
+            accentColor: AppColors.studentPrimary,
           ),
           const SizedBox(width: AppSpacing.sm),
           _IconBtn(
@@ -742,14 +744,24 @@ class _HomeTabState extends State<_HomeTab> {
 // ─────────────────────────────────────────────────────────────────────────────
 // TAB 1 — Radar (full view)
 // ─────────────────────────────────────────────────────────────────────────────
-class _RadarTab extends StatefulWidget {
+class _RadarTab extends StatelessWidget {
   const _RadarTab();
 
   @override
-  State<_RadarTab> createState() => _RadarTabState();
+  Widget build(BuildContext context) => const NearbyBusinessRadar();
 }
 
-class _RadarTabState extends State<_RadarTab> {
+// Kept temporarily so existing static-map installations can be compared during
+// rollout. The active Radar above uses GPS and an interactive map.
+// ignore: unused_element
+class _LegacyRadarTab extends StatefulWidget {
+  const _LegacyRadarTab();
+
+  @override
+  State<_LegacyRadarTab> createState() => _LegacyRadarTabState();
+}
+
+class _LegacyRadarTabState extends State<_LegacyRadarTab> {
   static const _mapboxToken = String.fromEnvironment('MAPBOX_PUBLIC_TOKEN');
   List<Map<String, dynamic>> _businesses = [];
   bool _loading = true;

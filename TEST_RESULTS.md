@@ -1,6 +1,6 @@
 # LaunchPad test status
 
-Tested on 2026-10-02 against Supabase project `oboyvpcziyjydyfguucs`.
+Core suite tested on 2026-10-02 against Supabase project `oboyvpcziyjydyfguucs`; UI, location, and notification upgrades rechecked on 2026-10-05.
 
 Status meanings:
 
@@ -101,10 +101,19 @@ Status meanings:
 ## Verification completed
 
 - `flutter analyze --no-pub lib test`: no issues.
-- `flutter test --no-pub`: 9 of 9 tests passed.
+- `flutter test --no-pub`: 11 of 11 tests passed, including GPS distance calculations.
 - Release web build with Supabase configuration: passed.
 - Android debug APK build with Supabase configuration: passed.
 - Built-web smoke test: onboarding rendered, signed-out protected route redirected, and weak-password error rendered.
 - Live database rollback suites passed: contract acceptance, proposal errors, guarded deletion, marketplace lifecycle, skill catalog, and direct RLS isolation.
 
 The remaining **READY** cases are not known failures. They are cases whose exact external behavior cannot be claimed as passed until the stated device, inbox, network, or simultaneous-account run is performed.
+
+## 2026-10-05 upgrade verification
+
+- Dart static analysis after the full screen-by-screen UI pass: **PASS, no issues**.
+- Live GPS permission handling, distance calculation, map markers, radius controls, and business coordinate publishing: **implemented**.
+- Proposal notification deep links now fetch proposal details from Supabase when navigation memory is unavailable: **implemented**.
+- Realtime unread badge and cloud notification preferences: **implemented**.
+- Location and notification preference migration plus rollback tests: **ready to run in Supabase**. The dashboard was unreachable during the final deployment attempt, so this is not marked live.
+- Android rebuild: Gradle reached dependency resolution, then the network timed out while downloading Android and Kotlin artifacts. The previous Android debug build remains a pass; this upgraded dependency set still needs one successful rebuild when Maven and Google repositories are reachable.

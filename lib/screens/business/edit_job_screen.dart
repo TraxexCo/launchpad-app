@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/constants.dart';
 import '../../widgets/app_background.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_text_field.dart';
+import '../../widgets/app_card.dart';
 import '../../models/job_post.dart';
 import '../../services/job_service.dart';
 
@@ -133,12 +135,26 @@ class _EditJobScreenState extends State<EditJobScreen> {
                       ),
                     ),
                     const SizedBox(width: AppSpacing.md),
-                    Text(
-                      'Edit Job Post',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textPrimary,
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Refine Job Post',
+                            style: GoogleFonts.plusJakartaSans(
+                              fontSize: 20,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          Text(
+                            'Keep the brief clear for stronger pitches',
+                            style: GoogleFonts.inter(
+                              fontSize: 11,
+                              color: AppColors.textMuted,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -153,6 +169,51 @@ class _EditJobScreenState extends State<EditJobScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
+                        AppCard(
+                          padding: const EdgeInsets.all(AppSpacing.md),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 42,
+                                height: 42,
+                                decoration: BoxDecoration(
+                                  color: AppColors.businessPrimary.withValues(
+                                    alpha: 0.12,
+                                  ),
+                                  borderRadius: BorderRadius.circular(
+                                    AppRadius.md,
+                                  ),
+                                ),
+                                child: const Icon(
+                                  Icons.tips_and_updates_outlined,
+                                  color: AppColors.businessPrimary,
+                                ),
+                              ),
+                              const SizedBox(width: AppSpacing.md),
+                              Expanded(
+                                child: Text(
+                                  'Specific deliverables, budget, and timeline help students send more accurate proposals.',
+                                  style: GoogleFonts.inter(
+                                    fontSize: 12,
+                                    height: 1.45,
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ).animate().fadeIn().slideY(begin: 0.06),
+                        const SizedBox(height: AppSpacing.lg),
+                        Text(
+                          'PROJECT BRIEF',
+                          style: GoogleFonts.jetBrainsMono(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1.2,
+                            color: AppColors.businessPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
                         AppTextField(
                           controller: _titleCtrl,
                           label: 'Job Title',
@@ -197,6 +258,16 @@ class _EditJobScreenState extends State<EditJobScreen> {
                           hint: 'e.g. Sta. Mesa, Manila',
                         ),
                         const SizedBox(height: AppSpacing.lg),
+                        Text(
+                          'CLASSIFICATION',
+                          style: GoogleFonts.jetBrainsMono(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1.2,
+                            color: AppColors.businessPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
                         Text(
                           'Category',
                           style: GoogleFonts.inter(

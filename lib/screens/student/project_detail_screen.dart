@@ -8,6 +8,7 @@ import '../../core/constants.dart';
 import '../../widgets/app_background.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/skill_chip.dart';
+import '../../widgets/app_state_view.dart';
 
 class ProjectDetailScreen extends StatefulWidget {
   final String projectId;
@@ -290,11 +291,21 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
             future: _details,
             builder: (context, snapshot) {
               if (!snapshot.hasData) {
-                return Center(
-                  child: snapshot.hasError
-                      ? Text('Could not load project: ${snapshot.error}')
-                      : const CircularProgressIndicator(),
-                );
+                return snapshot.hasError
+                    ? AppStateView(
+                        icon: Icons.folder_off_outlined,
+                        title: 'Project could not load',
+                        message:
+                            'The project may be unavailable or your connection may have changed.',
+                        accentColor: AppColors.error,
+                        actionLabel: 'Try again',
+                        actionIcon: Icons.refresh_rounded,
+                        onAction: _refresh,
+                      )
+                    : const AppLoadingView(
+                        label: 'Opening project showcase…',
+                        color: AppColors.studentPrimary,
+                      );
               }
               final (project, skills) = snapshot.data!;
               final isOwner =
@@ -305,11 +316,35 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new_rounded),
-                      onPressed: () => context.canPop()
-                          ? context.pop()
-                          : context.go('/student'),
+                    Row(
+                      children: [
+                        IconButton.filledTonal(
+                          tooltip: 'Back',
+                          icon: const Icon(Icons.arrow_back_ios_new_rounded),
+                          onPressed: () => context.canPop()
+                              ? context.pop()
+                              : context.go('/student'),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Project Showcase',
+                                style: Theme.of(context).textTheme.titleLarge,
+                              ),
+                              Text(
+                                'Portfolio case study',
+                                style: GoogleFonts.inter(
+                                  fontSize: 12,
+                                  color: AppColors.textMuted,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: AppSpacing.md),
                     AppCard(

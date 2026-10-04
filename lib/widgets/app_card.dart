@@ -57,34 +57,40 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
       child: Container(
         width: widget.width,
         height: widget.height,
-        padding: widget.padding,
         decoration: BoxDecoration(
-          color: widget.backgroundColor ?? AppColors.surface,
           borderRadius: BorderRadius.circular(widget.borderRadius),
-          border: Border.all(color: AppColors.border, width: 1),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 24,
-              spreadRadius: 0,
-              offset: const Offset(0, 8),
+              color: const Color(0xFF23304A).withValues(alpha: 0.075),
+              blurRadius: 26,
+              spreadRadius: -8,
+              offset: const Offset(0, 12),
             ),
           ],
         ),
-        child: widget.child,
+        child: Material(
+          color: widget.backgroundColor ?? AppColors.surface,
+          surfaceTintColor: Colors.transparent,
+          clipBehavior: Clip.antiAlias,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(widget.borderRadius),
+            side: const BorderSide(color: AppColors.border),
+          ),
+          child: InkWell(
+            onTap: widget.onTap,
+            onTapDown: widget.onTap == null ? null : (_) => _ctrl.forward(),
+            onTapUp: widget.onTap == null ? null : (_) => _ctrl.reverse(),
+            onTapCancel: widget.onTap == null ? null : () => _ctrl.reverse(),
+            splashColor: AppColors.studentPrimary.withValues(alpha: 0.06),
+            highlightColor: AppColors.studentPrimary.withValues(alpha: 0.03),
+            child: Padding(
+              padding: widget.padding ?? EdgeInsets.zero,
+              child: widget.child,
+            ),
+          ),
+        ),
       ),
     );
-
-    if (widget.onTap == null) return card;
-
-    return GestureDetector(
-      onTapDown: (_) => _ctrl.forward(),
-      onTapUp: (_) {
-        _ctrl.reverse();
-        widget.onTap!();
-      },
-      onTapCancel: () => _ctrl.reverse(),
-      child: card,
-    );
+    return card;
   }
 }

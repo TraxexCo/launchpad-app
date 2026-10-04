@@ -18,6 +18,7 @@ import '../../models/proposal.dart';
 import '../../widgets/confirm_sign_out.dart';
 import '../../widgets/contract_action_panel.dart';
 import '../../widgets/dashboard_load_error.dart';
+import '../../widgets/notification_bell.dart';
 
 class BusinessDashboard extends StatefulWidget {
   const BusinessDashboard({super.key});
@@ -156,9 +157,9 @@ class _BizAppBar extends StatelessWidget {
 
           const Spacer(),
 
-          _BizIconBtn(
-            icon: Icons.notifications_none_rounded,
-            onTap: () => context.go('/notifications?role=business'),
+          const NotificationBell(
+            role: UserRole.business,
+            accentColor: AppColors.businessPrimary,
           ),
           const SizedBox(width: AppSpacing.sm),
           _BizIconBtn(icon: Icons.logout_rounded, onTap: onLogout),

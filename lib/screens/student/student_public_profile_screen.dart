@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../core/constants.dart';
 import '../../widgets/app_background.dart';
+import '../../widgets/app_state_view.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/skill_chip.dart';
 
@@ -150,10 +151,20 @@ class _StudentPublicProfileScreenState
     return Scaffold(
       backgroundColor: AppColors.background,
       body: _profileLoading
-          ? const Center(child: CircularProgressIndicator())
+          ? const AppLoadingView(
+              label: 'Building student profile…',
+              color: AppColors.studentPrimary,
+            )
           : _profileError != null
-          ? Center(
-              child: Text('Could not load student profile: $_profileError'),
+          ? AppStateView(
+              icon: Icons.person_search_outlined,
+              title: 'Student profile unavailable',
+              message:
+                  'This profile could not be loaded. Check the connection and try again.',
+              accentColor: AppColors.error,
+              actionLabel: 'Try again',
+              actionIcon: Icons.refresh_rounded,
+              onAction: _loadProfile,
             )
           : AppBackground(
               tintColor: AppColors.studentPrimary.withValues(alpha: 0.04),

@@ -36,6 +36,9 @@ class _AppBackgroundState extends State<AppBackground>
     return Stack(
       children: [
         Container(color: AppColors.background),
+        const Positioned.fill(
+          child: IgnorePointer(child: CustomPaint(painter: _GridPainter())),
+        ),
         RepaintBoundary(
           child: AnimatedBuilder(
             animation: _ctrl,
@@ -52,6 +55,27 @@ class _AppBackgroundState extends State<AppBackground>
       ],
     );
   }
+}
+
+class _GridPainter extends CustomPainter {
+  const _GridPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = AppColors.textPrimary.withValues(alpha: 0.018)
+      ..strokeWidth = 0.7;
+    const gap = 28.0;
+    for (double x = 0; x < size.width; x += gap) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    }
+    for (double y = 0; y < size.height; y += gap) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class _MeshPainter extends CustomPainter {

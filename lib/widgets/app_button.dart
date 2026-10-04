@@ -118,9 +118,17 @@ class _AppButtonState extends State<AppButton>
           duration: const Duration(milliseconds: 200),
           height: widget.height,
           decoration: BoxDecoration(
-            color: widget.outlined
-                ? Colors.transparent
-                : (!_enabled ? AppColors.border : widget.backgroundColor),
+            color: widget.outlined || _enabled ? null : AppColors.border,
+            gradient: !widget.outlined && _enabled
+                ? LinearGradient(
+                    colors: [
+                      widget.backgroundColor,
+                      Color.lerp(widget.backgroundColor, Colors.white, 0.16)!,
+                    ],
+                    begin: Alignment.bottomLeft,
+                    end: Alignment.topRight,
+                  )
+                : null,
             borderRadius: BorderRadius.circular(AppRadius.lg),
             border: widget.outlined
                 ? Border.all(color: widget.backgroundColor, width: 1.5)
@@ -135,48 +143,53 @@ class _AppButtonState extends State<AppButton>
                   ]
                 : null,
           ),
-          child: Center(
-            child: widget.isLoading
-                ? SizedBox(
-                    width: 22,
-                    height: 22,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2.5,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        widget.foregroundColor,
-                      ),
-                    ),
-                  )
-                : Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (widget.icon != null) ...[
-                        Icon(
-                          widget.icon,
-                          color: widget.outlined
-                              ? widget.backgroundColor
-                              : (!_enabled
-                                    ? AppColors.textMuted
-                                    : widget.foregroundColor),
-                          size: 18,
+          child: Semantics(
+            button: true,
+            enabled: _enabled,
+            label: widget.label,
+            child: Center(
+              child: widget.isLoading
+                  ? SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          widget.foregroundColor,
                         ),
-                        const SizedBox(width: AppSpacing.sm),
+                      ),
+                    )
+                  : Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (widget.icon != null) ...[
+                          Icon(
+                            widget.icon,
+                            color: widget.outlined
+                                ? widget.backgroundColor
+                                : (!_enabled
+                                      ? AppColors.textMuted
+                                      : widget.foregroundColor),
+                            size: 18,
+                          ),
+                          const SizedBox(width: AppSpacing.sm),
+                        ],
+                        Text(
+                          widget.label,
+                          style: GoogleFonts.plusJakartaSans(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            color: widget.outlined
+                                ? widget.backgroundColor
+                                : (_enabled
+                                      ? widget.foregroundColor
+                                      : AppColors.textMuted),
+                            letterSpacing: 0.1,
+                          ),
+                        ),
                       ],
-                      Text(
-                        widget.label,
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w700,
-                          color: widget.outlined
-                              ? widget.backgroundColor
-                              : (_enabled
-                                    ? widget.foregroundColor
-                                    : AppColors.textMuted),
-                          letterSpacing: 0.1,
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+            ),
           ),
         ),
       ),

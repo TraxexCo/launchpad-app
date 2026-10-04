@@ -8,6 +8,7 @@ import '../../models/proposal.dart';
 import '../../widgets/app_background.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/status_badge.dart';
+import '../../widgets/app_state_view.dart';
 
 class MyProposalsScreen extends StatefulWidget {
   const MyProposalsScreen({super.key});
@@ -76,30 +77,20 @@ class _MyProposalsScreenState extends State<MyProposalsScreen>
               _buildTabBar(),
               Expanded(
                 child: _loading
-                    ? const Center(
-                        child: CircularProgressIndicator(
-                          color: AppColors.studentPrimary,
-                        ),
+                    ? const AppLoadingView(
+                        label: 'Syncing your pitches…',
+                        color: AppColors.studentPrimary,
                       )
                     : _error != null
-                    ? Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.cloud_off_rounded,
-                              size: 42,
-                              color: AppColors.error,
-                            ),
-                            const SizedBox(height: AppSpacing.sm),
-                            const Text('Could not load proposals.'),
-                            TextButton.icon(
-                              onPressed: _loadProposals,
-                              icon: const Icon(Icons.refresh_rounded),
-                              label: const Text('Retry'),
-                            ),
-                          ],
-                        ),
+                    ? AppStateView(
+                        icon: Icons.cloud_off_rounded,
+                        title: 'Your pitches are unavailable',
+                        message:
+                            'We could not sync your proposal activity. Check your connection, then retry.',
+                        accentColor: AppColors.error,
+                        actionLabel: 'Try again',
+                        actionIcon: Icons.refresh_rounded,
+                        onAction: _loadProposals,
                       )
                     : _buildTabViews(),
               ),
@@ -275,45 +266,44 @@ class _ProposalList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (proposals.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.inbox_outlined,
-              color: AppColors.textMuted,
-              size: 48,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              'No proposals here',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-          ],
-        ),
+      return AppStateView(
+        icon: Icons.rocket_launch_outlined,
+        title: 'No pitches in this stage',
+        message:
+            'Browse opportunities, choose a project that fits your skills, and send a focused proposal.',
+        accentColor: AppColors.studentPrimary,
+        actionLabel: 'Browse jobs',
+        actionIcon: Icons.explore_outlined,
+        onAction: () => context.go('/student/jobs'),
       );
     }
-    return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.lg,
-        AppSpacing.sm,
-        AppSpacing.lg,
-        AppSpacing.xl,
+    return RefreshIndicator(
+      color: AppColors.studentPrimary,
+      onRefresh: onChanged,
+      child: ListView.separated(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          AppSpacing.sm,
+          AppSpacing.lg,
+          AppSpacing.xl,
+        ),
+        itemCount: proposals.length,
+        separatorBuilder: (context, idx) =>
+            const SizedBox(height: AppSpacing.md),
+        itemBuilder: (context, i) =>
+            _ProposalCard(proposal: proposals[i], onChanged: onChanged)
+                .animate()
+                .fadeIn(
+                  duration: 350.ms,
+                  delay: Duration(milliseconds: i * 60),
+                )
+                .slideY(
+                  begin: 0.08,
+                  duration: 300.ms,
+                  delay: Duration(milliseconds: i * 60),
+                ),
       ),
-      itemCount: proposals.length,
-      separatorBuilder: (context, idx) => const SizedBox(height: AppSpacing.md),
-      itemBuilder: (context, i) =>
-          _ProposalCard(proposal: proposals[i], onChanged: onChanged)
-              .animate()
-              .fadeIn(
-                duration: 350.ms,
-                delay: Duration(milliseconds: i * 60),
-              )
-              .slideY(
-                begin: 0.08,
-                duration: 300.ms,
-                delay: Duration(milliseconds: i * 60),
-              ),
     );
   }
 }

@@ -7,6 +7,7 @@ import '../../core/constants.dart';
 import '../../services/job_service.dart';
 import '../../models/job_post.dart';
 import '../../widgets/app_background.dart';
+import '../../widgets/app_state_view.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/skill_chip.dart';
@@ -79,20 +80,32 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
       body: AppBackground(
         tintColor: AppColors.studentPrimary.withValues(alpha: 0.04),
         child: _loading
-            ? const Center(
-                child: CircularProgressIndicator(
-                  color: AppColors.studentPrimary,
-                ),
+            ? const AppLoadingView(
+                label: 'Opening opportunity details…',
+                color: AppColors.studentPrimary,
               )
             : _error != null
-            ? Center(
-                child: Text(
-                  _error!,
-                  style: const TextStyle(color: AppColors.error),
-                ),
+            ? AppStateView(
+                icon: Icons.work_off_outlined,
+                title: 'Opportunity unavailable',
+                message:
+                    'This job may have closed or the connection was interrupted.',
+                accentColor: AppColors.error,
+                actionLabel: 'Try again',
+                actionIcon: Icons.refresh_rounded,
+                onAction: _loadJob,
               )
             : _job == null
-            ? const Center(child: Text('Job not found'))
+            ? AppStateView(
+                icon: Icons.search_off_rounded,
+                title: 'Job not found',
+                message:
+                    'The posting is no longer available. Explore other open opportunities.',
+                accentColor: AppColors.studentPrimary,
+                actionLabel: 'Browse jobs',
+                actionIcon: Icons.explore_outlined,
+                onAction: () => context.go('/student/jobs'),
+              )
             : Column(
                 children: [
                   Expanded(

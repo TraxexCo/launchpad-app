@@ -6,6 +6,7 @@ import '../../core/constants.dart';
 import '../../widgets/app_background.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/status_badge.dart';
+import '../../widgets/app_state_view.dart';
 
 import '../../models/job_post.dart';
 import '../../models/proposal.dart';
@@ -25,6 +26,7 @@ class _JobProposalsScreenState extends State<JobProposalsScreen> {
   JobPost? _job;
   List<Proposal> _proposals = [];
   bool _loading = true;
+  String? _error;
 
   @override
   void initState() {
@@ -33,6 +35,10 @@ class _JobProposalsScreenState extends State<JobProposalsScreen> {
   }
 
   Future<void> _loadData() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       final jId = int.parse(widget.jobId);
       final job = await JobService().getJobById(jId);
@@ -45,7 +51,12 @@ class _JobProposalsScreenState extends State<JobProposalsScreen> {
         });
       }
     } catch (e) {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) {
+        setState(() {
+          _error = '$e';
+          _loading = false;
+        });
+      }
     }
   }
 
@@ -77,17 +88,28 @@ class _JobProposalsScreenState extends State<JobProposalsScreen> {
               _buildSortRow(context),
               Expanded(
                 child: _loading
-                    ? const Center(
-                        child: CircularProgressIndicator(
-                          color: AppColors.businessPrimary,
-                        ),
+                    ? const AppLoadingView(
+                        label: 'Reviewing incoming pitches…',
+                        color: AppColors.businessPrimary,
+                      )
+                    : _error != null
+                    ? AppStateView(
+                        icon: Icons.cloud_off_rounded,
+                        title: 'Proposals could not load',
+                        message:
+                            'Check your connection and try again. Your job post is safe.',
+                        accentColor: AppColors.error,
+                        actionLabel: 'Try again',
+                        actionIcon: Icons.refresh_rounded,
+                        onAction: _loadData,
                       )
                     : _proposals.isEmpty
-                    ? Center(
-                        child: Text(
-                          'No proposals yet',
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
+                    ? AppStateView(
+                        icon: Icons.mark_email_unread_outlined,
+                        title: 'Waiting for the first pitch',
+                        message:
+                            'Student proposals will appear here with their budget, timeline, portfolio, and cover letter.',
+                        accentColor: AppColors.businessPrimary,
                       )
                     : _buildList(),
               ),
@@ -252,29 +274,35 @@ class _JobProposalsScreenState extends State<JobProposalsScreen> {
   }
 
   Widget _buildList() {
-    return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.lg,
-        AppSpacing.sm,
-        AppSpacing.lg,
-        AppSpacing.xl,
+    return RefreshIndicator(
+      color: AppColors.businessPrimary,
+      onRefresh: _loadData,
+      child: ListView.separated(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          AppSpacing.sm,
+          AppSpacing.lg,
+          AppSpacing.xl,
+        ),
+        itemCount: _proposals.length,
+        separatorBuilder: (context, idx) =>
+            const SizedBox(height: AppSpacing.md),
+        itemBuilder: (context, i) {
+          final p = _proposals[i];
+          return _ProposalCard(proposal: p, job: _job!)
+              .animate()
+              .fadeIn(
+                duration: 350.ms,
+                delay: Duration(milliseconds: i * 70),
+              )
+              .slideY(
+                begin: 0.08,
+                duration: 300.ms,
+                delay: Duration(milliseconds: i * 70),
+              );
+        },
       ),
-      itemCount: _proposals.length,
-      separatorBuilder: (context, idx) => const SizedBox(height: AppSpacing.md),
-      itemBuilder: (context, i) {
-        final p = _proposals[i];
-        return _ProposalCard(proposal: p, job: _job!)
-            .animate()
-            .fadeIn(
-              duration: 350.ms,
-              delay: Duration(milliseconds: i * 70),
-            )
-            .slideY(
-              begin: 0.08,
-              duration: 300.ms,
-              delay: Duration(milliseconds: i * 70),
-            );
-      },
     );
   }
 }

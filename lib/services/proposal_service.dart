@@ -29,6 +29,17 @@ class ProposalService {
     return _decorate(rows);
   }
 
+  Future<Proposal?> getProposalById(int proposalId) async {
+    final row = await _client
+        .from('proposals')
+        .select()
+        .eq('id', proposalId)
+        .maybeSingle();
+    if (row == null) return null;
+    final proposals = await _decorate([row]);
+    return proposals.isEmpty ? null : proposals.first;
+  }
+
   Future<List<Proposal>> _decorate(List<Map<String, dynamic>> rows) async {
     if (rows.isEmpty) return [];
     final jobIds = rows.map((row) => row['job_id'] as int).toSet().toList();

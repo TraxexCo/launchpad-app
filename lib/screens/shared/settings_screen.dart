@@ -8,6 +8,8 @@ import '../../core/constants.dart';
 import '../../widgets/app_background.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/confirm_sign_out.dart';
+import '../../services/location_service.dart';
+import '../../services/notification_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   final UserRole role;
@@ -22,6 +24,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _notifProposals = true;
   bool _notifMessages = true;
   bool _loadingProfile = true;
+  bool _locatingBusiness = false;
   Map<String, dynamic> _profile = {};
 
   bool get _isStudent => widget.role == UserRole.student;
@@ -61,13 +64,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 .eq('user_id', user.id)
                 .single();
       final prefs = await SharedPreferences.getInstance();
+      Map<String, bool>? cloudPreferences;
+      try {
+        cloudPreferences = await NotificationService().getPreferences();
+      } catch (_) {
+        cloudPreferences = null;
+      }
       if (!mounted) return;
       setState(() {
         _profile = {...base, ...roleProfile, 'email': user.email ?? ''};
-        _notifJobs = prefs.getBool('${_preferencePrefix}_jobs') ?? true;
+        _notifJobs =
+            cloudPreferences?['jobs'] ??
+            prefs.getBool('${_preferencePrefix}_jobs') ??
+            true;
         _notifProposals =
-            prefs.getBool('${_preferencePrefix}_proposals') ?? true;
-        _notifMessages = prefs.getBool('${_preferencePrefix}_messages') ?? true;
+            cloudPreferences?['proposals'] ??
+            prefs.getBool('${_preferencePrefix}_proposals') ??
+            true;
+        _notifMessages =
+            cloudPreferences?['messages'] ??
+            prefs.getBool('${_preferencePrefix}_messages') ??
+            true;
         _loadingProfile = false;
       });
     } catch (error) {
@@ -83,6 +100,44 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _setPreference(String key, bool value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('${_preferencePrefix}_$key', value);
+    try {
+      await NotificationService().setPreference(key, value);
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not sync notification setting: $error'),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _useCurrentBusinessLocation() async {
+    if (_locatingBusiness) return;
+    setState(() => _locatingBusiness = true);
+    try {
+      final position = await LocationService().determinePosition();
+      await LocationService().publishBusinessLocation(
+        position: position,
+        address: _profile['address']?.toString(),
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Current phone location published to Local Radar.'),
+          ),
+        );
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('$error')));
+      }
+    } finally {
+      if (mounted) setState(() => _locatingBusiness = false);
+    }
   }
 
   Future<void> _editProfile() async {
@@ -489,6 +544,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       const SizedBox(height: AppSpacing.xl),
                       _buildSectionLabel('Account'),
                       const SizedBox(height: AppSpacing.md),
+                      if (!_isStudent)
+                        _buildTile(
+                          icon: _locatingBusiness
+                              ? Icons.location_searching_rounded
+                              : Icons.my_location_rounded,
+                          label: _locatingBusiness
+                              ? 'Finding Your Location…'
+                              : 'Publish Current Phone Location',
+                          color: AppColors.info,
+                          onTap: _useCurrentBusinessLocation,
+                        ),
                       if (!_isStudent)
                         _buildTile(
                           icon: Icons.location_on_outlined,

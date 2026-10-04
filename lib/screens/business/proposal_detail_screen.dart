@@ -7,6 +7,7 @@ import '../../widgets/app_background.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/report_modal.dart';
+import '../../widgets/app_state_view.dart';
 import '../../models/proposal.dart';
 import '../../services/proposal_service.dart';
 
@@ -24,18 +25,50 @@ class ProposalDetailScreen extends StatefulWidget {
 }
 
 class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
+  Proposal? _proposal;
+  bool _loading = false;
+  String? _loadError;
   bool _accepting = false;
   bool _rejecting = false;
   String _decision = ''; // '' | 'accepted' | 'rejected'
 
+  @override
+  void initState() {
+    super.initState();
+    _proposal = widget.proposal;
+    if (_proposal == null) _loadProposal();
+  }
+
+  Future<void> _loadProposal() async {
+    setState(() {
+      _loading = true;
+      _loadError = null;
+    });
+    try {
+      final proposal = await ProposalService().getProposalById(
+        int.parse(widget.proposalId),
+      );
+      if (mounted) {
+        setState(() {
+          _proposal = proposal;
+          _loading = false;
+        });
+      }
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _loadError = '$error';
+          _loading = false;
+        });
+      }
+    }
+  }
+
   Future<void> _accept() async {
     setState(() => _accepting = true);
     try {
-      if (widget.proposal != null) {
-        await ProposalService().updateProposalStatus(
-          widget.proposal!.id,
-          'accepted',
-        );
+      if (_proposal != null) {
+        await ProposalService().updateProposalStatus(_proposal!.id, 'accepted');
       }
       if (!mounted) return;
       setState(() {
@@ -54,11 +87,8 @@ class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
   Future<void> _reject() async {
     setState(() => _rejecting = true);
     try {
-      if (widget.proposal != null) {
-        await ProposalService().updateProposalStatus(
-          widget.proposal!.id,
-          'rejected',
-        );
+      if (_proposal != null) {
+        await ProposalService().updateProposalStatus(_proposal!.id, 'rejected');
       }
       if (!mounted) return;
       setState(() {
@@ -76,11 +106,30 @@ class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (widget.proposal == null) {
-      return const Scaffold(body: Center(child: Text('Proposal not found')));
+    if (_loading) {
+      return const Scaffold(
+        body: AppLoadingView(
+          label: 'Opening proposal details…',
+          color: AppColors.businessPrimary,
+        ),
+      );
+    }
+    if (_loadError != null || _proposal == null) {
+      return Scaffold(
+        body: AppStateView(
+          icon: Icons.description_outlined,
+          title: 'Proposal unavailable',
+          message:
+              'This proposal could not be opened. It may have been withdrawn or the connection may have changed.',
+          accentColor: AppColors.error,
+          actionLabel: 'Try again',
+          actionIcon: Icons.refresh_rounded,
+          onAction: _loadProposal,
+        ),
+      );
     }
 
-    if (_decision.isNotEmpty || widget.proposal!.status != 'pending') {
+    if (_decision.isNotEmpty || _proposal!.status != 'pending') {
       return _buildDecisionState(context);
     }
 
@@ -97,7 +146,7 @@ class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
                   SliverToBoxAdapter(child: _buildStudentCard(context)),
                   SliverToBoxAdapter(child: _buildRateTimeline(context)),
                   SliverToBoxAdapter(child: _buildCoverLetter(context)),
-                  if (widget.proposal!.attachedProjectId != null)
+                  if (_proposal!.attachedProjectId != null)
                     SliverToBoxAdapter(child: _buildAttachedProject(context)),
                   const SliverToBoxAdapter(child: SizedBox(height: 120)),
                 ],
@@ -111,7 +160,7 @@ class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
   }
 
   Widget _buildDecisionState(BuildContext context) {
-    final status = _decision.isNotEmpty ? _decision : widget.proposal!.status;
+    final status = _decision.isNotEmpty ? _decision : _proposal!.status;
     final accepted = status == 'accepted';
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -167,7 +216,7 @@ class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
                 const SizedBox(height: AppSpacing.sm),
                 Text(
                   accepted
-                      ? 'You accepted ${widget.proposal!.studentName ?? "Student"}. A chat has been opened — say hello!'
+                      ? 'You accepted ${_proposal!.studentName ?? "Student"}. A chat has been opened — say hello!'
                       : 'This proposal has been rejected.',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyMedium,
@@ -178,7 +227,7 @@ class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
                     label: 'Open Chat',
                     icon: Icons.chat_bubble_outline_rounded,
                     onPressed: () => context.go(
-                      '/chat/${widget.proposal!.id}?name=${widget.proposal!.studentName ?? "Student"}',
+                      '/chat/${_proposal!.id}?name=${_proposal!.studentName ?? "Student"}',
                     ),
                   ).animate().fadeIn(delay: 650.ms)
                 else
@@ -227,7 +276,7 @@ class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
           tooltip: 'Report Proposal',
           onPressed: () => ReportModal.show(
             context,
-            targetName: widget.proposal!.studentName ?? "Student",
+            targetName: _proposal!.studentName ?? "Student",
             targetType: 'proposal',
           ),
         ),
@@ -265,9 +314,9 @@ class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
               ),
               child: Center(
                 child: Text(
-                  (widget.proposal!.studentName != null &&
-                          widget.proposal!.studentName!.isNotEmpty)
-                      ? widget.proposal!.studentName![0]
+                  (_proposal!.studentName != null &&
+                          _proposal!.studentName!.isNotEmpty)
+                      ? _proposal!.studentName![0]
                       : 'S',
                   style: GoogleFonts.plusJakartaSans(
                     fontSize: 22,
@@ -286,7 +335,7 @@ class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
                     children: [
                       Flexible(
                         child: Text(
-                          widget.proposal!.studentName ?? "Student",
+                          _proposal!.studentName ?? "Student",
                           style: GoogleFonts.plusJakartaSans(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
@@ -309,9 +358,8 @@ class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
               ),
             ),
             GestureDetector(
-              onTap: () => context.go(
-                '/student/profile/${widget.proposal!.studentProfileId}',
-              ),
+              onTap: () =>
+                  context.go('/student/profile/${_proposal!.studentProfileId}'),
               child: Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.sm,
@@ -348,7 +396,7 @@ class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
           _MetaTile(
             icon: Icons.payments_outlined,
             label: 'Proposed Rate',
-            value: '₱${widget.proposal!.proposedBudget}',
+            value: '₱${_proposal!.proposedBudget}',
             accent: AppColors.businessPrimary,
             mono: true,
           ),
@@ -356,7 +404,7 @@ class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
           _MetaTile(
             icon: Icons.timer_outlined,
             label: 'Timeline',
-            value: '${widget.proposal!.estimatedTimelineWeeks} weeks',
+            value: '${_proposal!.estimatedTimelineWeeks} weeks',
             accent: AppColors.businessAccent,
           ),
         ],
@@ -378,7 +426,7 @@ class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
           const _SectionLabel(label: 'Cover Letter'),
           const SizedBox(height: AppSpacing.md),
           Text(
-            widget.proposal!.pitchText,
+            _proposal!.pitchText,
             style: Theme.of(
               context,
             ).textTheme.bodyMedium?.copyWith(height: 1.75),
@@ -403,7 +451,7 @@ class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
           const SizedBox(height: AppSpacing.md),
           AppCard(
             onTap: () => context.go(
-              '/student/portfolio/${widget.proposal!.attachedProjectId}',
+              '/student/portfolio/${_proposal!.attachedProjectId}',
             ),
             child: Row(
               children: [

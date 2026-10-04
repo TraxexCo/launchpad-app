@@ -7,6 +7,7 @@ import '../../services/job_service.dart';
 import '../../models/job_post.dart';
 import '../../widgets/app_background.dart';
 import '../../widgets/app_card.dart';
+import '../../widgets/app_state_view.dart';
 
 class BrowseJobsScreen extends StatefulWidget {
   const BrowseJobsScreen({super.key});
@@ -373,57 +374,59 @@ class _BrowseJobsScreenState extends State<BrowseJobsScreen> {
 
   Widget _buildJobList() {
     if (_loading) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppColors.studentPrimary),
+      return const AppLoadingView(
+        label: 'Finding opportunities for you…',
+        color: AppColors.studentPrimary,
       );
     }
     if (_error != null) {
-      return Center(
-        child: Text(_error!, style: TextStyle(color: AppColors.error)),
+      return AppStateView(
+        icon: Icons.wifi_off_rounded,
+        title: 'Opportunities could not load',
+        message: 'Check your connection and refresh the job board.',
+        accentColor: AppColors.error,
+        actionLabel: 'Refresh jobs',
+        actionIcon: Icons.refresh_rounded,
+        onAction: _loadJobs,
       );
     }
 
     final jobs = _filtered;
     if (jobs.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.work_off_outlined, color: AppColors.textMuted, size: 48),
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              'No jobs found',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              'Try a different filter or search term.',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ],
-        ),
+      return AppStateView(
+        icon: Icons.manage_search_rounded,
+        title: 'No matching opportunities',
+        message:
+            'Adjust your search, category, or budget filters to widen the results.',
+        accentColor: AppColors.studentPrimary,
       );
     }
-    return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.lg,
-        AppSpacing.sm,
-        AppSpacing.lg,
-        AppSpacing.xl,
+    return RefreshIndicator(
+      color: AppColors.studentPrimary,
+      onRefresh: _loadJobs,
+      child: ListView.separated(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          AppSpacing.sm,
+          AppSpacing.lg,
+          AppSpacing.xl,
+        ),
+        itemCount: jobs.length,
+        separatorBuilder: (context, idx) =>
+            const SizedBox(height: AppSpacing.md),
+        itemBuilder: (context, i) => _JobCard(job: jobs[i])
+            .animate()
+            .fadeIn(
+              duration: 400.ms,
+              delay: Duration(milliseconds: i * 60),
+            )
+            .slideY(
+              begin: 0.1,
+              duration: 350.ms,
+              delay: Duration(milliseconds: i * 60),
+            ),
       ),
-      itemCount: jobs.length,
-      separatorBuilder: (context, idx) => const SizedBox(height: AppSpacing.md),
-      itemBuilder: (context, i) => _JobCard(job: jobs[i])
-          .animate()
-          .fadeIn(
-            duration: 400.ms,
-            delay: Duration(milliseconds: i * 60),
-          )
-          .slideY(
-            begin: 0.1,
-            duration: 350.ms,
-            delay: Duration(milliseconds: i * 60),
-          ),
     );
   }
 }

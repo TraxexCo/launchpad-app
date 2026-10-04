@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants.dart';
 import '../../widgets/app_background.dart';
+import '../../widgets/app_state_view.dart';
 import '../../widgets/app_card.dart';
 import '../../services/notification_service.dart';
 
@@ -46,15 +47,34 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   Future<void> _loadFilters() async {
     final userId = Supabase.instance.client.auth.currentUser?.id ?? 'guest';
     final prefs = await SharedPreferences.getInstance();
+    Map<String, bool>? cloudPreferences;
+    try {
+      cloudPreferences = await NotificationService().getPreferences();
+    } catch (_) {
+      cloudPreferences = null;
+    }
     if (!mounted) return;
     setState(() {
-      _showJobs = prefs.getBool('settings_${userId}_jobs') ?? true;
-      _showProposals = prefs.getBool('settings_${userId}_proposals') ?? true;
-      _showMessages = prefs.getBool('settings_${userId}_messages') ?? true;
+      _showJobs =
+          cloudPreferences?['jobs'] ??
+          prefs.getBool('settings_${userId}_jobs') ??
+          true;
+      _showProposals =
+          cloudPreferences?['proposals'] ??
+          prefs.getBool('settings_${userId}_proposals') ??
+          true;
+      _showMessages =
+          cloudPreferences?['messages'] ??
+          prefs.getBool('settings_${userId}_messages') ??
+          true;
     });
   }
 
   bool _isVisible(Map<String, dynamic> notification) {
+    final kind = notification['kind']?.toString();
+    if (kind == 'messages') return _showMessages;
+    if (kind == 'proposals') return _showProposals;
+    if (kind == 'jobs') return _showJobs;
     final text = '${notification['title'] ?? ''} ${notification['body'] ?? ''}'
         .toLowerCase();
     if (text.contains('message') || text.contains('chat')) return _showMessages;
@@ -194,20 +214,27 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   ),
                   Expanded(
                     child: snapshot.hasError
-                        ? Center(
-                            child: Padding(
-                              padding: const EdgeInsets.all(AppSpacing.lg),
-                              child: Text(
-                                'Error loading notifications:\n\n${snapshot.error}',
-                                textAlign: TextAlign.center,
-                                style: TextStyle(color: AppColors.error),
-                              ),
-                            ),
+                        ? AppStateView(
+                            icon: Icons.notifications_off_outlined,
+                            title: 'Updates could not sync',
+                            message:
+                                'Your activity feed will reconnect automatically when the service is available.',
+                            accentColor: AppColors.error,
                           )
                         : !snapshot.hasData
-                        ? const Center(child: CircularProgressIndicator())
+                        ? AppLoadingView(
+                            label: 'Checking recent activity…',
+                            color: _primary,
+                          )
                         : notifications.isEmpty
-                        ? const Center(child: Text('No notifications yet'))
+                        ? AppStateView(
+                            icon: Icons.notifications_none_rounded,
+                            title: 'You are all caught up',
+                            message: _isStudent
+                                ? 'Proposal decisions, messages, contracts, and reviews will appear here.'
+                                : 'New pitches, messages, milestones, and reviews will appear here.',
+                            accentColor: _primary,
+                          )
                         : ListView.separated(
                             padding: const EdgeInsets.symmetric(
                               horizontal: AppSpacing.lg,

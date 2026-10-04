@@ -7,33 +7,35 @@ class AppColors {
   AppColors._();
 
   // Base canvas
-  static const Color background = Color(0xFFF8FAFC); // slate-50
+  static const Color background = Color(0xFFF5F7FB);
   static const Color surface = Color(0xFFFFFFFF); // white
-  static const Color surfaceHigh = Color(0xFFF1F5F9); // slate-100
-  static const Color border = Color(0xFFE2E8F0); // slate-200
-  static const Color borderHigh = Color(0xFFCBD5E1); // slate-300
+  static const Color surfaceHigh = Color(0xFFF0F3F9);
+  static const Color surfaceMuted = Color(0xFFE9EDF5);
+  static const Color border = Color(0xFFE1E6EF);
+  static const Color borderHigh = Color(0xFFC9D1DF);
 
   // Student — Fresh Indigo
-  static const Color studentPrimary = Color(0xFF4F46E5); // indigo-600
-  static const Color studentAccent = Color(0xFF818CF8); // indigo-400
+  static const Color studentPrimary = Color(0xFF5B4CF0);
+  static const Color studentAccent = Color(0xFF8B80FF);
   static const Color studentGlow = Color(0x224F46E5);
 
   // Business — Trustworthy Emerald
-  static const Color businessPrimary = Color(0xFF059669); // emerald-600
-  static const Color businessAccent = Color(0xFF34D399); // emerald-400
+  static const Color businessPrimary = Color(0xFF087E6A);
+  static const Color businessAccent = Color(0xFF35C9A3);
   static const Color businessGlow = Color(0x22059669);
 
   // Text hierarchy
-  static const Color textPrimary = Color(0xFF0F172A); // slate-900
-  static const Color textSecondary = Color(0xFF475569); // slate-600
-  static const Color textMuted = Color(0xFF94A3B8); // slate-400
-  static const Color textDisabled = Color(0xFFCBD5E1); // slate-300
+  static const Color textPrimary = Color(0xFF111827);
+  static const Color textSecondary = Color(0xFF4B5565);
+  static const Color textMuted = Color(0xFF8A94A6);
+  static const Color textDisabled = Color(0xFFBCC4D1);
 
   // Semantic
   static const Color success = Color(0xFF10B981);
   static const Color warning = Color(0xFFF59E0B);
   static const Color error = Color(0xFFEF4444);
   static const Color info = Color(0xFF3B82F6);
+  static const Color violet = Color(0xFF8B5CF6);
 
   // Animated mesh orbs (Faint pastels for light mode)
   static const Color meshBlue = Color(0x0C4F46E5); // faint indigo

@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants.dart';
 import '../../widgets/app_background.dart';
+import '../../widgets/app_state_view.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -93,6 +94,17 @@ class _ChatScreenState extends State<ChatScreen> {
         });
       }
     }
+  }
+
+  Future<void> _retryConversation() async {
+    await _subscription?.cancel();
+    _subscription = null;
+    if (!mounted) return;
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    await _loadConversation();
   }
 
   String _formatTime(String value) {
@@ -189,11 +201,29 @@ class _ChatScreenState extends State<ChatScreen> {
               _buildAppBar(context),
               Expanded(
                 child: _loading
-                    ? const Center(child: CircularProgressIndicator())
+                    ? const AppLoadingView(
+                        label: 'Opening secure conversation…',
+                        color: AppColors.studentPrimary,
+                      )
                     : _error != null
-                    ? Center(child: Text(_error!))
+                    ? AppStateView(
+                        icon: Icons.forum_outlined,
+                        title: 'Conversation unavailable',
+                        message:
+                            'Chat opens after a proposal is accepted. If it already was, reconnect and try again.',
+                        accentColor: AppColors.error,
+                        actionLabel: 'Try again',
+                        actionIcon: Icons.refresh_rounded,
+                        onAction: _retryConversation,
+                      )
                     : _messages.isEmpty && _failedMessages.isEmpty
-                    ? const Center(child: Text('No messages yet. Say hello!'))
+                    ? AppStateView(
+                        icon: Icons.waving_hand_outlined,
+                        title: 'Start the project conversation',
+                        message:
+                            'Introduce yourself, confirm the scope, and keep decisions in one place.',
+                        accentColor: AppColors.studentPrimary,
+                      )
                     : _buildMessages(),
               ),
               if (_contractId != null) _buildInput(),
