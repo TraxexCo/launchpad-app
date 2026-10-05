@@ -140,7 +140,7 @@ class _EditJobScreenState extends State<EditJobScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Refine Job Post',
+                            'Brief Revision',
                             style: GoogleFonts.plusJakartaSans(
                               fontSize: 20,
                               fontWeight: FontWeight.w800,
@@ -148,7 +148,7 @@ class _EditJobScreenState extends State<EditJobScreen> {
                             ),
                           ),
                           Text(
-                            'Keep the brief clear for stronger pitches',
+                            'Recalibrate scope, budget, and candidate signal',
                             style: GoogleFonts.inter(
                               fontSize: 11,
                               color: AppColors.textMuted,

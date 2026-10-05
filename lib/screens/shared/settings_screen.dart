@@ -510,6 +510,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: AppSpacing.sm),
+                      _buildControlSummary(),
+                      const SizedBox(height: AppSpacing.md),
                       _buildProfileCard(),
                       const SizedBox(height: AppSpacing.xl),
                       _buildSectionLabel('Notifications'),
@@ -627,6 +629,59 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  Widget _buildControlSummary() {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: _primary.withValues(alpha: .09),
+        border: Border.all(color: _primary.withValues(alpha: .35)),
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(26),
+          bottomRight: Radius.circular(26),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: _primary.withValues(alpha: .14),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(Icons.tune_rounded, color: _primary),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _isStudent ? 'STUDENT SYSTEM' : 'BUSINESS SYSTEM',
+                  style: GoogleFonts.jetBrainsMono(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.2,
+                    color: _primary,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  'Manage identity, alerts, security, and location.',
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Icon(Icons.shield_outlined, color: AppColors.success),
+        ],
+      ),
+    );
+  }
+
   Widget _buildHeader(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
@@ -661,11 +716,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Settings',
+                'Control Panel',
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               Text(
-                '// account.preferences',
+                '// identity • signals • access',
                 style: GoogleFonts.jetBrainsMono(fontSize: 10, color: _primary),
               ),
             ],

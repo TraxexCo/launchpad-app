@@ -134,11 +134,11 @@ class _MyProposalsScreenState extends State<MyProposalsScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'My Pitches',
+                'Transmission Tracker',
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               Text(
-                '// proposal.tracker',
+                '// every pitch has a flight path',
                 style: GoogleFonts.jetBrainsMono(
                   fontSize: 10,
                   color: AppColors.studentPrimary,

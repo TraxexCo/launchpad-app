@@ -112,6 +112,7 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                     child: CustomScrollView(
                       slivers: [
                         _buildAppBar(context),
+                        SliverToBoxAdapter(child: _buildOpportunityIdentity()),
                         SliverToBoxAdapter(child: _buildBusinessCard()),
                         SliverToBoxAdapter(child: _buildJobMeta()),
                         SliverToBoxAdapter(child: _buildDescription()),
@@ -126,6 +127,75 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
               ),
       ),
     );
+  }
+
+  Widget _buildOpportunityIdentity() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.sm,
+        AppSpacing.lg,
+        AppSpacing.md,
+      ),
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppColors.studentPrimary.withValues(alpha: .2),
+            AppColors.surfaceHigh,
+          ],
+        ),
+        border: Border.all(
+          color: AppColors.studentPrimary.withValues(alpha: .4),
+        ),
+        borderRadius: const BorderRadius.only(
+          topRight: Radius.circular(28),
+          bottomLeft: Radius.circular(28),
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: AppColors.studentAccent),
+            ),
+            child: const Icon(
+              Icons.travel_explore_rounded,
+              color: AppColors.studentAccent,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'OPPORTUNITY BRIEF',
+                  style: GoogleFonts.jetBrainsMono(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.5,
+                    color: AppColors.studentAccent,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  'Inspect the mission before you commit.',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Icon(Icons.north_east_rounded, color: AppColors.studentPrimary),
+        ],
+      ),
+    ).animate().fadeIn().slideY(begin: -.08);
   }
 
   Widget _buildAppBar(BuildContext context) {

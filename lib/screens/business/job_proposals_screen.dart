@@ -153,12 +153,12 @@ class _JobProposalsScreenState extends State<JobProposalsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Proposals',
+                'Candidate Signals',
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               if (!_loading)
                 Text(
-                  '// ${_proposals.length} pitches received',
+                  '// ${_proposals.length} dossiers ready for review',
                   style: GoogleFonts.jetBrainsMono(
                     fontSize: 10,
                     color: AppColors.businessPrimary,

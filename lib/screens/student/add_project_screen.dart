@@ -329,11 +329,11 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Add Project',
+                'Build Manifest',
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               Text(
-                '// portfolio.new_entry',
+                '// document the work behind the result',
                 style: GoogleFonts.jetBrainsMono(
                   fontSize: 10,
                   color: AppColors.studentPrimary,

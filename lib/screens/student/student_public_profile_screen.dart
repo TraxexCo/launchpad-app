@@ -174,6 +174,7 @@ class _StudentPublicProfileScreenState
                     child: CustomScrollView(
                       slivers: [
                         _buildAppBar(context),
+                        SliverToBoxAdapter(child: _buildPassportIdentity()),
                         SliverToBoxAdapter(child: _buildProfileHeader(context)),
                         SliverToBoxAdapter(child: _buildStats(context)),
                         SliverToBoxAdapter(child: _buildBio(context)),
@@ -191,6 +192,53 @@ class _StudentPublicProfileScreenState
                 ],
               ),
             ),
+    );
+  }
+
+  Widget _buildPassportIdentity() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.sm,
+        AppSpacing.lg,
+        0,
+      ),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.sm,
+      ),
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: AppColors.studentAccent.withValues(alpha: .45),
+        ),
+        borderRadius: const BorderRadius.only(
+          topRight: Radius.circular(22),
+          bottomLeft: Radius.circular(22),
+        ),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.badge_outlined, color: AppColors.studentAccent),
+          const SizedBox(width: AppSpacing.sm),
+          Text(
+            'DEVELOPER PASSPORT',
+            style: GoogleFonts.jetBrainsMono(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.4,
+              color: AppColors.studentAccent,
+            ),
+          ),
+          const Spacer(),
+          Text(
+            'VERIFIED WORK',
+            style: GoogleFonts.jetBrainsMono(
+              fontSize: 8,
+              color: AppColors.textMuted,
+            ),
+          ),
+        ],
+      ),
     );
   }
 

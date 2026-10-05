@@ -331,14 +331,15 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Project Showcase',
+                                'Case File',
                                 style: Theme.of(context).textTheme.titleLarge,
                               ),
                               Text(
-                                'Portfolio case study',
-                                style: GoogleFonts.inter(
-                                  fontSize: 12,
-                                  color: AppColors.textMuted,
+                                'BUILD RECORD • VERIFIED EVIDENCE',
+                                style: GoogleFonts.jetBrainsMono(
+                                  fontSize: 9,
+                                  letterSpacing: 1.1,
+                                  color: AppColors.studentAccent,
                                 ),
                               ),
                             ],
@@ -351,10 +352,22 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Icon(
-                            Icons.folder_outlined,
-                            size: 44,
-                            color: AppColors.studentPrimary,
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.data_object_rounded,
+                                size: 42,
+                                color: AppColors.studentAccent,
+                              ),
+                              const Spacer(),
+                              Text(
+                                'CASE ${widget.projectId.padLeft(4, '0')}',
+                                style: GoogleFonts.jetBrainsMono(
+                                  fontSize: 9,
+                                  color: AppColors.textMuted,
+                                ),
+                              ),
+                            ],
                           ),
                           const SizedBox(height: AppSpacing.md),
                           Text(

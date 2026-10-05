@@ -21,21 +21,21 @@ The student dashboard is a **Flight Deck** centered on live missions, pitches, b
 | Registration | Guided multi-step flow, progress feedback, role-specific fields, and validation |
 | Password recovery | Secure visual focus, show/hide controls, live strength meter, and clear completion path |
 | Student home | Personalized hierarchy, quick actions, live notification badge, activity summaries, and animated cards |
-| Opportunity browser | Search, filters, sorting, animated results, pull-to-refresh, and tailored loading/error/empty states |
-| Job details | Business trust context, structured project brief, skills, timeline, fixed pitch action, and recovery states |
-| Submit proposal | Guided proposal composer, project attachment, live review step, validation, and submission feedback |
-| My pitches | Stage tabs, summary metrics, pull-to-refresh, status cards, withdrawal flow, and tailored empty states |
-| Add portfolio project | Structured project form, project type selector, skill picker, link validation, and fixed completion action |
-| Project showcase | Portfolio case-study hierarchy, owner actions, external links, skills, and retryable loading states |
-| Student public profile | Professional profile hierarchy, GitHub and portfolio sections, reviews, and resilient loading states |
+| Opportunity scanner | Live radar identity, match count, search, filters, sorting, animated results, pull-to-refresh, and tailored states |
+| Opportunity brief | Mission inspection header, business trust context, structured brief, skills, timeline, fixed pitch action, and recovery states |
+| Pitch composer | Three-node compose/verify/transmit route, project attachment, live review step, validation, and launch feedback |
+| Transmission tracker | Stage tabs, summary metrics, pull-to-refresh, status cards, withdrawal flow, and tailored empty states |
+| Build manifest | Structured evidence form, project type selector, skill picker, link validation, and fixed completion action |
+| Case file | Build-record hierarchy, owner actions, external links, skills, case identifier, and retryable loading states |
+| Developer passport | Identity strip, professional profile hierarchy, GitHub evidence, portfolio, reviews, and resilient states |
 | Business home | Hiring overview, job/proposal/contract summaries, live notification badge, and role-specific navigation |
-| Post job | Guided brief builder, budget/timeline inputs, skills, preview step, and publish feedback |
-| Edit job | Brief-quality guidance, grouped fields, role color treatment, and focused save action |
-| Job proposals | Job summary, sort tools, animated candidates, pull-to-refresh, and useful empty/error states |
-| Proposal details | Deep-link loading from the backend, candidate context, portfolio access, decision flow, and decision confirmation |
-| Chat | Realtime project conversation, send/retry states, timestamped bubbles, and contextual first-message guidance |
-| Notifications | Realtime unread state, per-event visuals, preferences, swipe deletion, mark-all-read, and role-specific empty copy |
-| Settings | Account card, profile editing, notification controls synced to the backend, security, support, and business GPS publishing |
+| Mission brief builder | Guided scope builder, route progress, budget/timeline inputs, skills, preview, and publish feedback |
+| Brief revision | Recalibration identity, brief-quality guidance, grouped fields, and focused save action |
+| Candidate signals | Dossier count, job summary, sort tools, animated candidates, pull-to-refresh, and useful states |
+| Candidate dossier | Evidence review identity, backend deep-link loading, candidate context, portfolio, decision flow, and confirmation |
+| Secure project channel | Live connection status, realtime conversation, send/retry states, timestamped bubbles, and first-message guidance |
+| Signal inbox | Read-progress instrument, realtime unread state, per-event visuals, swipe deletion, mark-all-read, and role-specific copy |
+| Control panel | Role-aware system identity, account card, profile editing, synced alert controls, security, support, and business GPS publishing |
 | Nearby Radar | Live device GPS, interactive OpenStreetMap, adjustable radius, business markers, distance ranking, and permission recovery |
 
 ## Interaction and accessibility improvements

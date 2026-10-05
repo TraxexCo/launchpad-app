@@ -143,6 +143,7 @@ class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
               child: CustomScrollView(
                 slivers: [
                   _buildAppBar(context),
+                  SliverToBoxAdapter(child: _buildDossierIdentity()),
                   SliverToBoxAdapter(child: _buildStudentCard(context)),
                   SliverToBoxAdapter(child: _buildRateTimeline(context)),
                   SliverToBoxAdapter(child: _buildCoverLetter(context)),
@@ -155,6 +156,70 @@ class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
             _buildActionBar(context),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildDossierIdentity() {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.sm,
+        AppSpacing.lg,
+        AppSpacing.md,
+      ),
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.businessPrimary.withValues(alpha: .09),
+        border: Border.all(
+          color: AppColors.businessPrimary.withValues(alpha: .4),
+        ),
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(26),
+          bottomRight: Radius.circular(26),
+        ),
+      ),
+      child: Row(
+        children: [
+          const Icon(
+            Icons.fingerprint_rounded,
+            size: 40,
+            color: AppColors.businessAccent,
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'CANDIDATE DOSSIER',
+                  style: GoogleFonts.jetBrainsMono(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.5,
+                    color: AppColors.businessAccent,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  'Evidence, terms, and fit in one review.',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            width: 8,
+            height: 8,
+            decoration: const BoxDecoration(
+              color: AppColors.warning,
+              shape: BoxShape.circle,
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -186,11 +186,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Notifications',
+                              'Signal Inbox',
                               style: Theme.of(context).textTheme.headlineSmall,
                             ),
                             Text(
-                              '// $unreadCount unread',
+                              '// $unreadCount unread transmissions',
                               style: GoogleFonts.jetBrainsMono(
                                 fontSize: 10,
                                 color: _primary,
@@ -212,6 +212,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                       ],
                     ).animate().fadeIn(duration: 400.ms),
                   ),
+                  _buildSignalSummary(unreadCount, notifications.length),
                   Expanded(
                     child: snapshot.hasError
                         ? AppStateView(
@@ -423,6 +424,74 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
             },
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildSignalSummary(int unread, int total) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        0,
+        AppSpacing.lg,
+        AppSpacing.md,
+      ),
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [_primary.withValues(alpha: .18), AppColors.surfaceHigh],
+        ),
+        border: Border.all(color: _primary.withValues(alpha: .35)),
+        borderRadius: const BorderRadius.only(
+          topRight: Radius.circular(24),
+          bottomLeft: Radius.circular(24),
+        ),
+      ),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 46,
+            height: 46,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                CircularProgressIndicator(
+                  value: total == 0 ? 0 : (total - unread) / total,
+                  strokeWidth: 3,
+                  color: _primary,
+                  backgroundColor: AppColors.border,
+                ),
+                Icon(Icons.sensors_rounded, size: 19, color: _primary),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  unread == 0
+                      ? 'ALL SIGNALS CLEARED'
+                      : '$unread SIGNAL${unread == 1 ? '' : 'S'} NEED ATTENTION',
+                  style: GoogleFonts.jetBrainsMono(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '$total activity records in this channel',
+                  style: GoogleFonts.inter(
+                    fontSize: 11,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

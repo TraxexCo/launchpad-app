@@ -189,7 +189,7 @@ class _PostJobScreenState extends State<PostJobScreen>
                   borderRadius: BorderRadius.circular(AppRadius.full),
                 ),
                 child: Text(
-                  '// business.post_job',
+                  'MISSION BRIEF BUILDER',
                   style: GoogleFonts.jetBrainsMono(
                     fontSize: 10,
                     color: _primary,
@@ -199,6 +199,14 @@ class _PostJobScreenState extends State<PostJobScreen>
             ],
           ),
           const SizedBox(height: AppSpacing.md),
+          Text(
+            'Define the work. Attract the right builder.',
+            style: GoogleFonts.inter(
+              fontSize: 12,
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
           Row(
             children: List.generate(
               3,

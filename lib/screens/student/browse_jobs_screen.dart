@@ -138,81 +138,159 @@ class _BrowseJobsScreenState extends State<BrowseJobsScreen> {
         AppSpacing.lg,
         AppSpacing.sm,
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          GestureDetector(
-            onTap: () =>
-                context.canPop() ? context.pop() : context.go('/student'),
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: AppColors.surfaceHigh,
-                borderRadius: BorderRadius.circular(AppRadius.md),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: const Icon(
-                Icons.arrow_back_ios_new_rounded,
-                color: AppColors.textSecondary,
-                size: 14,
-              ),
-            ),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          Row(
             children: [
-              Text(
-                'Browse Jobs',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
-              Text(
-                '// ${_filtered.length} opportunities near you',
-                style: GoogleFonts.jetBrainsMono(
-                  fontSize: 10,
-                  color: AppColors.studentPrimary,
+              GestureDetector(
+                onTap: () =>
+                    context.canPop() ? context.pop() : context.go('/student'),
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceHigh,
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: const Icon(
+                    Icons.arrow_back_ios_new_rounded,
+                    color: AppColors.textSecondary,
+                    size: 14,
+                  ),
                 ),
               ),
-            ],
-          ),
-          const Spacer(),
-          GestureDetector(
-            onTap: () => context.go('/notifications?role=student'),
-            child: Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: AppColors.surfaceHigh,
-                borderRadius: BorderRadius.circular(AppRadius.md),
-                border: Border.all(color: AppColors.border),
-              ),
-              child: Stack(
-                children: [
-                  const Center(
-                    child: Icon(
-                      Icons.notifications_none_rounded,
-                      color: AppColors.textSecondary,
-                      size: 20,
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Opportunity Scanner',
+                      style: Theme.of(context).textTheme.headlineSmall,
                     ),
-                  ),
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: Container(
-                      width: 7,
-                      height: 7,
-                      decoration: const BoxDecoration(
-                        color: AppColors.studentPrimary,
-                        shape: BoxShape.circle,
+                    Text(
+                      'LIVE MARKET RADAR',
+                      style: GoogleFonts.jetBrainsMono(
+                        fontSize: 9,
+                        letterSpacing: 1.8,
+                        color: AppColors.studentAccent,
                       ),
                     ),
-                  ),
+                  ],
+                ),
+              ),
+              _buildNotificationButton(context),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  AppColors.studentPrimary.withValues(alpha: .18),
+                  AppColors.studentAccent.withValues(alpha: .05),
                 ],
               ),
+              border: Border.all(
+                color: AppColors.studentPrimary.withValues(alpha: .35),
+              ),
+              borderRadius: const BorderRadius.only(
+                topRight: Radius.circular(24),
+                bottomLeft: Radius.circular(24),
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 46,
+                  height: 46,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.studentAccent),
+                  ),
+                  child: const Icon(
+                    Icons.radar_rounded,
+                    color: AppColors.studentAccent,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${_filtered.length} MATCHING SIGNALS',
+                        style: GoogleFonts.jetBrainsMono(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Search skills, compare briefs, launch a pitch.',
+                        style: GoogleFonts.inter(
+                          fontSize: 12,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  width: 7,
+                  height: 7,
+                  decoration: const BoxDecoration(
+                    color: AppColors.success,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
-      ).animate().fadeIn(duration: 400.ms),
+      ),
+    );
+  }
+
+  Widget _buildNotificationButton(BuildContext context) {
+    return GestureDetector(
+      onTap: () => context.go('/notifications?role=student'),
+      child: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: AppColors.surfaceHigh,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Stack(
+          children: [
+            const Center(
+              child: Icon(
+                Icons.notifications_none_rounded,
+                color: AppColors.textSecondary,
+                size: 20,
+              ),
+            ),
+            Positioned(
+              top: 8,
+              right: 8,
+              child: Container(
+                width: 7,
+                height: 7,
+                decoration: const BoxDecoration(
+                  color: AppColors.studentPrimary,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

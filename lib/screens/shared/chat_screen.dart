@@ -307,10 +307,15 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                 ),
                 Text(
-                  'Project conversation',
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
-                    color: AppColors.textMuted,
+                  _contractId == null
+                      ? 'CHANNEL SYNCING'
+                      : 'SECURE PROJECT CHANNEL • LIVE',
+                  style: GoogleFonts.jetBrainsMono(
+                    fontSize: 8,
+                    letterSpacing: .8,
+                    color: _contractId == null
+                        ? AppColors.warning
+                        : AppColors.success,
                   ),
                 ),
               ],

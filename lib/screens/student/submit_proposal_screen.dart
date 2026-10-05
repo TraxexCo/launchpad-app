@@ -257,7 +257,7 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _step == 0 ? 'Write Your Pitch' : 'Preview Pitch',
+                      _step == 0 ? 'Pitch Composer' : 'Launch Check',
                       style: Theme.of(context).textTheme.headlineSmall,
                     ),
                     Text(
@@ -275,29 +275,72 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
             ],
           ),
           const SizedBox(height: AppSpacing.md),
-          // Progress
-          Row(
-            children: List.generate(
-              2,
-              (i) => Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.only(right: 6),
-                  child: AnimatedContainer(
-                    duration: AppDurations.normal,
-                    height: 3,
-                    decoration: BoxDecoration(
-                      color: i <= _step
-                          ? AppColors.studentPrimary
-                          : AppColors.border,
-                      borderRadius: BorderRadius.circular(AppRadius.full),
-                    ),
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceHigh.withValues(alpha: .82),
+              border: Border.all(
+                color: AppColors.studentPrimary.withValues(alpha: .3),
+              ),
+              borderRadius: const BorderRadius.only(
+                topRight: Radius.circular(22),
+                bottomLeft: Radius.circular(22),
+              ),
+            ),
+            child: Row(
+              children: [
+                _buildRouteNode('01', 'COMPOSE', _step >= 0),
+                Expanded(
+                  child: Container(
+                    height: 1,
+                    color: _step >= 1
+                        ? AppColors.studentAccent
+                        : AppColors.border,
                   ),
                 ),
-              ),
+                _buildRouteNode('02', 'VERIFY', _step >= 1),
+                Expanded(child: Container(height: 1, color: AppColors.border)),
+                _buildRouteNode('03', 'TRANSMIT', false),
+              ],
             ),
           ),
         ],
       ).animate().fadeIn(duration: 400.ms),
+    );
+  }
+
+  Widget _buildRouteNode(String code, String label, bool active) {
+    final color = active ? AppColors.studentAccent : AppColors.textDisabled;
+    return Column(
+      children: [
+        Container(
+          width: 28,
+          height: 28,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: color),
+            color: color.withValues(alpha: .1),
+          ),
+          child: Text(
+            code,
+            style: GoogleFonts.jetBrainsMono(
+              fontSize: 8,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: GoogleFonts.jetBrainsMono(
+            fontSize: 7,
+            letterSpacing: .8,
+            color: color,
+          ),
+        ),
+      ],
     );
   }
 
