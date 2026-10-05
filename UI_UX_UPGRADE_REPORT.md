@@ -2,7 +2,14 @@
 
 ## Design direction
 
-LaunchPad now uses a focused two-role visual system: blue and violet for student discovery and portfolio work, and green and teal for business hiring. Every screen uses consistent spacing, typography, touch targets, motion, and feedback while keeping its own task-specific hierarchy.
+LaunchPad now uses the custom **Night Mission** visual system. Its orbital field, animated scan line, signal nodes, clipped opposing corners, console typography, and electric role colors are based on the product idea: students and nearby businesses launching real local projects together. Student screens use orbit violet and electric cyan; business screens use launch mint and opportunity amber. Every screen keeps its own task-specific hierarchy inside this shared product identity.
+
+The student dashboard is a **Flight Deck** centered on live missions, pitches, builds, Radar, and portfolio progress. The business dashboard is a separate **Business Control** view centered on open briefs, incoming signals, successful matches, and launching a new project brief. These are different page compositions rather than recolored copies.
+
+## Verified mobile previews
+
+- `docs/ui/night-mission-onboarding.png` — role selection at a 390 × 844 mobile viewport
+- `docs/ui/night-mission-student-access.png` — student access state at the same viewport
 
 ## Screen-by-screen coverage
 

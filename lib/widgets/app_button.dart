@@ -20,7 +20,7 @@ class AppButton extends StatefulWidget {
     required this.label,
     this.onPressed,
     this.backgroundColor = AppColors.studentPrimary,
-    this.foregroundColor = Colors.white,
+    this.foregroundColor = AppColors.ink,
     this.isLoading = false,
     this.isExpanded = true,
     this.icon,
@@ -39,7 +39,7 @@ class AppButton extends StatefulWidget {
     label: label,
     onPressed: onPressed,
     backgroundColor: AppColors.studentPrimary,
-    foregroundColor: outlined ? AppColors.studentPrimary : Colors.white,
+    foregroundColor: outlined ? AppColors.studentPrimary : AppColors.ink,
     isLoading: isLoading,
     isExpanded: isExpanded,
     outlined: outlined,
@@ -57,7 +57,7 @@ class AppButton extends StatefulWidget {
     label: label,
     onPressed: onPressed,
     backgroundColor: AppColors.businessPrimary,
-    foregroundColor: outlined ? AppColors.businessPrimary : Colors.white,
+    foregroundColor: outlined ? AppColors.businessPrimary : AppColors.ink,
     isLoading: isLoading,
     isExpanded: isExpanded,
     outlined: outlined,
@@ -129,7 +129,12 @@ class _AppButtonState extends State<AppButton>
                     end: Alignment.topRight,
                   )
                 : null,
-            borderRadius: BorderRadius.circular(AppRadius.lg),
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(AppRadius.sm),
+              topRight: Radius.circular(AppRadius.xl),
+              bottomLeft: Radius.circular(AppRadius.xl),
+              bottomRight: Radius.circular(AppRadius.sm),
+            ),
             border: widget.outlined
                 ? Border.all(color: widget.backgroundColor, width: 1.5)
                 : null,

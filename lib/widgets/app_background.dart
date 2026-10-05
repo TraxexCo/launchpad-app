@@ -2,8 +2,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../core/constants.dart';
 
-/// Full-screen animated gradient mesh background.
-/// Three translucent orbs drift in slow Lissajous-like paths.
+/// Launch field: a moving orbital map that gives every page a recognizable
+/// LaunchPad backdrop instead of a generic flat canvas.
 class AppBackground extends StatefulWidget {
   final Widget child;
   final Color? tintColor;
@@ -62,15 +62,57 @@ class _GridPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = AppColors.textPrimary.withValues(alpha: 0.018)
-      ..strokeWidth = 0.7;
-    const gap = 28.0;
+    final grid = Paint()
+      ..color = AppColors.info.withValues(alpha: 0.045)
+      ..strokeWidth = 0.65;
+    const gap = 34.0;
     for (double x = 0; x < size.width; x += gap) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), grid);
     }
     for (double y = 0; y < size.height; y += gap) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), grid);
+    }
+
+    final orbit = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1
+      ..color = AppColors.studentPrimary.withValues(alpha: 0.11);
+    final anchor = Offset(size.width * 0.86, size.height * 0.13);
+    canvas.drawCircle(anchor, 58, orbit);
+    canvas.drawCircle(anchor, 102, orbit);
+    canvas.drawCircle(anchor, 148, orbit);
+
+    final trajectory = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2
+      ..color = AppColors.businessPrimary.withValues(alpha: 0.10);
+    final path = Path()
+      ..moveTo(-20, size.height * 0.72)
+      ..cubicTo(
+        size.width * 0.22,
+        size.height * 0.46,
+        size.width * 0.52,
+        size.height * 0.86,
+        size.width + 30,
+        size.height * 0.48,
+      );
+    canvas.drawPath(path, trajectory);
+
+    final node = Paint()
+      ..color = AppColors.signalYellow.withValues(alpha: 0.55);
+    for (final point in [
+      Offset(size.width * 0.14, size.height * 0.66),
+      Offset(size.width * 0.58, size.height * 0.68),
+      anchor,
+    ]) {
+      canvas.drawCircle(point, 2.3, node);
+      canvas.drawCircle(
+        point,
+        7,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..color = node.color.withValues(alpha: 0.28),
+      );
     }
   }
 
@@ -108,6 +150,17 @@ class _MeshPainter extends CustomPainter {
     final x3 = w * (0.52 + 0.22 * math.sin(t * tau * 1.3 + 1.2));
     final y3 = h * (0.48 + 0.18 * math.cos(t * tau * 0.8 + 2.1));
     _drawOrb(canvas, Offset(x3, y3), w * 0.45, tintColor ?? AppColors.meshCyan);
+
+    final scanY = h * t;
+    final scan = Paint()
+      ..shader = LinearGradient(
+        colors: [
+          Colors.transparent,
+          AppColors.info.withValues(alpha: 0.11),
+          Colors.transparent,
+        ],
+      ).createShader(Rect.fromLTWH(0, scanY - 1, w, 2));
+    canvas.drawRect(Rect.fromLTWH(0, scanY - 1, w, 2), scan);
   }
 
   void _drawOrb(Canvas canvas, Offset center, double radius, Color color) {

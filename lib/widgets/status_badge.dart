@@ -68,7 +68,12 @@ class StatusBadge extends StatelessWidget {
       ),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(AppRadius.full),
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(3),
+          topRight: Radius.circular(10),
+          bottomLeft: Radius.circular(10),
+          bottomRight: Radius.circular(3),
+        ),
         border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
       ),
       child: Row(
@@ -80,7 +85,8 @@ class StatusBadge extends StatelessWidget {
             label,
             style: GoogleFonts.jetBrainsMono(
               fontSize: 10,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.45,
               color: color,
             ),
           ),

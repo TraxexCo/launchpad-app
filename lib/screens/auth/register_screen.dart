@@ -231,6 +231,8 @@ class _RegisterScreenState extends State<RegisterScreen>
                   label: _currentStep < _totalSteps - 1
                       ? 'Continue'
                       : 'Create Account',
+                  backgroundColor: _primary,
+                  foregroundColor: AppColors.ink,
                   isLoading: _loading,
                   icon: _currentStep < _totalSteps - 1
                       ? Icons.arrow_forward_rounded

@@ -136,7 +136,7 @@ class _AppBar extends StatelessWidget {
                 style: GoogleFonts.plusJakartaSans(
                   fontSize: 14,
                   fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
+                  color: AppColors.ink,
                 ),
               ),
             ),
@@ -363,50 +363,22 @@ class _HomeTabState extends State<_HomeTab> {
       children: [
         const SizedBox(height: AppSpacing.sm),
 
-        // ── Welcome
-        Text(
-          'Hey, ${widget.name.split(' ').first} 👋',
-          style: Theme.of(context).textTheme.headlineMedium,
-        ).animate().fadeIn(duration: 500.ms).slideY(begin: 0.15),
-        const SizedBox(height: AppSpacing.xs),
-        Text(
-          'Ready to hustle today?',
-          style: Theme.of(context).textTheme.bodyLarge,
-        ).animate().fadeIn(duration: 400.ms, delay: 100.ms),
+        _StudentLaunchHero(
+          name: widget.name.split(' ').first,
+          projects: _projectCount,
+          pitches: _proposals.length,
+          activeMissions: _contracts
+              .where((contract) => contract.status != 'completed')
+              .length,
+          loading: _loading,
+          onBrowse: () => context.go('/student/jobs'),
+          onPortfolio: () => widget.onNavigate(2),
+        ).animate().fadeIn(duration: 500.ms).slideY(begin: 0.08),
 
         if (_loadFailed) ...[
           const SizedBox(height: AppSpacing.md),
           DashboardLoadError(onRetry: _loadData),
         ],
-
-        const SizedBox(height: AppSpacing.lg),
-
-        // ── Stats row
-        Row(
-              children: [
-                _StatCard(
-                  label: 'Projects',
-                  value: '$_projectCount',
-                  color: AppColors.studentPrimary,
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                _StatCard(
-                  label: 'Pitches',
-                  value: '${_proposals.length}',
-                  color: AppColors.studentAccent,
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                _StatCard(
-                  label: 'Active Jobs',
-                  value:
-                      '${_contracts.where((c) => c.status != 'completed').length}',
-                  color: AppColors.success,
-                ),
-              ],
-            )
-            .animate()
-            .fadeIn(duration: 500.ms, delay: 200.ms)
-            .slideY(begin: 0.1, duration: 400.ms, delay: 200.ms),
 
         // ── Project workspaces
         if (_contracts.isNotEmpty) ...[
@@ -739,6 +711,237 @@ class _HomeTabState extends State<_HomeTab> {
       ],
     );
   }
+}
+
+class _StudentLaunchHero extends StatelessWidget {
+  final String name;
+  final int projects;
+  final int pitches;
+  final int activeMissions;
+  final bool loading;
+  final VoidCallback onBrowse;
+  final VoidCallback onPortfolio;
+
+  const _StudentLaunchHero({
+    required this.name,
+    required this.projects,
+    required this.pitches,
+    required this.activeMissions,
+    required this.loading,
+    required this.onBrowse,
+    required this.onPortfolio,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF241B4A), Color(0xFF10192A)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        border: Border.all(
+          color: AppColors.studentPrimary.withValues(alpha: 0.34),
+        ),
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(10),
+          topRight: Radius.circular(34),
+          bottomLeft: Radius.circular(34),
+          bottomRight: Radius.circular(10),
+        ),
+      ),
+      child: Stack(
+        children: [
+          const Positioned(
+            right: -34,
+            top: -38,
+            child: _OrbitGlyph(color: AppColors.studentAccent),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 7,
+                      height: 7,
+                      decoration: const BoxDecoration(
+                        color: AppColors.studentAccent,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.studentAccent,
+                            blurRadius: 10,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'STUDENT FLIGHT DECK  /  ONLINE',
+                      style: GoogleFonts.jetBrainsMono(
+                        fontSize: 9,
+                        letterSpacing: 1.1,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.studentAccent,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  'Ready for launch,\n$name?',
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 27,
+                    height: 1.04,
+                    letterSpacing: -1.2,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                Row(
+                  children: [
+                    _HeroMetric(
+                      value: loading ? '—' : '$activeMissions',
+                      label: 'LIVE MISSIONS',
+                      color: AppColors.success,
+                    ),
+                    _HeroMetric(
+                      value: loading ? '—' : '$pitches',
+                      label: 'PITCHES',
+                      color: AppColors.studentAccent,
+                    ),
+                    _HeroMetric(
+                      value: loading ? '—' : '$projects',
+                      label: 'BUILDS',
+                      color: AppColors.signalYellow,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                Row(
+                  children: [
+                    Expanded(
+                      child: FilledButton.icon(
+                        onPressed: onBrowse,
+                        icon: const Icon(Icons.radar_rounded, size: 18),
+                        label: const Text('Find a mission'),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    IconButton.outlined(
+                      tooltip: 'Open portfolio',
+                      onPressed: onPortfolio,
+                      icon: const Icon(Icons.grid_view_rounded),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HeroMetric extends StatelessWidget {
+  final String value;
+  final String label;
+  final Color color;
+
+  const _HeroMetric({
+    required this.value,
+    required this.label,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) => Expanded(
+    child: Container(
+      margin: const EdgeInsets.only(right: 6),
+      padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 10),
+      decoration: BoxDecoration(
+        color: AppColors.ink.withValues(alpha: 0.30),
+        border: Border(left: BorderSide(color: color, width: 2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            value,
+            style: GoogleFonts.jetBrainsMono(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: color,
+            ),
+          ),
+          Text(
+            label,
+            maxLines: 1,
+            style: GoogleFonts.jetBrainsMono(
+              fontSize: 7,
+              letterSpacing: 0.5,
+              color: AppColors.textMuted,
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+class _OrbitGlyph extends StatelessWidget {
+  final Color color;
+  const _OrbitGlyph({required this.color});
+
+  @override
+  Widget build(BuildContext context) => SizedBox(
+    width: 180,
+    height: 180,
+    child: CustomPaint(painter: _OrbitGlyphPainter(color)),
+  );
+}
+
+class _OrbitGlyphPainter extends CustomPainter {
+  final Color color;
+  const _OrbitGlyphPainter(this.color);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final center = Offset(size.width / 2, size.height / 2);
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1
+      ..color = color.withValues(alpha: 0.18);
+    for (final radius in [30.0, 54.0, 78.0]) {
+      canvas.drawCircle(center, radius, paint);
+    }
+    canvas.drawLine(
+      Offset(center.dx - 90, center.dy),
+      Offset(center.dx + 90, center.dy),
+      paint,
+    );
+    canvas.drawLine(
+      Offset(center.dx, center.dy - 90),
+      Offset(center.dx, center.dy + 90),
+      paint,
+    );
+    canvas.drawCircle(
+      Offset(center.dx - 42, center.dy + 33),
+      4,
+      Paint()..color = color.withValues(alpha: 0.8),
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _OrbitGlyphPainter oldDelegate) =>
+      oldDelegate.color != color;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1521,57 +1724,6 @@ class _SectionHeader extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _StatCard extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color color;
-  const _StatCard({
-    required this.label,
-    required this.value,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          vertical: AppSpacing.md,
-          horizontal: AppSpacing.sm,
-        ),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-          border: Border.all(color: color.withValues(alpha: 0.25)),
-          boxShadow: [
-            BoxShadow(color: color.withValues(alpha: 0.08), blurRadius: 16),
-          ],
-        ),
-        child: Column(
-          children: [
-            Text(
-              value,
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 28,
-                fontWeight: FontWeight.w800,
-                color: color,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: GoogleFonts.jetBrainsMono(
-                fontSize: 10,
-                color: AppColors.textMuted,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

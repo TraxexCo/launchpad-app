@@ -10,16 +10,16 @@ class AppTheme {
   static ThemeData get light {
     return ThemeData(
       useMaterial3: true,
-      brightness: Brightness.light,
+      brightness: Brightness.dark,
       scaffoldBackgroundColor: AppColors.background,
-      colorScheme: const ColorScheme.light(
+      colorScheme: const ColorScheme.dark(
         surface: AppColors.surface,
         primary: AppColors.studentPrimary,
         secondary: AppColors.studentAccent,
         tertiary: AppColors.businessPrimary,
         error: AppColors.error,
         onSurface: AppColors.textPrimary,
-        onPrimary: Colors.white,
+        onPrimary: AppColors.ink,
         outline: AppColors.border,
         surfaceContainerHighest: AppColors.surfaceHigh,
       ),
@@ -35,7 +35,7 @@ class AppTheme {
         backgroundColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
-        systemOverlayStyle: SystemUiOverlayStyle.dark,
+        systemOverlayStyle: SystemUiOverlayStyle.light,
         iconTheme: const IconThemeData(color: AppColors.textPrimary),
         titleTextStyle: GoogleFonts.plusJakartaSans(
           fontSize: 18,
@@ -46,28 +46,48 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.surface,
+        fillColor: AppColors.surfaceHigh,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
           vertical: 17,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadius.lg),
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(5),
+            topRight: Radius.circular(15),
+            bottomLeft: Radius.circular(15),
+            bottomRight: Radius.circular(5),
+          ),
           borderSide: const BorderSide(color: AppColors.border),
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadius.lg),
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(5),
+            topRight: Radius.circular(15),
+            bottomLeft: Radius.circular(15),
+            bottomRight: Radius.circular(5),
+          ),
           borderSide: const BorderSide(color: AppColors.border),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadius.lg),
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(5),
+            topRight: Radius.circular(15),
+            bottomLeft: Radius.circular(15),
+            bottomRight: Radius.circular(5),
+          ),
           borderSide: const BorderSide(
             color: AppColors.studentPrimary,
             width: 1.8,
           ),
         ),
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppRadius.lg),
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(5),
+            topRight: Radius.circular(15),
+            bottomLeft: Radius.circular(15),
+            bottomRight: Radius.circular(5),
+          ),
           borderSide: const BorderSide(color: AppColors.error),
         ),
       ),
@@ -75,7 +95,12 @@ class AppTheme {
         style: FilledButton.styleFrom(
           minimumSize: const Size(48, 52),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadius.lg),
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(AppRadius.sm),
+              topRight: Radius.circular(AppRadius.xl),
+              bottomLeft: Radius.circular(AppRadius.xl),
+              bottomRight: Radius.circular(AppRadius.sm),
+            ),
           ),
           textStyle: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
         ),
@@ -85,7 +110,12 @@ class AppTheme {
           minimumSize: const Size(48, 52),
           side: const BorderSide(color: AppColors.borderHigh),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadius.lg),
+            borderRadius: BorderRadius.only(
+              topLeft: Radius.circular(AppRadius.sm),
+              topRight: Radius.circular(AppRadius.xl),
+              bottomLeft: Radius.circular(AppRadius.xl),
+              bottomRight: Radius.circular(AppRadius.sm),
+            ),
           ),
           textStyle: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
         ),
@@ -114,7 +144,7 @@ class AppTheme {
       navigationBarTheme: NavigationBarThemeData(
         height: 72,
         elevation: 0,
-        backgroundColor: AppColors.surface,
+        backgroundColor: AppColors.surfaceHigh,
         indicatorColor: AppColors.studentPrimary.withValues(alpha: 0.12),
         labelTextStyle: WidgetStatePropertyAll(
           GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600),
@@ -122,7 +152,7 @@ class AppTheme {
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
-        backgroundColor: AppColors.textPrimary,
+        backgroundColor: AppColors.surfaceHigh,
         contentTextStyle: GoogleFonts.inter(color: Colors.white),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.md),

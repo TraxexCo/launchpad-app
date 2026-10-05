@@ -6,41 +6,43 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  // Base canvas
-  static const Color background = Color(0xFFF5F7FB);
-  static const Color surface = Color(0xFFFFFFFF); // white
-  static const Color surfaceHigh = Color(0xFFF0F3F9);
-  static const Color surfaceMuted = Color(0xFFE9EDF5);
-  static const Color border = Color(0xFFE1E6EF);
-  static const Color borderHigh = Color(0xFFC9D1DF);
+  // LaunchPad "Night Mission" canvas
+  static const Color background = Color(0xFF070B14);
+  static const Color surface = Color(0xFF0E1522);
+  static const Color surfaceHigh = Color(0xFF151F30);
+  static const Color surfaceMuted = Color(0xFF1B2739);
+  static const Color border = Color(0xFF243249);
+  static const Color borderHigh = Color(0xFF3A506F);
+  static const Color ink = Color(0xFF05070C);
+  static const Color signalYellow = Color(0xFFFFD166);
 
-  // Student — Fresh Indigo
-  static const Color studentPrimary = Color(0xFF5B4CF0);
-  static const Color studentAccent = Color(0xFF8B80FF);
-  static const Color studentGlow = Color(0x224F46E5);
+  // Student — orbit violet + electric cyan
+  static const Color studentPrimary = Color(0xFF9B7BFF);
+  static const Color studentAccent = Color(0xFF4EDBFF);
+  static const Color studentGlow = Color(0x339B7BFF);
 
-  // Business — Trustworthy Emerald
-  static const Color businessPrimary = Color(0xFF087E6A);
-  static const Color businessAccent = Color(0xFF35C9A3);
-  static const Color businessGlow = Color(0x22059669);
+  // Business — launch mint + opportunity amber
+  static const Color businessPrimary = Color(0xFF42E8A5);
+  static const Color businessAccent = Color(0xFFFFC857);
+  static const Color businessGlow = Color(0x3342E8A5);
 
   // Text hierarchy
-  static const Color textPrimary = Color(0xFF111827);
-  static const Color textSecondary = Color(0xFF4B5565);
-  static const Color textMuted = Color(0xFF8A94A6);
-  static const Color textDisabled = Color(0xFFBCC4D1);
+  static const Color textPrimary = Color(0xFFF5F7FC);
+  static const Color textSecondary = Color(0xFFADB9CD);
+  static const Color textMuted = Color(0xFF718099);
+  static const Color textDisabled = Color(0xFF47556B);
 
   // Semantic
-  static const Color success = Color(0xFF10B981);
-  static const Color warning = Color(0xFFF59E0B);
-  static const Color error = Color(0xFFEF4444);
-  static const Color info = Color(0xFF3B82F6);
-  static const Color violet = Color(0xFF8B5CF6);
+  static const Color success = Color(0xFF42E8A5);
+  static const Color warning = Color(0xFFFFC857);
+  static const Color error = Color(0xFFFF6B7A);
+  static const Color info = Color(0xFF4EDBFF);
+  static const Color violet = Color(0xFFB28CFF);
 
-  // Animated mesh orbs (Faint pastels for light mode)
-  static const Color meshBlue = Color(0x0C4F46E5); // faint indigo
-  static const Color meshAmber = Color(0x0C059669); // faint emerald
-  static const Color meshCyan = Color(0x0CF43F5E); // faint rose
+  // Animated launch-field glows
+  static const Color meshBlue = Color(0x269B7BFF);
+  static const Color meshAmber = Color(0x1AFFC857);
+  static const Color meshCyan = Color(0x1F4EDBFF);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

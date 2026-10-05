@@ -662,6 +662,7 @@ class _PostJobScreenState extends State<PostJobScreen>
       ),
       child: AppButton(
         label: _step < 2 ? 'Continue' : 'Post Job Now',
+        backgroundColor: AppColors.businessPrimary,
         isLoading: _loading,
         icon: _step < 2 ? Icons.arrow_forward_rounded : Icons.check_rounded,
         onPressed: _nextStep,

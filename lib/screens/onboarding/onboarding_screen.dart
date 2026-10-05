@@ -107,10 +107,58 @@ class _RoleSelectPage extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: AppSpacing.xxl),
+            const SizedBox(height: AppSpacing.lg),
+
+            Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: const BoxDecoration(
+                    color: AppColors.studentPrimary,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(6),
+                      topRight: Radius.circular(16),
+                      bottomLeft: Radius.circular(16),
+                      bottomRight: Radius.circular(6),
+                    ),
+                  ),
+                  child: const Icon(
+                    Icons.rocket_launch_rounded,
+                    color: AppColors.ink,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'LAUNCHPAD',
+                      style: GoogleFonts.jetBrainsMono(
+                        fontSize: 12,
+                        letterSpacing: 2.4,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                    Text(
+                      'LOCAL TECH MISSION NETWORK',
+                      style: GoogleFonts.jetBrainsMono(
+                        fontSize: 7,
+                        letterSpacing: 1.1,
+                        color: AppColors.studentAccent,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ).animate().fadeIn(duration: 400.ms),
+
+            const SizedBox(height: AppSpacing.xl),
 
             Text(
-                  'Who are\nyou?',
+                  'Choose your\nlaunch path.',
                   style: Theme.of(context).textTheme.displayMedium,
                 )
                 .animate()
@@ -124,7 +172,7 @@ class _RoleSelectPage extends StatelessWidget {
             const SizedBox(height: AppSpacing.sm),
 
             Text(
-              'Your role shapes the entire experience.',
+              'One network. Two ways to build local progress.',
               style: Theme.of(context).textTheme.bodyLarge,
             ).animate().fadeIn(duration: 500.ms, delay: 180.ms),
 
@@ -163,7 +211,7 @@ class _RoleSelectPage extends StatelessWidget {
 
             Center(
               child: Text(
-                '// you can always switch roles later',
+                'SIGNAL SECURED  •  BUILT FOR LOCAL COLLABORATION',
                 style: Theme.of(context).textTheme.labelMedium,
               ),
             ).animate().fadeIn(duration: 400.ms, delay: 650.ms),
@@ -239,8 +287,20 @@ class _RoleCardState extends State<_RoleCard>
         child: Container(
           padding: const EdgeInsets.all(AppSpacing.lg),
           decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(AppRadius.xl),
+            gradient: LinearGradient(
+              colors: [
+                widget.primaryColor.withValues(alpha: 0.14),
+                AppColors.surface,
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(8),
+              topRight: Radius.circular(30),
+              bottomLeft: Radius.circular(30),
+              bottomRight: Radius.circular(8),
+            ),
             border: Border.all(
               color: widget.primaryColor.withValues(alpha: 0.28),
             ),
@@ -263,7 +323,12 @@ class _RoleCardState extends State<_RoleCard>
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
-                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(6),
+                    topRight: Radius.circular(20),
+                    bottomLeft: Radius.circular(20),
+                    bottomRight: Radius.circular(6),
+                  ),
                   boxShadow: [
                     BoxShadow(
                       color: widget.primaryColor.withValues(alpha: 0.4),
@@ -271,11 +336,7 @@ class _RoleCardState extends State<_RoleCard>
                     ),
                   ],
                 ),
-                child: Icon(
-                  widget.icon,
-                  color: AppColors.textPrimary,
-                  size: 30,
-                ),
+                child: Icon(widget.icon, color: AppColors.ink, size: 30),
               ),
               const SizedBox(width: AppSpacing.md),
               Expanded(

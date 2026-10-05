@@ -347,6 +347,7 @@ class _EditJobScreenState extends State<EditJobScreen> {
                         AppButton(
                           label: _loading ? 'Saving...' : 'Save Changes',
                           icon: Icons.save_rounded,
+                          backgroundColor: AppColors.businessPrimary,
                           isLoading: _loading,
                           onPressed: _save,
                         ),

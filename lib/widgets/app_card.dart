@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../core/constants.dart';
 
-/// Clean, light-mode surface card with soft shadow.
+/// LaunchPad mission tile with clipped opposing corners and a signal rail.
 class AppCard extends StatefulWidget {
   final Widget child;
   final EdgeInsetsGeometry? padding;
@@ -10,6 +10,7 @@ class AppCard extends StatefulWidget {
   final double? width;
   final double? height;
   final Color? backgroundColor;
+  final Color? accentColor;
 
   const AppCard({
     super.key,
@@ -20,6 +21,7 @@ class AppCard extends StatefulWidget {
     this.width,
     this.height,
     this.backgroundColor,
+    this.accentColor,
   });
 
   @override
@@ -51,6 +53,13 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    final shape = BorderRadius.only(
+      topLeft: Radius.circular(widget.borderRadius * 0.45),
+      topRight: Radius.circular(widget.borderRadius * 1.55),
+      bottomLeft: Radius.circular(widget.borderRadius * 1.55),
+      bottomRight: Radius.circular(widget.borderRadius * 0.45),
+    );
+    final accent = widget.accentColor ?? AppColors.info;
     final card = AnimatedBuilder(
       animation: _scale,
       builder: (_, child) => Transform.scale(scale: _scale.value, child: child),
@@ -58,22 +67,22 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
         width: widget.width,
         height: widget.height,
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(widget.borderRadius),
+          borderRadius: shape,
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF23304A).withValues(alpha: 0.075),
-              blurRadius: 26,
-              spreadRadius: -8,
-              offset: const Offset(0, 12),
+              color: accent.withValues(alpha: 0.10),
+              blurRadius: 24,
+              spreadRadius: -12,
+              offset: const Offset(0, 10),
             ),
           ],
         ),
         child: Material(
-          color: widget.backgroundColor ?? AppColors.surface,
+          color: Colors.transparent,
           surfaceTintColor: Colors.transparent,
           clipBehavior: Clip.antiAlias,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(widget.borderRadius),
+            borderRadius: shape,
             side: const BorderSide(color: AppColors.border),
           ),
           child: InkWell(
@@ -83,9 +92,34 @@ class _AppCardState extends State<AppCard> with SingleTickerProviderStateMixin {
             onTapCancel: widget.onTap == null ? null : () => _ctrl.reverse(),
             splashColor: AppColors.studentPrimary.withValues(alpha: 0.06),
             highlightColor: AppColors.studentPrimary.withValues(alpha: 0.03),
-            child: Padding(
-              padding: widget.padding ?? EdgeInsets.zero,
-              child: widget.child,
+            child: Ink(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    widget.backgroundColor ?? AppColors.surfaceHigh,
+                    widget.backgroundColor ?? AppColors.surface,
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              child: Stack(
+                children: [
+                  Positioned(
+                    top: 0,
+                    left: 18,
+                    child: Container(
+                      width: 34,
+                      height: 2,
+                      color: accent.withValues(alpha: 0.8),
+                    ),
+                  ),
+                  Padding(
+                    padding: widget.padding ?? EdgeInsets.zero,
+                    child: widget.child,
+                  ),
+                ],
+              ),
             ),
           ),
         ),

@@ -279,6 +279,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   AppButton(
                         label: 'Sign In',
+                        backgroundColor: _primary,
+                        foregroundColor: AppColors.ink,
                         isLoading: _loading,
                         onPressed: _submit,
                       )

@@ -32,7 +32,12 @@ class SkillChip extends StatelessWidget {
           color: selected
               ? accentColor.withValues(alpha: 0.15)
               : AppColors.surfaceHigh,
-          borderRadius: BorderRadius.circular(AppRadius.full),
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(4),
+            topRight: Radius.circular(12),
+            bottomLeft: Radius.circular(12),
+            bottomRight: Radius.circular(4),
+          ),
           border: Border.all(
             color: selected
                 ? accentColor.withValues(alpha: 0.7)
@@ -48,13 +53,25 @@ class SkillChip extends StatelessWidget {
                 ]
               : null,
         ),
-        child: Text(
-          label,
-          style: GoogleFonts.jetBrainsMono(
-            fontSize: 11,
-            fontWeight: FontWeight.w500,
-            color: selected ? accentColor : AppColors.textSecondary,
-          ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 4,
+              height: 4,
+              color: selected ? accentColor : AppColors.textMuted,
+            ),
+            const SizedBox(width: 7),
+            Text(
+              label.toUpperCase(),
+              style: GoogleFonts.jetBrainsMono(
+                fontSize: 10,
+                letterSpacing: 0.35,
+                fontWeight: FontWeight.w600,
+                color: selected ? accentColor : AppColors.textSecondary,
+              ),
+            ),
+          ],
         ),
       ),
     );

@@ -601,6 +601,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       AppButton(
                         label: 'Sign Out',
                         outlined: true,
+                        backgroundColor: AppColors.error,
                         icon: Icons.logout_rounded,
                         onPressed: () => confirmSignOut(context),
                       ),

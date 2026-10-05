@@ -55,7 +55,12 @@ class _SplashScreenState extends State<SplashScreen> {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
-                      borderRadius: BorderRadius.circular(AppRadius.xxl),
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(10),
+                        topRight: Radius.circular(34),
+                        bottomLeft: Radius.circular(34),
+                        bottomRight: Radius.circular(10),
+                      ),
                       boxShadow: [
                         BoxShadow(
                           color: AppColors.studentPrimary.withValues(
@@ -72,7 +77,7 @@ class _SplashScreenState extends State<SplashScreen> {
                     ),
                     child: const Icon(
                       Icons.rocket_launch_rounded,
-                      color: Colors.white,
+                      color: AppColors.ink,
                       size: 38,
                     ),
                   )
@@ -109,11 +114,11 @@ class _SplashScreenState extends State<SplashScreen> {
 
               // Mono tagline
               Text(
-                '// where code meets commerce',
+                'LOCAL IDEAS  ×  STUDENT CODE',
                 style: GoogleFonts.jetBrainsMono(
                   fontSize: 12,
                   color: AppColors.textMuted,
-                  letterSpacing: 0.3,
+                  letterSpacing: 1.7,
                 ),
               ).animate().fadeIn(duration: 500.ms, delay: 650.ms),
 

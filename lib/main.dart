@@ -20,9 +20,9 @@ Future<void> main() async {
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
-      systemNavigationBarColor: Color(0xFFF5F7FB),
-      systemNavigationBarIconBrightness: Brightness.dark,
+      statusBarIconBrightness: Brightness.light,
+      systemNavigationBarColor: Color(0xFF070B14),
+      systemNavigationBarIconBrightness: Brightness.light,
     ),
   );
   runApp(const LaunchPadApp());
@@ -37,7 +37,7 @@ class LaunchPadApp extends StatelessWidget {
       title: 'LaunchPad',
       theme: AppTheme.light,
       darkTheme: AppTheme.light,
-      themeMode: ThemeMode.light,
+      themeMode: ThemeMode.dark,
       routerConfig: appRouter,
       debugShowCheckedModeBanner: false,
     );

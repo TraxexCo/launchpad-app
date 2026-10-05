@@ -226,6 +226,7 @@ class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
                   AppButton(
                     label: 'Open Chat',
                     icon: Icons.chat_bubble_outline_rounded,
+                    backgroundColor: AppColors.businessPrimary,
                     onPressed: () => context.go(
                       '/chat/${_proposal!.id}?name=${_proposal!.studentName ?? "Student"}',
                     ),
@@ -234,6 +235,7 @@ class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
                   AppButton(
                     label: 'Back to Proposals',
                     icon: Icons.arrow_back_rounded,
+                    backgroundColor: AppColors.businessPrimary,
                     onPressed: () => context.canPop()
                         ? context.pop()
                         : context.go('/business'),
@@ -514,6 +516,7 @@ class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
             child: AppButton(
               label: 'Decline',
               outlined: true,
+              backgroundColor: AppColors.error,
               isLoading: _rejecting,
               onPressed: _reject,
             ),
@@ -524,6 +527,7 @@ class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
             child: AppButton(
               label: 'Accept Proposal',
               icon: Icons.handshake_rounded,
+              backgroundColor: AppColors.businessPrimary,
               isLoading: _accepting,
               onPressed: _accept,
             ),

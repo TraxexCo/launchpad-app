@@ -126,7 +126,7 @@ class _BizAppBar extends StatelessWidget {
             ),
             child: const Icon(
               Icons.storefront_rounded,
-              color: Colors.white,
+              color: AppColors.ink,
               size: 20,
             ),
           ),
@@ -376,49 +376,23 @@ class _BizHomeTabState extends State<_BizHomeTab> {
       children: [
         const SizedBox(height: AppSpacing.sm),
 
-        // ── Welcome
-        Text(
-          'Welcome back,',
-          style: Theme.of(context).textTheme.bodyLarge,
-        ).animate().fadeIn(duration: 400.ms),
-        Text(
-          '$_businessName 👋',
-          style: Theme.of(context).textTheme.headlineMedium,
-        ).animate().fadeIn(duration: 500.ms, delay: 80.ms).slideY(begin: 0.15),
+        _BusinessCommandHero(
+          businessName: _businessName,
+          activeJobs: _jobs
+              .where(
+                (job) => job.status == 'open' || job.status == 'in_progress',
+              )
+              .length,
+          proposals: _proposals.length,
+          hired: _contracts.length,
+          loading: _loading,
+          onPost: () => context.go('/business/post-job'),
+        ).animate().fadeIn(duration: 500.ms).slideY(begin: 0.08),
 
         if (_loadFailed) ...[
           const SizedBox(height: AppSpacing.md),
           DashboardLoadError(onRetry: _loadData),
         ],
-
-        const SizedBox(height: AppSpacing.lg),
-
-        // ── Stats row
-        Row(
-              children: [
-                _BizStatCard(
-                  label: 'Active Jobs',
-                  value:
-                      '${_jobs.where((job) => job.status == 'open' || job.status == 'in_progress').length}',
-                  color: AppColors.businessPrimary,
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                _BizStatCard(
-                  label: 'Proposals',
-                  value: '${_proposals.length}',
-                  color: AppColors.businessAccent,
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                _BizStatCard(
-                  label: 'Hired',
-                  value: '${_contracts.length}',
-                  color: AppColors.success,
-                ),
-              ],
-            )
-            .animate()
-            .fadeIn(duration: 500.ms, delay: 200.ms)
-            .slideY(begin: 0.1, duration: 400.ms, delay: 200.ms),
 
         // ── Project contracts
         if (_contracts.isNotEmpty) ...[
@@ -665,6 +639,202 @@ class _BizHomeTabState extends State<_BizHomeTab> {
       ],
     );
   }
+}
+
+class _BusinessCommandHero extends StatelessWidget {
+  final String businessName;
+  final int activeJobs;
+  final int proposals;
+  final int hired;
+  final bool loading;
+  final VoidCallback onPost;
+
+  const _BusinessCommandHero({
+    required this.businessName,
+    required this.activeJobs,
+    required this.proposals,
+    required this.hired,
+    required this.loading,
+    required this.onPost,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF123529), Color(0xFF101A24)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        border: Border.all(
+          color: AppColors.businessPrimary.withValues(alpha: 0.34),
+        ),
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(10),
+          topRight: Radius.circular(34),
+          bottomLeft: Radius.circular(34),
+          bottomRight: Radius.circular(10),
+        ),
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            right: 18,
+            top: 18,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: List.generate(
+                8,
+                (index) => Container(
+                  width: 3,
+                  height: 8.0 + (index % 4) * 7,
+                  margin: const EdgeInsets.only(left: 4),
+                  color: AppColors.businessPrimary.withValues(
+                    alpha: 0.18 + (index * 0.055),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 7,
+                      height: 7,
+                      decoration: const BoxDecoration(
+                        color: AppColors.businessPrimary,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.businessPrimary,
+                            blurRadius: 10,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'BUSINESS CONTROL  /  SIGNAL LIVE',
+                      style: GoogleFonts.jetBrainsMono(
+                        fontSize: 9,
+                        letterSpacing: 1.05,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.businessPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  businessName,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: GoogleFonts.plusJakartaSans(
+                    fontSize: 27,
+                    height: 1.04,
+                    letterSpacing: -1.2,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  'Turn a local need into a student-built solution.',
+                  style: GoogleFonts.inter(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                Row(
+                  children: [
+                    _BusinessHeroMetric(
+                      value: loading ? '—' : '$activeJobs',
+                      label: 'OPEN BRIEFS',
+                      color: AppColors.businessPrimary,
+                    ),
+                    _BusinessHeroMetric(
+                      value: loading ? '—' : '$proposals',
+                      label: 'SIGNALS',
+                      color: AppColors.businessAccent,
+                    ),
+                    _BusinessHeroMetric(
+                      value: loading ? '—' : '$hired',
+                      label: 'MATCHES',
+                      color: AppColors.info,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                FilledButton.icon(
+                  onPressed: onPost,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.businessPrimary,
+                    foregroundColor: AppColors.ink,
+                  ),
+                  icon: const Icon(Icons.add_rounded),
+                  label: const Text('Launch a project brief'),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _BusinessHeroMetric extends StatelessWidget {
+  final String value;
+  final String label;
+  final Color color;
+
+  const _BusinessHeroMetric({
+    required this.value,
+    required this.label,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) => Expanded(
+    child: Container(
+      margin: const EdgeInsets.only(right: 6),
+      padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 10),
+      decoration: BoxDecoration(
+        color: AppColors.ink.withValues(alpha: 0.30),
+        border: Border(left: BorderSide(color: color, width: 2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            value,
+            style: GoogleFonts.jetBrainsMono(
+              fontSize: 18,
+              fontWeight: FontWeight.w800,
+              color: color,
+            ),
+          ),
+          Text(
+            label,
+            maxLines: 1,
+            style: GoogleFonts.jetBrainsMono(
+              fontSize: 7,
+              letterSpacing: 0.5,
+              color: AppColors.textMuted,
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1356,58 +1526,6 @@ class _BizSectionHeader extends StatelessWidget {
   }
 }
 
-class _BizStatCard extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color color;
-  const _BizStatCard({
-    required this.label,
-    required this.value,
-    required this.color,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          vertical: AppSpacing.md,
-          horizontal: AppSpacing.sm,
-        ),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-          border: Border.all(color: color.withValues(alpha: 0.25)),
-          boxShadow: [
-            BoxShadow(color: color.withValues(alpha: 0.08), blurRadius: 16),
-          ],
-        ),
-        child: Column(
-          children: [
-            Text(
-              value,
-              style: GoogleFonts.plusJakartaSans(
-                fontSize: 28,
-                fontWeight: FontWeight.w800,
-                color: color,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: GoogleFonts.jetBrainsMono(
-                fontSize: 9,
-                color: AppColors.textMuted,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
 class _PostJobCard extends StatelessWidget {
   final VoidCallback onPosted;
 
@@ -1426,11 +1544,19 @@ class _PostJobCard extends StatelessWidget {
         padding: const EdgeInsets.all(AppSpacing.lg),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
-            colors: [AppColors.businessPrimary, AppColors.businessAccent],
+            colors: [Color(0xFF173D31), Color(0xFF172230)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
-          borderRadius: BorderRadius.circular(AppRadius.xl),
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(8),
+            topRight: Radius.circular(30),
+            bottomLeft: Radius.circular(30),
+            bottomRight: Radius.circular(8),
+          ),
+          border: Border.all(
+            color: AppColors.businessPrimary.withValues(alpha: 0.35),
+          ),
           boxShadow: [
             BoxShadow(
               color: AppColors.businessPrimary.withValues(alpha: 0.4),
@@ -1469,10 +1595,12 @@ class _PostJobCard extends StatelessWidget {
                       vertical: AppSpacing.sm,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
+                      color: AppColors.businessPrimary.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(AppRadius.md),
                       border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.3),
+                        color: AppColors.businessPrimary.withValues(
+                          alpha: 0.32,
+                        ),
                       ),
                     ),
                     child: Row(
@@ -1503,12 +1631,12 @@ class _PostJobCard extends StatelessWidget {
               width: 72,
               height: 72,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.15),
+                color: AppColors.businessPrimary.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(AppRadius.xl),
               ),
               child: const Icon(
                 Icons.work_rounded,
-                color: Colors.white,
+                color: AppColors.businessPrimary,
                 size: 34,
               ),
             ),

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../core/constants.dart';
 
-/// Clean, modern text input with subtle border on focus.
+/// Mission-console input with LaunchPad's opposing-corner geometry.
 class AppTextField extends StatefulWidget {
   final String label;
   final String? hint;
@@ -61,18 +61,24 @@ class _AppTextFieldState extends State<AppTextField>
 
   @override
   Widget build(BuildContext context) {
+    const fieldRadius = BorderRadius.only(
+      topLeft: Radius.circular(5),
+      topRight: Radius.circular(15),
+      bottomLeft: Radius.circular(15),
+      bottomRight: Radius.circular(5),
+    );
     final borderStyle = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(AppRadius.md),
+      borderRadius: fieldRadius,
       borderSide: const BorderSide(color: AppColors.border, width: 1.5),
     );
 
     final focusedBorderStyle = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(AppRadius.md),
+      borderRadius: fieldRadius,
       borderSide: BorderSide(color: widget.accentColor, width: 2),
     );
 
     final errorBorderStyle = OutlineInputBorder(
-      borderRadius: BorderRadius.circular(AppRadius.md),
+      borderRadius: fieldRadius,
       borderSide: const BorderSide(color: AppColors.error, width: 1.5),
     );
 
@@ -91,7 +97,7 @@ class _AppTextFieldState extends State<AppTextField>
         labelText: widget.label,
         hintText: widget.hint,
         filled: true,
-        fillColor: widget.enabled ? AppColors.surface : AppColors.surfaceHigh,
+        fillColor: widget.enabled ? AppColors.surfaceHigh : AppColors.surface,
         hintStyle: GoogleFonts.inter(
           color: AppColors.textDisabled,
           fontSize: 14,
