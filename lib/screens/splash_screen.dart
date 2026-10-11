@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../core/constants.dart';
 import '../widgets/app_background.dart';
 import '../services/auth_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
-
   @override
   State<SplashScreen> createState() => _SplashScreenState();
 }
@@ -23,125 +20,57 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _checkAuth() async {
     final user = await AuthService().getCurrentUser();
     if (!mounted) return;
-    if (user != null) {
-      if (user.role == 'business') {
-        context.go('/business');
-      } else {
-        context.go('/student');
-      }
-    } else {
-      context.go('/onboarding');
-    }
+    context.go(
+      user == null
+          ? '/onboarding'
+          : user.role == 'business'
+          ? '/business'
+          : '/student',
+    );
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: AppBackground(
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Logo icon
-              Container(
-                    width: 88,
-                    height: 88,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [
-                          AppColors.studentPrimary,
-                          AppColors.studentAccent,
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(10),
-                        topRight: Radius.circular(34),
-                        bottomLeft: Radius.circular(34),
-                        bottomRight: Radius.circular(10),
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.studentPrimary.withValues(
-                            alpha: 0.45,
-                          ),
-                          blurRadius: 40,
-                        ),
-                        BoxShadow(
-                          color: AppColors.studentAccent.withValues(alpha: 0.2),
-                          blurRadius: 80,
-                          spreadRadius: 10,
-                        ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.rocket_launch_rounded,
-                      color: AppColors.ink,
-                      size: 38,
-                    ),
-                  )
-                  .animate()
-                  .scale(
-                    begin: const Offset(0.4, 0.4),
-                    duration: 700.ms,
-                    curve: Curves.elasticOut,
-                  )
-                  .fadeIn(duration: 400.ms),
-
-              const SizedBox(height: AppSpacing.lg),
-
-              // Wordmark
-              Text(
-                    'LaunchPad',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 42,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary,
-                      letterSpacing: -2,
-                    ),
-                  )
-                  .animate()
-                  .slideY(
-                    begin: 0.4,
-                    duration: 600.ms,
-                    delay: 250.ms,
-                    curve: Curves.easeOutCubic,
-                  )
-                  .fadeIn(duration: 500.ms, delay: 250.ms),
-
-              const SizedBox(height: AppSpacing.sm),
-
-              // Mono tagline
-              Text(
-                'LOCAL IDEAS  ×  STUDENT CODE',
-                style: GoogleFonts.jetBrainsMono(
-                  fontSize: 12,
-                  color: AppColors.textMuted,
-                  letterSpacing: 1.7,
-                ),
-              ).animate().fadeIn(duration: 500.ms, delay: 650.ms),
-
-              const SizedBox(height: AppSpacing.xxxl),
-
-              // Loading bar
-              SizedBox(
-                width: 100,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(AppRadius.full),
-                  child: const LinearProgressIndicator(
-                    backgroundColor: AppColors.border,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      AppColors.studentPrimary,
-                    ),
-                    minHeight: 2,
-                  ),
-                ),
-              ).animate().fadeIn(duration: 400.ms, delay: 900.ms),
-            ],
-          ),
+  Widget build(BuildContext context) => const Scaffold(
+    body: AppBackground(
+      tintColor: AppColors.studentPrimary,
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _LaunchMark(),
+            SizedBox(height: 18),
+            Text(
+              'LaunchPad',
+              style: TextStyle(
+                fontSize: 34,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -1,
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Student talent for local business',
+              style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+            ),
+            SizedBox(height: 28),
+            SizedBox(width: 120, child: LinearProgressIndicator(minHeight: 3)),
+          ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
+
+class _LaunchMark extends StatelessWidget {
+  const _LaunchMark();
+  @override
+  Widget build(BuildContext context) => Container(
+    width: 68,
+    height: 68,
+    decoration: BoxDecoration(
+      color: AppColors.studentPrimary,
+      borderRadius: BorderRadius.circular(16),
+    ),
+    child: const Icon(Icons.north_east_rounded, color: AppColors.ink, size: 34),
+  );
 }

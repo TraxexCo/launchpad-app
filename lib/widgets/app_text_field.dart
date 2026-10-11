@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../core/constants.dart';
 
-/// Mission-console input with LaunchPad's opposing-corner geometry.
+/// Accessible form field using the shared LaunchPad control geometry.
 class AppTextField extends StatefulWidget {
   final String label;
   final String? hint;
@@ -61,12 +61,7 @@ class _AppTextFieldState extends State<AppTextField>
 
   @override
   Widget build(BuildContext context) {
-    const fieldRadius = BorderRadius.only(
-      topLeft: Radius.circular(5),
-      topRight: Radius.circular(15),
-      bottomLeft: Radius.circular(15),
-      bottomRight: Radius.circular(5),
-    );
+    final fieldRadius = BorderRadius.circular(10);
     final borderStyle = OutlineInputBorder(
       borderRadius: fieldRadius,
       borderSide: const BorderSide(color: AppColors.border, width: 1.5),
@@ -92,26 +87,27 @@ class _AppTextFieldState extends State<AppTextField>
       maxLines: widget.obscureText ? 1 : widget.maxLines,
       textInputAction: widget.textInputAction,
       enabled: widget.enabled,
-      style: GoogleFonts.inter(color: AppColors.textPrimary, fontSize: 15),
+      style: GoogleFonts.manrope(color: AppColors.textPrimary, fontSize: 15),
       decoration: InputDecoration(
         labelText: widget.label,
         hintText: widget.hint,
         filled: true,
         fillColor: widget.enabled ? AppColors.surfaceHigh : AppColors.surface,
-        hintStyle: GoogleFonts.inter(
+        hintStyle: GoogleFonts.manrope(
           color: AppColors.textDisabled,
           fontSize: 14,
         ),
-        labelStyle: GoogleFonts.inter(
+        labelStyle: GoogleFonts.manrope(
           color: _focus.hasFocus ? widget.accentColor : AppColors.textSecondary,
           fontSize: 14,
           fontWeight: FontWeight.w500,
         ),
         prefixIcon: widget.prefixIcon,
         suffixIcon: widget.obscureText
-            ? GestureDetector(
-                onTap: () => setState(() => _hide = !_hide),
-                child: Icon(
+            ? IconButton(
+                tooltip: _hide ? 'Show password' : 'Hide password',
+                onPressed: () => setState(() => _hide = !_hide),
+                icon: Icon(
                   _hide
                       ? Icons.visibility_off_rounded
                       : Icons.visibility_rounded,

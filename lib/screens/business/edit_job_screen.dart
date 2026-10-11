@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/constants.dart';
 import '../../widgets/app_background.dart';
 import '../../widgets/app_button.dart';
@@ -141,7 +140,7 @@ class _EditJobScreenState extends State<EditJobScreen> {
                         children: [
                           Text(
                             'Brief Revision',
-                            style: GoogleFonts.plusJakartaSans(
+                            style: GoogleFonts.manrope(
                               fontSize: 20,
                               fontWeight: FontWeight.w800,
                               color: AppColors.textPrimary,
@@ -149,7 +148,7 @@ class _EditJobScreenState extends State<EditJobScreen> {
                           ),
                           Text(
                             'Recalibrate scope, budget, and candidate signal',
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.manrope(
                               fontSize: 11,
                               color: AppColors.textMuted,
                             ),
@@ -193,7 +192,7 @@ class _EditJobScreenState extends State<EditJobScreen> {
                               Expanded(
                                 child: Text(
                                   'Specific deliverables, budget, and timeline help students send more accurate proposals.',
-                                  style: GoogleFonts.inter(
+                                  style: GoogleFonts.manrope(
                                     fontSize: 12,
                                     height: 1.45,
                                     color: AppColors.textSecondary,
@@ -202,11 +201,11 @@ class _EditJobScreenState extends State<EditJobScreen> {
                               ),
                             ],
                           ),
-                        ).animate().fadeIn().slideY(begin: 0.06),
+                        ),
                         const SizedBox(height: AppSpacing.lg),
                         Text(
                           'PROJECT BRIEF',
-                          style: GoogleFonts.jetBrainsMono(
+                          style: GoogleFonts.manrope(
                             fontSize: 10,
                             fontWeight: FontWeight.w700,
                             letterSpacing: 1.2,
@@ -260,7 +259,7 @@ class _EditJobScreenState extends State<EditJobScreen> {
                         const SizedBox(height: AppSpacing.lg),
                         Text(
                           'CLASSIFICATION',
-                          style: GoogleFonts.jetBrainsMono(
+                          style: GoogleFonts.manrope(
                             fontSize: 10,
                             fontWeight: FontWeight.w700,
                             letterSpacing: 1.2,
@@ -270,7 +269,7 @@ class _EditJobScreenState extends State<EditJobScreen> {
                         const SizedBox(height: AppSpacing.sm),
                         Text(
                           'Category',
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.manrope(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                             color: AppColors.textSecondary,
@@ -295,7 +294,7 @@ class _EditJobScreenState extends State<EditJobScreen> {
                         const SizedBox(height: AppSpacing.lg),
                         Text(
                           'Urgency',
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.manrope(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                             color: AppColors.textSecondary,
@@ -318,7 +317,7 @@ class _EditJobScreenState extends State<EditJobScreen> {
                         const SizedBox(height: AppSpacing.lg),
                         Text(
                           'Required Skills',
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.manrope(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                             color: AppColors.textSecondary,

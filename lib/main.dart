@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'dart:ui';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'core/constants.dart';
 import 'core/router.dart';
 import 'core/theme.dart';
 import 'services/auth_service.dart';
+import 'services/crash_reporting_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,13 +18,24 @@ Future<void> main() async {
     );
   }
   await Supabase.initialize(url: url, publishableKey: publishableKey);
+  FlutterError.onError = (details) {
+    FlutterError.presentError(details);
+    CrashReportingService.record(
+      details.exception,
+      details.stack ?? StackTrace.current,
+    );
+  };
+  PlatformDispatcher.instance.onError = (error, stack) {
+    CrashReportingService.record(error, stack);
+    return false;
+  };
   await AuthService().restoreInitialRecoveryState();
   await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.light,
-      systemNavigationBarColor: Color(0xFF070B14),
+      systemNavigationBarColor: AppColors.background,
       systemNavigationBarIconBrightness: Brightness.light,
     ),
   );

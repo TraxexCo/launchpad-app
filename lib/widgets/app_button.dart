@@ -3,7 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../core/constants.dart';
 
-/// Clean, solid action button with spring-bounce physics.
+/// Solid product action with short tactile feedback.
 class AppButton extends StatefulWidget {
   final String label;
   final VoidCallback? onPressed;
@@ -118,35 +118,22 @@ class _AppButtonState extends State<AppButton>
           duration: const Duration(milliseconds: 200),
           height: widget.height,
           decoration: BoxDecoration(
-            color: widget.outlined || _enabled ? null : AppColors.border,
-            gradient: !widget.outlined && _enabled
-                ? LinearGradient(
-                    colors: [
-                      widget.backgroundColor,
-                      Color.lerp(widget.backgroundColor, Colors.white, 0.16)!,
-                    ],
-                    begin: Alignment.bottomLeft,
-                    end: Alignment.topRight,
-                  )
-                : null,
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(AppRadius.sm),
-              topRight: Radius.circular(AppRadius.xl),
-              bottomLeft: Radius.circular(AppRadius.xl),
-              bottomRight: Radius.circular(AppRadius.sm),
-            ),
+            color: widget.outlined
+                ? Colors.transparent
+                : (_enabled ? widget.backgroundColor : AppColors.surfaceMuted),
+            borderRadius: BorderRadius.circular(10),
             border: widget.outlined
                 ? Border.all(color: widget.backgroundColor, width: 1.5)
                 : null,
-            boxShadow: (!widget.outlined && _enabled)
-                ? [
+            boxShadow: widget.outlined || !_enabled
+                ? null
+                : const [
                     BoxShadow(
-                      color: widget.backgroundColor.withValues(alpha: 0.25),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
+                      color: Color(0x3D000000),
+                      blurRadius: 0,
+                      offset: Offset(0, 3),
                     ),
-                  ]
-                : null,
+                  ],
           ),
           child: Semantics(
             button: true,
@@ -181,7 +168,7 @@ class _AppButtonState extends State<AppButton>
                         ],
                         Text(
                           widget.label,
-                          style: GoogleFonts.plusJakartaSans(
+                          style: GoogleFonts.manrope(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
                             color: widget.outlined

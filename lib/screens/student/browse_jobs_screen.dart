@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants.dart';
@@ -172,7 +171,7 @@ class _BrowseJobsScreenState extends State<BrowseJobsScreen> {
                     ),
                     Text(
                       'LIVE MARKET RADAR',
-                      style: GoogleFonts.jetBrainsMono(
+                      style: GoogleFonts.manrope(
                         fontSize: 9,
                         letterSpacing: 1.8,
                         color: AppColors.studentAccent,
@@ -188,19 +187,9 @@ class _BrowseJobsScreenState extends State<BrowseJobsScreen> {
           Container(
             padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  AppColors.studentPrimary.withValues(alpha: .18),
-                  AppColors.studentAccent.withValues(alpha: .05),
-                ],
-              ),
-              border: Border.all(
-                color: AppColors.studentPrimary.withValues(alpha: .35),
-              ),
-              borderRadius: const BorderRadius.only(
-                topRight: Radius.circular(24),
-                bottomLeft: Radius.circular(24),
-              ),
+              color: AppColors.surfaceHigh,
+              border: Border.all(color: AppColors.border),
+              borderRadius: BorderRadius.circular(AppRadius.md),
             ),
             child: Row(
               children: [
@@ -222,8 +211,8 @@ class _BrowseJobsScreenState extends State<BrowseJobsScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '${_filtered.length} MATCHING SIGNALS',
-                        style: GoogleFonts.jetBrainsMono(
+                        '${_filtered.length} matching jobs',
+                        style: GoogleFonts.manrope(
                           fontSize: 11,
                           fontWeight: FontWeight.w700,
                           color: AppColors.textPrimary,
@@ -232,7 +221,7 @@ class _BrowseJobsScreenState extends State<BrowseJobsScreen> {
                       const SizedBox(height: 4),
                       Text(
                         'Search skills, compare briefs, launch a pitch.',
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.manrope(
                           fontSize: 12,
                           color: AppColors.textMuted,
                         ),
@@ -320,13 +309,13 @@ class _BrowseJobsScreenState extends State<BrowseJobsScreen> {
               child: TextField(
                 controller: _searchCtrl,
                 onChanged: (v) => setState(() {}),
-                style: GoogleFonts.inter(
+                style: GoogleFonts.manrope(
                   color: AppColors.textPrimary,
                   fontSize: 14,
                 ),
                 decoration: InputDecoration(
                   hintText: 'Search jobs or businesses…',
-                  hintStyle: GoogleFonts.inter(
+                  hintStyle: GoogleFonts.manrope(
                     color: AppColors.textDisabled,
                     fontSize: 14,
                   ),
@@ -349,7 +338,7 @@ class _BrowseJobsScreenState extends State<BrowseJobsScreen> {
               ),
           ],
         ),
-      ).animate().fadeIn(duration: 400.ms, delay: 80.ms),
+      ),
     );
   }
 
@@ -383,20 +372,10 @@ class _BrowseJobsScreenState extends State<BrowseJobsScreen> {
                       ? AppColors.studentPrimary.withValues(alpha: 0.7)
                       : AppColors.border,
                 ),
-                boxShadow: active
-                    ? [
-                        BoxShadow(
-                          color: AppColors.studentPrimary.withValues(
-                            alpha: 0.15,
-                          ),
-                          blurRadius: 10,
-                        ),
-                      ]
-                    : null,
               ),
               child: Text(
                 f,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.manrope(
                   fontSize: 12,
                   fontWeight: active ? FontWeight.w600 : FontWeight.w400,
                   color: active
@@ -408,7 +387,7 @@ class _BrowseJobsScreenState extends State<BrowseJobsScreen> {
           );
         },
       ),
-    ).animate().fadeIn(duration: 400.ms, delay: 140.ms);
+    );
   }
 
   Widget _buildSortRow() {
@@ -421,7 +400,10 @@ class _BrowseJobsScreenState extends State<BrowseJobsScreen> {
         children: [
           Text(
             '${_filtered.length} jobs',
-            style: GoogleFonts.inter(fontSize: 12, color: AppColors.textMuted),
+            style: GoogleFonts.manrope(
+              fontSize: 12,
+              color: AppColors.textMuted,
+            ),
           ),
           const Spacer(),
           const Icon(Icons.sort_rounded, color: AppColors.textMuted, size: 14),
@@ -431,7 +413,7 @@ class _BrowseJobsScreenState extends State<BrowseJobsScreen> {
             underline: const SizedBox(),
             isDense: true,
             dropdownColor: AppColors.surface,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.manrope(
               fontSize: 12,
               color: AppColors.textSecondary,
             ),
@@ -447,7 +429,7 @@ class _BrowseJobsScreenState extends State<BrowseJobsScreen> {
           ),
         ],
       ),
-    ).animate().fadeIn(duration: 400.ms, delay: 180.ms);
+    );
   }
 
   Widget _buildJobList() {
@@ -493,17 +475,7 @@ class _BrowseJobsScreenState extends State<BrowseJobsScreen> {
         itemCount: jobs.length,
         separatorBuilder: (context, idx) =>
             const SizedBox(height: AppSpacing.md),
-        itemBuilder: (context, i) => _JobCard(job: jobs[i])
-            .animate()
-            .fadeIn(
-              duration: 400.ms,
-              delay: Duration(milliseconds: i * 60),
-            )
-            .slideY(
-              begin: 0.1,
-              duration: 350.ms,
-              delay: Duration(milliseconds: i * 60),
-            ),
+        itemBuilder: (context, i) => _JobCard(job: jobs[i]),
       ),
     );
   }
@@ -538,12 +510,7 @@ class _JobCard extends StatelessWidget {
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppColors.businessPrimary.withValues(alpha: 0.25),
-                      AppColors.businessAccent.withValues(alpha: 0.1),
-                    ],
-                  ),
+                  color: AppColors.surfaceMuted,
                   borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
                 child: const Icon(
@@ -561,7 +528,7 @@ class _JobCard extends StatelessWidget {
                       children: [
                         Text(
                           job.businessName ?? 'Business',
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.manrope(
                             fontSize: 12,
                             color: AppColors.textMuted,
                           ),
@@ -578,7 +545,7 @@ class _JobCard extends StatelessWidget {
                     ),
                     Text(
                       job.title,
-                      style: GoogleFonts.plusJakartaSans(
+                      style: GoogleFonts.manrope(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                         color: AppColors.textPrimary,
@@ -594,7 +561,7 @@ class _JobCard extends StatelessWidget {
                 children: [
                   Text(
                     job.budget,
-                    style: GoogleFonts.jetBrainsMono(
+                    style: GoogleFonts.manrope(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
                       color: AppColors.studentPrimary,
@@ -602,7 +569,7 @@ class _JobCard extends StatelessWidget {
                   ),
                   Text(
                     'budget',
-                    style: GoogleFonts.jetBrainsMono(
+                    style: GoogleFonts.manrope(
                       fontSize: 9,
                       color: AppColors.textMuted,
                     ),
@@ -641,7 +608,7 @@ class _JobCard extends StatelessWidget {
                     ),
                     child: Text(
                       s,
-                      style: GoogleFonts.jetBrainsMono(
+                      style: GoogleFonts.manrope(
                         fontSize: 9,
                         color: AppColors.studentPrimary,
                       ),
@@ -664,7 +631,7 @@ class _JobCard extends StatelessWidget {
               const SizedBox(width: 3),
               Text(
                 job.location,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.manrope(
                   fontSize: 11,
                   color: AppColors.textMuted,
                 ),
@@ -678,7 +645,7 @@ class _JobCard extends StatelessWidget {
               const SizedBox(width: 3),
               Text(
                 _timeAgo(job.createdAt),
-                style: GoogleFonts.inter(
+                style: GoogleFonts.manrope(
                   fontSize: 11,
                   color: AppColors.textMuted,
                 ),
@@ -702,7 +669,7 @@ class _JobCard extends StatelessWidget {
                 ),
                 child: Text(
                   job.urgency,
-                  style: GoogleFonts.jetBrainsMono(
+                  style: GoogleFonts.manrope(
                     fontSize: 9,
                     color: job.urgency == 'Urgent'
                         ? AppColors.error

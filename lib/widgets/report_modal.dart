@@ -115,6 +115,7 @@ class _ReportModalState extends State<ReportModal> {
                 style: Theme.of(context).textTheme.titleLarge,
               ),
               IconButton(
+                tooltip: 'Close report form',
                 icon: const Icon(
                   Icons.close_rounded,
                   color: AppColors.textMuted,
@@ -126,7 +127,7 @@ class _ReportModalState extends State<ReportModal> {
           const SizedBox(height: AppSpacing.sm),
           Text(
             'Please let us know why you are reporting this ${widget.targetType}. Your report will be kept anonymous.',
-            style: GoogleFonts.inter(
+            style: GoogleFonts.manrope(
               color: AppColors.textSecondary,
               fontSize: 13,
             ),
@@ -169,7 +170,7 @@ class _ReportModalState extends State<ReportModal> {
                       Expanded(
                         child: Text(
                           reason,
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.manrope(
                             fontSize: 14,
                             fontWeight: isSelected
                                 ? FontWeight.w600

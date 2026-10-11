@@ -1,6 +1,5 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -14,7 +13,6 @@ import '../../services/review_service.dart';
 import '../../services/github_api_service.dart';
 import '../../models/job_post.dart';
 import '../../models/proposal.dart';
-import '../../core/theme.dart';
 import '../../widgets/app_background.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/skill_chip.dart';
@@ -115,14 +113,8 @@ class _AppBar extends StatelessWidget {
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              gradient: AppTheme.studentGradient(),
+              color: AppColors.studentPrimary,
               borderRadius: BorderRadius.circular(AppRadius.md),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.studentPrimary.withValues(alpha: 0.35),
-                  blurRadius: 12,
-                ),
-              ],
             ),
             child: Center(
               child: Text(
@@ -133,7 +125,7 @@ class _AppBar extends StatelessWidget {
                     .map((part) => part[0])
                     .join()
                     .toUpperCase(),
-                style: GoogleFonts.plusJakartaSans(
+                style: GoogleFonts.manrope(
                   fontSize: 14,
                   fontWeight: FontWeight.w800,
                   color: AppColors.ink,
@@ -149,7 +141,7 @@ class _AppBar extends StatelessWidget {
             children: [
               Text(
                 'LaunchPad',
-                style: GoogleFonts.plusJakartaSans(
+                style: GoogleFonts.manrope(
                   fontSize: 15,
                   fontWeight: FontWeight.w800,
                   color: AppColors.textPrimary,
@@ -158,7 +150,7 @@ class _AppBar extends StatelessWidget {
               ),
               Text(
                 name,
-                style: GoogleFonts.jetBrainsMono(
+                style: GoogleFonts.manrope(
                   fontSize: 10,
                   color: AppColors.textMuted,
                 ),
@@ -267,7 +259,7 @@ class _BottomNav extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         e.value.$3,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.manrope(
                           fontSize: 10,
                           fontWeight: isActive
                               ? FontWeight.w600
@@ -373,7 +365,7 @@ class _HomeTabState extends State<_HomeTab> {
           loading: _loading,
           onBrowse: () => context.go('/student/jobs'),
           onPortfolio: () => widget.onNavigate(2),
-        ).animate().fadeIn(duration: 500.ms).slideY(begin: 0.08),
+        ),
 
         if (_loadFailed) ...[
           const SizedBox(height: AppSpacing.md),
@@ -402,7 +394,7 @@ class _HomeTabState extends State<_HomeTab> {
                         Expanded(
                           child: Text(
                             c.jobTitle,
-                            style: GoogleFonts.plusJakartaSans(
+                            style: GoogleFonts.manrope(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
                               color: AppColors.textPrimary,
@@ -429,7 +421,7 @@ class _HomeTabState extends State<_HomeTab> {
                           ),
                           child: Text(
                             contractStatusLabel(c.status),
-                            style: GoogleFonts.jetBrainsMono(
+                            style: GoogleFonts.manrope(
                               fontSize: 10,
                               color: contractStatusColor(c.status),
                               fontWeight: FontWeight.w600,
@@ -441,7 +433,7 @@ class _HomeTabState extends State<_HomeTab> {
                     const SizedBox(height: 4),
                     Text(
                       'Client: ${c.businessName} · ₱${c.budget.toStringAsFixed(0)}',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 12,
                         color: AppColors.textMuted,
                       ),
@@ -481,7 +473,7 @@ class _HomeTabState extends State<_HomeTab> {
                                 const SizedBox(width: 6),
                                 Text(
                                   'Open Workspace Chat',
-                                  style: GoogleFonts.inter(
+                                  style: GoogleFonts.manrope(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
                                     color: AppColors.studentPrimary,
@@ -547,93 +539,85 @@ class _HomeTabState extends State<_HomeTab> {
           final job = e.value;
           return Padding(
             padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-            child:
-                AppCard(
-                  onTap: () => context.go('/student/jobs/${job.id}'),
-                  child: Row(
+            child: AppCard(
+              onTap: () => context.go('/student/jobs/${job.id}'),
+              child: Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: AppColors.businessPrimary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                    ),
+                    child: const Icon(
+                      Icons.work_outline_rounded,
+                      color: AppColors.businessPrimary,
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          job.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: GoogleFonts.manrope(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        Text(
+                          job.businessName ?? 'Business',
+                          style: GoogleFonts.manrope(
+                            fontSize: 11,
+                            color: AppColors.textMuted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
+                      Text(
+                        job.budget,
+                        style: GoogleFonts.manrope(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.studentPrimary,
+                        ),
+                      ),
                       Container(
-                        width: 44,
-                        height: 44,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
-                          color: AppColors.businessPrimary.withValues(
-                            alpha: 0.1,
-                          ),
-                          borderRadius: BorderRadius.circular(AppRadius.md),
+                          color: job.urgency == 'Urgent'
+                              ? AppColors.error.withValues(alpha: 0.1)
+                              : AppColors.success.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(AppRadius.full),
                         ),
-                        child: const Icon(
-                          Icons.work_outline_rounded,
-                          color: AppColors.businessPrimary,
-                          size: 22,
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.md),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              job.title,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: GoogleFonts.plusJakartaSans(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                            Text(
-                              job.businessName ?? 'Business',
-                              style: GoogleFonts.inter(
-                                fontSize: 11,
-                                color: AppColors.textMuted,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            job.budget,
-                            style: GoogleFonts.jetBrainsMono(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.studentPrimary,
-                            ),
+                        child: Text(
+                          job.urgency,
+                          style: GoogleFonts.manrope(
+                            fontSize: 9,
+                            color: job.urgency == 'Urgent'
+                                ? AppColors.error
+                                : AppColors.success,
                           ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
-                            ),
-                            decoration: BoxDecoration(
-                              color: job.urgency == 'Urgent'
-                                  ? AppColors.error.withValues(alpha: 0.1)
-                                  : AppColors.success.withValues(alpha: 0.08),
-                              borderRadius: BorderRadius.circular(
-                                AppRadius.full,
-                              ),
-                            ),
-                            child: Text(
-                              job.urgency,
-                              style: GoogleFonts.inter(
-                                fontSize: 9,
-                                color: job.urgency == 'Urgent'
-                                    ? AppColors.error
-                                    : AppColors.success,
-                              ),
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     ],
                   ),
-                ).animate().fadeIn(
-                  duration: 400.ms,
-                  delay: Duration(milliseconds: 500 + e.key * 80),
-                ),
+                ],
+              ),
+            ),
           );
         }),
 
@@ -651,7 +635,7 @@ class _HomeTabState extends State<_HomeTab> {
             padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
             child: Text(
               'No projects in portfolio yet.',
-              style: GoogleFonts.inter(
+              style: GoogleFonts.manrope(
                 color: AppColors.textMuted,
                 fontSize: 13,
               ),
@@ -693,17 +677,7 @@ class _HomeTabState extends State<_HomeTab> {
             .map(
               (e) => Padding(
                 padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                child: _ProposalCard(proposal: e.value)
-                    .animate()
-                    .fadeIn(
-                      duration: 400.ms,
-                      delay: Duration(milliseconds: 700 + e.key * 80),
-                    )
-                    .slideY(
-                      begin: 0.1,
-                      duration: 300.ms,
-                      delay: Duration(milliseconds: 700 + e.key * 80),
-                    ),
+                child: _ProposalCard(proposal: e.value),
               ),
             ),
 
@@ -735,116 +709,66 @@ class _StudentLaunchHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF241B4A), Color(0xFF10192A)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
+          colors: [Color(0xFF2A1B16), AppColors.surface],
         ),
-        border: Border.all(
-          color: AppColors.studentPrimary.withValues(alpha: 0.34),
-        ),
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(10),
-          topRight: Radius.circular(34),
-          bottomLeft: Radius.circular(34),
-          bottomRight: Radius.circular(10),
-        ),
+        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(AppRadius.md),
       ),
-      child: Stack(
-        children: [
-          const Positioned(
-            right: -34,
-            top: -38,
-            child: _OrbitGlyph(color: AppColors.studentAccent),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Welcome back, $name',
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Find nearby work, manage proposals, and keep your portfolio current.',
+              style: TextStyle(color: AppColors.textSecondary, height: 1.45),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Row(
               children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 7,
-                      height: 7,
-                      decoration: const BoxDecoration(
-                        color: AppColors.studentAccent,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.studentAccent,
-                            blurRadius: 10,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'STUDENT FLIGHT DECK  /  ONLINE',
-                      style: GoogleFonts.jetBrainsMono(
-                        fontSize: 9,
-                        letterSpacing: 1.1,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.studentAccent,
-                      ),
-                    ),
-                  ],
+                _HeroMetric(
+                  value: loading ? '—' : '$activeMissions',
+                  label: 'Active work',
                 ),
-                const SizedBox(height: AppSpacing.md),
-                Text(
-                  'Ready for launch,\n$name?',
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 27,
-                    height: 1.04,
-                    letterSpacing: -1.2,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
-                  ),
+                _HeroMetric(
+                  value: loading ? '—' : '$pitches',
+                  label: 'Proposals',
                 ),
-                const SizedBox(height: AppSpacing.lg),
-                Row(
-                  children: [
-                    _HeroMetric(
-                      value: loading ? '—' : '$activeMissions',
-                      label: 'LIVE MISSIONS',
-                      color: AppColors.success,
-                    ),
-                    _HeroMetric(
-                      value: loading ? '—' : '$pitches',
-                      label: 'PITCHES',
-                      color: AppColors.studentAccent,
-                    ),
-                    _HeroMetric(
-                      value: loading ? '—' : '$projects',
-                      label: 'BUILDS',
-                      color: AppColors.signalYellow,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                Row(
-                  children: [
-                    Expanded(
-                      child: FilledButton.icon(
-                        onPressed: onBrowse,
-                        icon: const Icon(Icons.radar_rounded, size: 18),
-                        label: const Text('Find a mission'),
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    IconButton.outlined(
-                      tooltip: 'Open portfolio',
-                      onPressed: onPortfolio,
-                      icon: const Icon(Icons.grid_view_rounded),
-                    ),
-                  ],
+                _HeroMetric(
+                  value: loading ? '—' : '$projects',
+                  label: 'Projects',
                 ),
               ],
             ),
-          ),
-        ],
+            const SizedBox(height: AppSpacing.lg),
+            Row(
+              children: [
+                Expanded(
+                  child: FilledButton.icon(
+                    onPressed: onBrowse,
+                    icon: const Icon(Icons.search_rounded, size: 18),
+                    label: const Text('Browse jobs'),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                IconButton.outlined(
+                  tooltip: 'Open portfolio',
+                  onPressed: onPortfolio,
+                  icon: const Icon(Icons.grid_view_rounded),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -853,13 +777,8 @@ class _StudentLaunchHero extends StatelessWidget {
 class _HeroMetric extends StatelessWidget {
   final String value;
   final String label;
-  final Color color;
 
-  const _HeroMetric({
-    required this.value,
-    required this.label,
-    required this.color,
-  });
+  const _HeroMetric({required this.value, required this.label});
 
   @override
   Widget build(BuildContext context) => Expanded(
@@ -867,26 +786,25 @@ class _HeroMetric extends StatelessWidget {
       margin: const EdgeInsets.only(right: 6),
       padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 10),
       decoration: BoxDecoration(
-        color: AppColors.ink.withValues(alpha: 0.30),
-        border: Border(left: BorderSide(color: color, width: 2)),
+        color: AppColors.surfaceHigh,
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             value,
-            style: GoogleFonts.jetBrainsMono(
+            style: GoogleFonts.manrope(
               fontSize: 18,
               fontWeight: FontWeight.w800,
-              color: color,
+              color: AppColors.textPrimary,
             ),
           ),
           Text(
             label,
             maxLines: 1,
-            style: GoogleFonts.jetBrainsMono(
-              fontSize: 7,
-              letterSpacing: 0.5,
+            style: GoogleFonts.manrope(
+              fontSize: 10,
               color: AppColors.textMuted,
             ),
           ),
@@ -894,54 +812,6 @@ class _HeroMetric extends StatelessWidget {
       ),
     ),
   );
-}
-
-class _OrbitGlyph extends StatelessWidget {
-  final Color color;
-  const _OrbitGlyph({required this.color});
-
-  @override
-  Widget build(BuildContext context) => SizedBox(
-    width: 180,
-    height: 180,
-    child: CustomPaint(painter: _OrbitGlyphPainter(color)),
-  );
-}
-
-class _OrbitGlyphPainter extends CustomPainter {
-  final Color color;
-  const _OrbitGlyphPainter(this.color);
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final paint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1
-      ..color = color.withValues(alpha: 0.18);
-    for (final radius in [30.0, 54.0, 78.0]) {
-      canvas.drawCircle(center, radius, paint);
-    }
-    canvas.drawLine(
-      Offset(center.dx - 90, center.dy),
-      Offset(center.dx + 90, center.dy),
-      paint,
-    );
-    canvas.drawLine(
-      Offset(center.dx, center.dy - 90),
-      Offset(center.dx, center.dy + 90),
-      paint,
-    );
-    canvas.drawCircle(
-      Offset(center.dx - 42, center.dy + 33),
-      4,
-      Paint()..color = color.withValues(alpha: 0.8),
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant _OrbitGlyphPainter oldDelegate) =>
-      oldDelegate.color != color;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1300,35 +1170,19 @@ class _PortfolioTabState extends State<_PortfolioTab> {
                   style: Theme.of(context).textTheme.headlineMedium,
                 ),
               ),
-              GestureDetector(
-                onTap: () => context.go('/student/portfolio/add'),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.md,
-                    vertical: AppSpacing.sm,
-                  ),
-                  decoration: BoxDecoration(
-                    gradient: AppTheme.studentGradient(),
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(
-                        Icons.add_rounded,
-                        color: AppColors.textPrimary,
-                        size: 16,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Add',
-                        style: GoogleFonts.inter(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                    ],
+              FilledButton.icon(
+                onPressed: () => context.go('/student/portfolio/add'),
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size(0, 42),
+                  padding: const EdgeInsets.symmetric(horizontal: 14),
+                ),
+                icon: const Icon(Icons.add_rounded, size: 16),
+                label: Text(
+                  'Add project',
+                  style: GoogleFonts.manrope(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.ink,
                   ),
                 ),
               ),
@@ -1524,26 +1378,20 @@ class _ProfileTabState extends State<_ProfileTab> {
                   width: 90,
                   height: 90,
                   decoration: BoxDecoration(
-                    gradient: AppTheme.studentGradient(),
+                    color: AppColors.surfaceMuted,
                     borderRadius: BorderRadius.circular(AppRadius.xxl),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.studentPrimary.withValues(alpha: 0.4),
-                        blurRadius: 30,
-                      ),
-                    ],
                   ),
                   child: Center(
                     child: Text(
                       initials.isNotEmpty ? initials : 'ST',
-                      style: GoogleFonts.plusJakartaSans(
+                      style: GoogleFonts.manrope(
                         fontSize: 28,
                         fontWeight: FontWeight.w800,
                         color: AppColors.textPrimary,
                       ),
                     ),
                   ),
-                ).animate().scale(duration: 600.ms, curve: Curves.elasticOut),
+                ),
               ),
 
               const SizedBox(height: AppSpacing.md),
@@ -1554,7 +1402,7 @@ class _ProfileTabState extends State<_ProfileTab> {
                 const SizedBox(height: 2),
                 Text(
                   year,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 12,
                     color: AppColors.textMuted,
                   ),
@@ -1563,7 +1411,7 @@ class _ProfileTabState extends State<_ProfileTab> {
               const SizedBox(height: AppSpacing.sm),
               Text(
                 'Verification: $status',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.manrope(
                   color: status == 'verified'
                       ? AppColors.success
                       : AppColors.warning,
@@ -1577,7 +1425,7 @@ class _ProfileTabState extends State<_ProfileTab> {
                     (profile['totalReviews'] as int) > 0
                         ? '★ ${profile['averageRating']} (${profile['totalReviews']} reviews)'
                         : 'No reviews yet',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.manrope(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: (profile['totalReviews'] as int) > 0
@@ -1590,7 +1438,7 @@ class _ProfileTabState extends State<_ProfileTab> {
                   const SizedBox(width: AppSpacing.sm),
                   Text(
                     '${profile['completedJobsCount']} jobs completed',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.manrope(
                       fontSize: 12,
                       color: AppColors.textSecondary,
                     ),
@@ -1618,7 +1466,7 @@ class _ProfileTabState extends State<_ProfileTab> {
                       const SizedBox(width: 4),
                       Text(
                         'github.com/$github',
-                        style: GoogleFonts.jetBrainsMono(
+                        style: GoogleFonts.manrope(
                           fontSize: 12,
                           color: AppColors.studentPrimary,
                         ),
@@ -1716,7 +1564,7 @@ class _SectionHeader extends StatelessWidget {
           onTap: onAction,
           child: Text(
             action,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.manrope(
               fontSize: 13,
               color: AppColors.studentPrimary,
               fontWeight: FontWeight.w500,
@@ -1909,7 +1757,7 @@ class _RadarPreview extends StatelessWidget {
               children: [
                 Text(
                   'Explore business map',
-                  style: GoogleFonts.plusJakartaSans(
+                  style: GoogleFonts.manrope(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                     color: AppColors.textPrimary,
@@ -1918,7 +1766,7 @@ class _RadarPreview extends StatelessWidget {
                 const SizedBox(height: AppSpacing.xs),
                 Text(
                   'View registered businesses with saved map locations.',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 12,
                     color: AppColors.textSecondary,
                     height: 1.4,
@@ -1939,7 +1787,7 @@ class _RadarPreview extends StatelessWidget {
                   ),
                   child: Text(
                     'Tap to explore →',
-                    style: GoogleFonts.jetBrainsMono(
+                    style: GoogleFonts.manrope(
                       fontSize: 10,
                       color: AppColors.businessPrimary,
                     ),
@@ -1950,7 +1798,7 @@ class _RadarPreview extends StatelessWidget {
           ),
         ],
       ),
-    ).animate().fadeIn(duration: 500.ms, delay: 400.ms);
+    );
   }
 }
 
@@ -1974,12 +1822,7 @@ class _ProjectGridCard extends StatelessWidget {
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    AppColors.studentPrimary.withValues(alpha: 0.3),
-                    AppColors.studentPrimary.withValues(alpha: 0.08),
-                  ],
-                ),
+                color: AppColors.surfaceHigh,
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(AppRadius.lg),
                 ),
@@ -2002,7 +1845,7 @@ class _ProjectGridCard extends StatelessWidget {
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.plusJakartaSans(
+                  style: GoogleFonts.manrope(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                     color: AppColors.textPrimary,
@@ -2010,7 +1853,7 @@ class _ProjectGridCard extends StatelessWidget {
                 ),
                 Text(
                   projectType,
-                  style: GoogleFonts.jetBrainsMono(
+                  style: GoogleFonts.manrope(
                     fontSize: 9,
                     color: AppColors.textMuted,
                   ),
@@ -2053,9 +1896,7 @@ class _GithubRepoGridCard extends StatelessWidget {
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [AppColors.surfaceHigh, AppColors.surface],
-                ),
+                color: AppColors.surfaceHigh,
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(AppRadius.lg),
                 ),
@@ -2078,7 +1919,7 @@ class _GithubRepoGridCard extends StatelessWidget {
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.plusJakartaSans(
+                  style: GoogleFonts.manrope(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                     color: AppColors.textPrimary,
@@ -2092,7 +1933,7 @@ class _GithubRepoGridCard extends StatelessWidget {
                         language,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.jetBrainsMono(
+                        style: GoogleFonts.manrope(
                           fontSize: 9,
                           color: AppColors.textMuted,
                         ),
@@ -2110,7 +1951,7 @@ class _GithubRepoGridCard extends StatelessWidget {
                           const SizedBox(width: 2),
                           Text(
                             '${repo['stargazers_count']}',
-                            style: GoogleFonts.jetBrainsMono(
+                            style: GoogleFonts.manrope(
                               fontSize: 9,
                               color: AppColors.textMuted,
                             ),
@@ -2172,7 +2013,7 @@ class _ProposalCard extends StatelessWidget {
               children: [
                 Text(
                   proposal.businessName ?? proposal.jobTitle ?? 'Job',
-                  style: GoogleFonts.plusJakartaSans(
+                  style: GoogleFonts.manrope(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: AppColors.textPrimary,
@@ -2236,7 +2077,7 @@ class _BusinessPingCard extends StatelessWidget {
                       Flexible(
                         child: Text(
                           name,
-                          style: GoogleFonts.plusJakartaSans(
+                          style: GoogleFonts.manrope(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
                             color: AppColors.textPrimary,
@@ -2257,7 +2098,7 @@ class _BusinessPingCard extends StatelessWidget {
                   ),
                   Text(
                     '$category · $address',
-                    style: GoogleFonts.jetBrainsMono(
+                    style: GoogleFonts.manrope(
                       fontSize: 10,
                       color: AppColors.textMuted,
                     ),
@@ -2278,7 +2119,7 @@ class _BusinessPingCard extends StatelessWidget {
               ),
               child: Text(
                 'Listed',
-                style: GoogleFonts.jetBrainsMono(
+                style: GoogleFonts.manrope(
                   fontSize: 9,
                   color: AppColors.businessPrimary,
                 ),

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -184,7 +183,7 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
                                 ),
                                 child: Text(
                                   t,
-                                  style: GoogleFonts.inter(
+                                  style: GoogleFonts.manrope(
                                     fontSize: 12,
                                     fontWeight: active
                                         ? FontWeight.w600
@@ -334,7 +333,7 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
               ),
               Text(
                 '// document the work behind the result',
-                style: GoogleFonts.jetBrainsMono(
+                style: GoogleFonts.manrope(
                   fontSize: 10,
                   color: AppColors.studentPrimary,
                 ),
@@ -342,7 +341,7 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
             ],
           ),
         ],
-      ).animate().fadeIn(duration: 400.ms),
+      ),
     );
   }
 

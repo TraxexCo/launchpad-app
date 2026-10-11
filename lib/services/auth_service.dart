@@ -56,9 +56,7 @@ class AuthService extends ChangeNotifier {
       isRecoveringPassword = true;
     }
     if (uri.scheme == 'launchpad' && uri.host == 'payment-return') {
-      final contractId = int.tryParse(
-        uri.queryParameters['contract_id'] ?? '',
-      );
+      final contractId = int.tryParse(uri.queryParameters['contract_id'] ?? '');
       if (contractId != null && contractId > 0) {
         _pendingPaymentContractId = contractId;
       }
@@ -151,6 +149,20 @@ class AuthService extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> deleteAccount() async {
+    final response = await _client.functions.invoke('delete-account');
+    if (response.status < 200 || response.status >= 300) {
+      final data = response.data;
+      throw StateError(
+        data is Map
+            ? data['error']?.toString() ?? 'Account deletion failed.'
+            : 'Account deletion failed.',
+      );
+    }
+    await _client.auth.signOut(scope: SignOutScope.local);
+    notifyListeners();
+  }
+
   Future<String?> getToken() async => _client.auth.currentSession?.accessToken;
 
   Future<UserSession?> getCurrentUser() async {
@@ -158,9 +170,15 @@ class AuthService extends ChangeNotifier {
     if (user == null || _client.auth.currentSession == null) return null;
     final row = await _client
         .from('profiles')
-        .select('id, role, full_name')
+        .select('id, role, full_name, suspended_at, suspension_reason')
         .eq('id', user.id)
         .single();
+    if (row['suspended_at'] != null) {
+      await _client.auth.signOut();
+      throw AuthException(
+        row['suspension_reason']?.toString() ?? 'This account is suspended.',
+      );
+    }
     return UserSession(
       id: row['id'] as String,
       role: row['role'] as String,

@@ -6,43 +6,43 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  // LaunchPad "Night Mission" canvas
-  static const Color background = Color(0xFF070B14);
-  static const Color surface = Color(0xFF0E1522);
-  static const Color surfaceHigh = Color(0xFF151F30);
-  static const Color surfaceMuted = Color(0xFF1B2739);
-  static const Color border = Color(0xFF243249);
-  static const Color borderHigh = Color(0xFF3A506F);
-  static const Color ink = Color(0xFF05070C);
-  static const Color signalYellow = Color(0xFFFFD166);
+  // Campus Utility palette: neutral graphite with one brand action color.
+  static const Color background = Color(0xFF101114);
+  static const Color surface = Color(0xFF181A1F);
+  static const Color surfaceHigh = Color(0xFF202228);
+  static const Color surfaceMuted = Color(0xFF292C33);
+  static const Color border = Color(0xFF34363D);
+  static const Color borderHigh = Color(0xFF50535C);
+  static const Color ink = Color(0xFF17181B);
+  static const Color signalYellow = Color(0xFFFF6A3D);
+  static const Color brandWarm = Color(0xFFFF9A5A);
+  static const Color brandDeep = Color(0xFF9F3520);
 
-  // Student — orbit violet + electric cyan
-  static const Color studentPrimary = Color(0xFF9B7BFF);
-  static const Color studentAccent = Color(0xFF4EDBFF);
-  static const Color studentGlow = Color(0x339B7BFF);
-
-  // Business — launch mint + opportunity amber
-  static const Color businessPrimary = Color(0xFF42E8A5);
-  static const Color businessAccent = Color(0xFFFFC857);
-  static const Color businessGlow = Color(0x3342E8A5);
+  // Role is communicated through content, not competing color systems.
+  static const Color studentPrimary = Color(0xFFFF6A3D);
+  static const Color studentAccent = Color(0xFFFF6A3D);
+  static const Color studentGlow = Color(0x00FF6A3D);
+  static const Color businessPrimary = Color(0xFFFF6A3D);
+  static const Color businessAccent = Color(0xFFFF6A3D);
+  static const Color businessGlow = Color(0x00FF6A3D);
 
   // Text hierarchy
-  static const Color textPrimary = Color(0xFFF5F7FC);
-  static const Color textSecondary = Color(0xFFADB9CD);
-  static const Color textMuted = Color(0xFF718099);
-  static const Color textDisabled = Color(0xFF47556B);
+  static const Color textPrimary = Color(0xFFF6F3EA);
+  static const Color textSecondary = Color(0xFFC7C6C2);
+  static const Color textMuted = Color(0xFF92959D);
+  static const Color textDisabled = Color(0xFF666A73);
 
   // Semantic
-  static const Color success = Color(0xFF42E8A5);
-  static const Color warning = Color(0xFFFFC857);
-  static const Color error = Color(0xFFFF6B7A);
-  static const Color info = Color(0xFF4EDBFF);
-  static const Color violet = Color(0xFFB28CFF);
+  static const Color success = Color(0xFF4FB286);
+  static const Color warning = Color(0xFFE6A64C);
+  static const Color error = Color(0xFFE06464);
+  static const Color info = Color(0xFF6FA8DC);
+  static const Color violet = Color(0xFFFF6A3D);
 
   // Animated launch-field glows
-  static const Color meshBlue = Color(0x269B7BFF);
-  static const Color meshAmber = Color(0x1AFFC857);
-  static const Color meshCyan = Color(0x1F4EDBFF);
+  static const Color meshBlue = Color(0x00FFFFFF);
+  static const Color meshAmber = Color(0x00FFFFFF);
+  static const Color meshCyan = Color(0x00FFFFFF);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -66,9 +66,9 @@ class AppRadius {
   AppRadius._();
   static const double sm = 8.0;
   static const double md = 12.0;
-  static const double lg = 16.0;
-  static const double xl = 20.0;
-  static const double xxl = 28.0;
+  static const double lg = 12.0;
+  static const double xl = 16.0;
+  static const double xxl = 16.0;
   static const double full = 999.0;
 }
 

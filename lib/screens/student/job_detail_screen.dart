@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -139,19 +138,9 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
       ),
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppColors.studentPrimary.withValues(alpha: .2),
-            AppColors.surfaceHigh,
-          ],
-        ),
-        border: Border.all(
-          color: AppColors.studentPrimary.withValues(alpha: .4),
-        ),
-        borderRadius: const BorderRadius.only(
-          topRight: Radius.circular(28),
-          bottomLeft: Radius.circular(28),
-        ),
+        color: AppColors.surfaceHigh,
+        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Row(
         children: [
@@ -174,7 +163,7 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
               children: [
                 Text(
                   'OPPORTUNITY BRIEF',
-                  style: GoogleFonts.jetBrainsMono(
+                  style: GoogleFonts.manrope(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 1.5,
@@ -183,8 +172,8 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  'Inspect the mission before you commit.',
-                  style: GoogleFonts.inter(
+                  'Review the job details before sending a proposal.',
+                  style: GoogleFonts.manrope(
                     fontSize: 12,
                     color: AppColors.textSecondary,
                   ),
@@ -195,7 +184,7 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
           const Icon(Icons.north_east_rounded, color: AppColors.studentPrimary),
         ],
       ),
-    ).animate().fadeIn().slideY(begin: -.08);
+    );
   }
 
   Widget _buildAppBar(BuildContext context) {
@@ -298,18 +287,8 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
               width: 60,
               height: 60,
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [AppColors.businessPrimary, AppColors.businessAccent],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+                color: AppColors.surfaceMuted,
                 borderRadius: BorderRadius.circular(AppRadius.lg),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.businessPrimary.withValues(alpha: 0.4),
-                    blurRadius: 16,
-                  ),
-                ],
               ),
               child: const Icon(
                 Icons.storefront_rounded,
@@ -332,8 +311,8 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                       borderRadius: BorderRadius.circular(AppRadius.full),
                     ),
                     child: Text(
-                      '// ${_job!.category}',
-                      style: GoogleFonts.jetBrainsMono(
+                      _job!.category,
+                      style: GoogleFonts.manrope(
                         fontSize: 9,
                         color: AppColors.businessPrimary,
                       ),
@@ -342,7 +321,7 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                   const SizedBox(height: 5),
                   Text(
                     _job!.businessName ?? 'Business',
-                    style: GoogleFonts.plusJakartaSans(
+                    style: GoogleFonts.manrope(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
                       color: AppColors.textPrimary,
@@ -359,7 +338,7 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                       const SizedBox(width: 3),
                       Text(
                         _job!.location,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.manrope(
                           fontSize: 12,
                           color: AppColors.textMuted,
                         ),
@@ -374,7 +353,7 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                         const SizedBox(width: 3),
                         Text(
                           'Verified',
-                          style: GoogleFonts.inter(
+                          style: GoogleFonts.manrope(
                             fontSize: 12,
                             color: AppColors.success,
                           ),
@@ -387,7 +366,7 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
             ),
           ],
         ),
-      ).animate().fadeIn(duration: 500.ms).slideY(begin: 0.1),
+      ),
     );
   }
 
@@ -418,7 +397,7 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
             ],
           ),
         ],
-      ).animate().fadeIn(duration: 500.ms, delay: 100.ms),
+      ),
     );
   }
 
@@ -442,7 +421,7 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
             ).textTheme.bodyMedium?.copyWith(height: 1.7),
           ),
         ],
-      ).animate().fadeIn(duration: 500.ms, delay: 180.ms),
+      ),
     );
   }
 
@@ -474,7 +453,7 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                 .toList(),
           ),
         ],
-      ).animate().fadeIn(duration: 500.ms, delay: 350.ms),
+      ),
     );
   }
 
@@ -510,14 +489,14 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
               children: [
                 Text(
                   'Expected Timeline',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 12,
                     color: AppColors.textMuted,
                   ),
                 ),
                 Text(
                   _job!.timeline,
-                  style: GoogleFonts.plusJakartaSans(
+                  style: GoogleFonts.manrope(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
                     color: AppColors.textPrimary,
@@ -531,14 +510,14 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
               children: [
                 Text(
                   'Posted',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 12,
                     color: AppColors.textMuted,
                   ),
                 ),
                 Text(
                   _timeAgo(_job!.createdAt),
-                  style: GoogleFonts.jetBrainsMono(
+                  style: GoogleFonts.manrope(
                     fontSize: 12,
                     color: AppColors.textSecondary,
                   ),
@@ -547,7 +526,7 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
             ),
           ],
         ),
-      ).animate().fadeIn(duration: 500.ms, delay: 420.ms),
+      ),
     );
   }
 
@@ -629,12 +608,12 @@ class _MetaTile extends StatelessWidget {
             Text(
               mono ? value : value,
               style: mono
-                  ? GoogleFonts.jetBrainsMono(
+                  ? GoogleFonts.manrope(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
                       color: accent,
                     )
-                  : GoogleFonts.plusJakartaSans(
+                  : GoogleFonts.manrope(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: AppColors.textPrimary,
@@ -644,7 +623,7 @@ class _MetaTile extends StatelessWidget {
             ),
             Text(
               label,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.manrope(
                 fontSize: 10,
                 color: AppColors.textMuted,
               ),

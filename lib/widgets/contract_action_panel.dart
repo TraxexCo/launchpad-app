@@ -7,14 +7,21 @@ import '../core/constants.dart';
 import '../services/contract_service.dart';
 
 String contractStatusLabel(String status) => switch (status) {
-  'completion_requested' => 'Awaiting Approval',
+  'funded' => 'Funded',
+  'submitted' => 'Submitted',
+  'revision_requested' => 'Revision Requested',
   'completed' => 'Completed',
+  'cancelled' => 'Cancelled',
+  'disputed' => 'Disputed',
+  'started' => 'Work Started',
   _ => 'In Progress',
 };
 
 Color contractStatusColor(String status) => switch (status) {
-  'completion_requested' => AppColors.warning,
+  'funded' => AppColors.success,
+  'submitted' || 'revision_requested' => AppColors.warning,
   'completed' => AppColors.info,
+  'cancelled' || 'disputed' => AppColors.error,
   _ => AppColors.success,
 };
 
@@ -35,91 +42,16 @@ class ContractActionPanel extends StatefulWidget {
 }
 
 class _ContractActionPanelState extends State<ContractActionPanel> {
-  bool _working = false;
-
-  Future<bool> _confirm(String title, String message, String action) async {
-    return await showDialog<bool>(
-          context: context,
-          builder: (dialogContext) => AlertDialog(
-            title: Text(title),
-            content: Text(message),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(dialogContext, false),
-                child: const Text('Cancel'),
-              ),
-              FilledButton(
-                onPressed: () => Navigator.pop(dialogContext, true),
-                child: Text(action),
-              ),
-            ],
-          ),
-        ) ??
-        false;
-  }
+  final bool _working = false;
 
   String _errorMessage(Object error) {
     if (error is PostgrestException) return error.message;
     return 'Something went wrong. Please try again.';
   }
 
-  Future<void> _perform(
-    Future<void> Function() operation,
-    String success,
-  ) async {
-    if (_working) return;
-    setState(() => _working = true);
-    try {
-      await operation();
-      await widget.onChanged();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(success), backgroundColor: AppColors.success),
-      );
-    } catch (error) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(_errorMessage(error)),
-          backgroundColor: AppColors.error,
-        ),
-      );
-    } finally {
-      if (mounted) setState(() => _working = false);
-    }
-  }
-
   Future<void> _requestCompletion() async {
-    final confirmed = await _confirm(
-      'Submit completed work?',
-      'The business will review the work and either approve it or request changes.',
-      'Submit',
-    );
-    if (!confirmed) return;
-    await _perform(
-      () => ContractService().requestCompletion(widget.contract.id),
-      'Work submitted for business approval.',
-    );
-  }
-
-  Future<void> _respond(bool approve) async {
-    final confirmed = await _confirm(
-      approve ? 'Approve project completion?' : 'Request more work?',
-      approve
-          ? 'This completes the contract and closes the related job.'
-          : 'The contract will return to in progress. Explain the changes in project chat.',
-      approve ? 'Approve' : 'Request changes',
-    );
-    if (!confirmed) return;
-    await _perform(
-      () => ContractService().respondToCompletion(
-        widget.contract.id,
-        approve: approve,
-      ),
-      approve
-          ? 'Project marked as completed.'
-          : 'Contract returned to in progress.',
-    );
+    await context.push('/contract/${widget.contract.id}');
+    await widget.onChanged();
   }
 
   Future<void> _openReview() async {
@@ -295,52 +227,21 @@ class _ContractActionPanelState extends State<ContractActionPanel> {
                   onPressed: _working ? null : _openReview,
                   icon: const Icon(Icons.star_outline_rounded, size: 18),
                   label: Text(
-                    widget.studentView
-                        ? 'Review business'
-                        : 'Review student',
+                    widget.studentView ? 'Review business' : 'Review student',
                   ),
                 ),
         ],
       );
     }
 
-    if (status == 'completion_requested') {
-      if (widget.studentView) {
-        return _message(
-          Icons.hourglass_top_rounded,
-          'Waiting for business approval',
-          AppColors.warning,
-        );
-      }
-      return Wrap(
-        spacing: AppSpacing.sm,
-        runSpacing: AppSpacing.sm,
-        children: [
-          OutlinedButton(
-            onPressed: _working ? null : () => _respond(false),
-            child: const Text('Request changes'),
-          ),
-          FilledButton.icon(
-            onPressed: _working ? null : () => _respond(true),
-            icon: const Icon(Icons.check_circle_outline_rounded, size: 18),
-            label: const Text('Approve completion'),
-          ),
-        ],
-      );
-    }
-
-    if (widget.studentView) {
-      return FilledButton.icon(
-        onPressed: _working ? null : _requestCompletion,
-        icon: const Icon(Icons.task_alt_rounded, size: 18),
-        label: const Text('Submit for approval'),
-      );
-    }
-
-    return _message(
-      Icons.engineering_outlined,
-      'Student is working on this project',
-      AppColors.success,
+    return FilledButton.icon(
+      onPressed: _working ? null : _requestCompletion,
+      icon: const Icon(Icons.space_dashboard_outlined, size: 18),
+      label: Text(
+        status == 'submitted' && !widget.studentView
+            ? 'Review deliverable'
+            : 'Open project workspace',
+      ),
     );
   }
 
@@ -353,7 +254,7 @@ class _ContractActionPanelState extends State<ContractActionPanel> {
         Flexible(
           child: Text(
             text,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.manrope(
               fontSize: 12,
               fontWeight: FontWeight.w600,
               color: color,

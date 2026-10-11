@@ -214,7 +214,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                               ),
                             )
                           : const Text(
-                              'Email confirmation is required. After signup, open the confirmation email on this device. Business verification documents are not collected in this build.',
+                              'Email confirmation is required. After signup, open the confirmation email on this device. You can submit verification documents from Settings.',
                             ),
                     ),
                   ],
@@ -332,10 +332,7 @@ class _StepHeader extends StatelessWidget {
                 ),
                 child: Text(
                   roleLabel,
-                  style: GoogleFonts.jetBrainsMono(
-                    fontSize: 10,
-                    color: accentColor,
-                  ),
+                  style: GoogleFonts.manrope(fontSize: 10, color: accentColor),
                 ),
               ),
             ],
@@ -367,7 +364,7 @@ class _StepHeader extends StatelessWidget {
           const SizedBox(height: AppSpacing.xs),
           Text(
             'Step ${currentStep + 1} of $totalSteps',
-            style: GoogleFonts.jetBrainsMono(
+            style: GoogleFonts.manrope(
               fontSize: 10,
               color: AppColors.textMuted,
             ),
@@ -519,7 +516,7 @@ class _StudentProfileStep extends StatelessWidget {
               Expanded(
                 child: Text(
                   'Your GitHub link will be displayed on your public portfolio.',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 12,
                     color: AppColors.textSecondary,
                     height: 1.4,
@@ -589,8 +586,8 @@ class _BusinessProfileStep extends StatelessWidget {
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Text(
-                  'Business verification is not available yet. Your account starts as unverified.',
-                  style: GoogleFonts.inter(
+                  'Your account starts as unverified. Submit a business permit from Settings after signing in.',
+                  style: GoogleFonts.manrope(
                     fontSize: 12,
                     color: AppColors.textSecondary,
                     height: 1.4,

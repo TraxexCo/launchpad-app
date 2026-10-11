@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -237,7 +236,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                                 ),
                                 child: Text(
                                   _error!,
-                                  style: GoogleFonts.inter(
+                                  style: GoogleFonts.manrope(
                                     fontSize: 12,
                                     color: AppColors.error,
                                   ),
@@ -276,7 +275,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                               Text(
                                 'The business has not opened a PayMongo checkout yet.',
                                 textAlign: TextAlign.center,
-                                style: GoogleFonts.inter(
+                                style: GoogleFonts.manrope(
                                   color: AppColors.textMuted,
                                 ),
                               ),
@@ -284,7 +283,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                             Text(
                               'TEST MODE • No real money is charged. LaunchPad confirms the result directly with the PayMongo API.',
                               textAlign: TextAlign.center,
-                              style: GoogleFonts.jetBrainsMono(
+                              style: GoogleFonts.manrope(
                                 fontSize: 9,
                                 height: 1.5,
                                 color: AppColors.textDisabled,
@@ -325,7 +324,7 @@ class _PaymentScreenState extends State<PaymentScreen>
               ),
               Text(
                 'PAYMONGO TEST CHANNEL',
-                style: GoogleFonts.jetBrainsMono(
+                style: GoogleFonts.manrope(
                   fontSize: 9,
                   letterSpacing: 1.5,
                   color: AppColors.businessAccent,
@@ -350,14 +349,9 @@ class _PaymentScreenState extends State<PaymentScreen>
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [color.withValues(alpha: .22), AppColors.surfaceHigh],
-        ),
+        color: AppColors.surfaceHigh,
         border: Border.all(color: color.withValues(alpha: .5)),
-        borderRadius: const BorderRadius.only(
-          topRight: Radius.circular(30),
-          bottomLeft: Radius.circular(30),
-        ),
+        borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -381,10 +375,9 @@ class _PaymentScreenState extends State<PaymentScreen>
           ),
           const SizedBox(height: AppSpacing.lg),
           Text(
-            status.toUpperCase(),
-            style: GoogleFonts.jetBrainsMono(
+            status,
+            style: GoogleFonts.manrope(
               fontSize: 12,
-              letterSpacing: 1.5,
               fontWeight: FontWeight.w700,
               color: color,
             ),
@@ -396,7 +389,7 @@ class _PaymentScreenState extends State<PaymentScreen>
                 : _studentView
                 ? 'Funding must be confirmed before submission.'
                 : 'Fund the accepted student proposal securely in test mode.',
-            style: GoogleFonts.inter(
+            style: GoogleFonts.manrope(
               fontSize: 13,
               height: 1.45,
               color: AppColors.textSecondary,
@@ -404,7 +397,7 @@ class _PaymentScreenState extends State<PaymentScreen>
           ),
         ],
       ),
-    ).animate().fadeIn().slideY(begin: .06);
+    );
   }
 
   Widget _row(String label, String value) => Row(
@@ -414,7 +407,7 @@ class _PaymentScreenState extends State<PaymentScreen>
         width: 82,
         child: Text(
           label.toUpperCase(),
-          style: GoogleFonts.jetBrainsMono(
+          style: GoogleFonts.manrope(
             fontSize: 9,
             letterSpacing: 1,
             color: AppColors.textMuted,
@@ -425,7 +418,7 @@ class _PaymentScreenState extends State<PaymentScreen>
         child: Text(
           value,
           textAlign: TextAlign.right,
-          style: GoogleFonts.inter(
+          style: GoogleFonts.manrope(
             fontSize: 13,
             fontWeight: FontWeight.w600,
             color: AppColors.textPrimary,

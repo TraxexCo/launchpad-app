@@ -336,7 +336,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                               ),
                               Text(
                                 'BUILD RECORD • VERIFIED EVIDENCE',
-                                style: GoogleFonts.jetBrainsMono(
+                                style: GoogleFonts.manrope(
                                   fontSize: 9,
                                   letterSpacing: 1.1,
                                   color: AppColors.studentAccent,
@@ -362,7 +362,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                               const Spacer(),
                               Text(
                                 'CASE ${widget.projectId.padLeft(4, '0')}',
-                                style: GoogleFonts.jetBrainsMono(
+                                style: GoogleFonts.manrope(
                                   fontSize: 9,
                                   color: AppColors.textMuted,
                                 ),
@@ -376,7 +376,7 @@ class _ProjectDetailScreenState extends State<ProjectDetailScreen> {
                           ),
                           Text(
                             project['project_type'] as String? ?? 'Project',
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.manrope(
                               color: AppColors.studentPrimary,
                             ),
                           ),

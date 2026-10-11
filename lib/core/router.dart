@@ -5,6 +5,7 @@ import '../screens/onboarding/onboarding_screen.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/register_screen.dart';
 import '../screens/auth/recover_password_screen.dart';
+import '../screens/auth/verification_screen.dart';
 import '../screens/student/student_dashboard.dart';
 import '../screens/student/browse_jobs_screen.dart';
 import '../screens/student/job_detail_screen.dart';
@@ -22,6 +23,9 @@ import '../screens/shared/notifications_screen.dart';
 import '../screens/shared/chat_screen.dart';
 import '../screens/shared/settings_screen.dart';
 import '../screens/shared/payment_screen.dart';
+import '../screens/shared/contract_workspace_screen.dart';
+import '../screens/admin/admin_portal_screen.dart';
+import '../screens/shared/legal_screen.dart';
 import '../models/job_post.dart';
 import '../models/proposal.dart';
 import '../services/auth_service.dart';
@@ -87,6 +91,14 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/recover-password',
       builder: (context, state) => const RecoverPasswordScreen(),
+    ),
+    GoRoute(
+      path: '/verification',
+      builder: (context, state) => VerificationScreen(
+        role: state.uri.queryParameters['role'] == 'business'
+            ? UserRole.business
+            : UserRole.student,
+      ),
     ),
 
     // ── Student routes
@@ -184,6 +196,25 @@ final appRouter = GoRouter(
         final id = state.pathParameters['id'] ?? '0';
         final name = state.uri.queryParameters['name'] ?? 'Chat';
         return ChatScreen(chatId: id, peerName: name);
+      },
+    ),
+    GoRoute(
+      path: '/legal/privacy',
+      builder: (context, state) => const LegalScreen(),
+    ),
+    GoRoute(
+      path: '/legal/terms',
+      builder: (context, state) => const LegalScreen(showTerms: true),
+    ),
+    GoRoute(
+      path: '/admin',
+      builder: (context, state) => const AdminPortalScreen(),
+    ),
+    GoRoute(
+      path: '/contract/:id',
+      builder: (context, state) {
+        final contractId = int.tryParse(state.pathParameters['id'] ?? '') ?? 0;
+        return ContractWorkspaceScreen(contractId: contractId);
       },
     ),
     GoRoute(

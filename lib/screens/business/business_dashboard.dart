@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/constants.dart';
-import '../../core/theme.dart';
 import '../../widgets/app_background.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/app_button.dart';
@@ -115,14 +113,8 @@ class _BizAppBar extends StatelessWidget {
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              gradient: AppTheme.businessGradient(),
+              color: AppColors.studentPrimary,
               borderRadius: BorderRadius.circular(AppRadius.md),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.businessPrimary.withValues(alpha: 0.35),
-                  blurRadius: 12,
-                ),
-              ],
             ),
             child: const Icon(
               Icons.storefront_rounded,
@@ -138,7 +130,7 @@ class _BizAppBar extends StatelessWidget {
             children: [
               Text(
                 businessName,
-                style: GoogleFonts.plusJakartaSans(
+                style: GoogleFonts.manrope(
                   fontSize: 15,
                   fontWeight: FontWeight.w800,
                   color: AppColors.textPrimary,
@@ -147,7 +139,7 @@ class _BizAppBar extends StatelessWidget {
               ),
               Text(
                 'Business account',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.manrope(
                   fontSize: 11,
                   color: AppColors.textMuted,
                 ),
@@ -250,7 +242,7 @@ class _BizBottomNav extends StatelessWidget {
                       const SizedBox(height: 2),
                       Text(
                         e.value.$3,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.manrope(
                           fontSize: 10,
                           fontWeight: isActive
                               ? FontWeight.w600
@@ -387,7 +379,7 @@ class _BizHomeTabState extends State<_BizHomeTab> {
           hired: _contracts.length,
           loading: _loading,
           onPost: () => context.go('/business/post-job'),
-        ).animate().fadeIn(duration: 500.ms).slideY(begin: 0.08),
+        ),
 
         if (_loadFailed) ...[
           const SizedBox(height: AppSpacing.md),
@@ -416,7 +408,7 @@ class _BizHomeTabState extends State<_BizHomeTab> {
                         Expanded(
                           child: Text(
                             c.jobTitle,
-                            style: GoogleFonts.plusJakartaSans(
+                            style: GoogleFonts.manrope(
                               fontSize: 15,
                               fontWeight: FontWeight.w700,
                               color: AppColors.textPrimary,
@@ -443,7 +435,7 @@ class _BizHomeTabState extends State<_BizHomeTab> {
                           ),
                           child: Text(
                             contractStatusLabel(c.status),
-                            style: GoogleFonts.jetBrainsMono(
+                            style: GoogleFonts.manrope(
                               fontSize: 10,
                               color: contractStatusColor(c.status),
                               fontWeight: FontWeight.w600,
@@ -455,7 +447,7 @@ class _BizHomeTabState extends State<_BizHomeTab> {
                     const SizedBox(height: 4),
                     Text(
                       'Assigned Student: ${c.studentName} · ₱${c.budget.toStringAsFixed(0)}',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 12,
                         color: AppColors.textMuted,
                       ),
@@ -495,7 +487,7 @@ class _BizHomeTabState extends State<_BizHomeTab> {
                                 const SizedBox(width: 6),
                                 Text(
                                   'Open Project Chat',
-                                  style: GoogleFonts.inter(
+                                  style: GoogleFonts.manrope(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w600,
                                     color: AppColors.businessPrimary,
@@ -523,10 +515,7 @@ class _BizHomeTabState extends State<_BizHomeTab> {
         const SizedBox(height: AppSpacing.xl),
 
         // ── Post a job CTA
-        _PostJobCard(onPosted: _loadData)
-            .animate()
-            .fadeIn(duration: 500.ms, delay: 350.ms)
-            .slideY(begin: 0.1, duration: 400.ms, delay: 350.ms),
+        _PostJobCard(onPosted: _loadData),
 
         const SizedBox(height: AppSpacing.xl),
 
@@ -570,17 +559,7 @@ class _BizHomeTabState extends State<_BizHomeTab> {
             .map(
               (e) => Padding(
                 padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                child: _JobCard(job: e.value)
-                    .animate()
-                    .fadeIn(
-                      duration: 400.ms,
-                      delay: Duration(milliseconds: 450 + e.key * 100),
-                    )
-                    .slideY(
-                      begin: 0.1,
-                      duration: 350.ms,
-                      delay: Duration(milliseconds: 450 + e.key * 100),
-                    ),
+                child: _JobCard(job: e.value),
               ),
             ),
 
@@ -626,12 +605,7 @@ class _BizHomeTabState extends State<_BizHomeTab> {
             .map(
               (e) => Padding(
                 padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                child: _IncomingProposalCard(proposal: e.value)
-                    .animate()
-                    .fadeIn(
-                      duration: 400.ms,
-                      delay: Duration(milliseconds: 700 + e.key * 80),
-                    ),
+                child: _IncomingProposalCard(proposal: e.value),
               ),
             ),
 
@@ -661,131 +635,56 @@ class _BusinessCommandHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF123529), Color(0xFF101A24)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
+          colors: [Color(0xFF2A1B16), AppColors.surface],
         ),
-        border: Border.all(
-          color: AppColors.businessPrimary.withValues(alpha: 0.34),
-        ),
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(10),
-          topRight: Radius.circular(34),
-          bottomLeft: Radius.circular(34),
-          bottomRight: Radius.circular(10),
-        ),
+        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(AppRadius.md),
       ),
-      child: Stack(
-        children: [
-          Positioned(
-            right: 18,
-            top: 18,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: List.generate(
-                8,
-                (index) => Container(
-                  width: 3,
-                  height: 8.0 + (index % 4) * 7,
-                  margin: const EdgeInsets.only(left: 4),
-                  color: AppColors.businessPrimary.withValues(
-                    alpha: 0.18 + (index * 0.055),
-                  ),
-                ),
-              ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              businessName,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.headlineMedium,
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            const SizedBox(height: 6),
+            const Text(
+              'Post real business needs and work directly with student talent.',
+              style: TextStyle(color: AppColors.textSecondary, height: 1.45),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Row(
               children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 7,
-                      height: 7,
-                      decoration: const BoxDecoration(
-                        color: AppColors.businessPrimary,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.businessPrimary,
-                            blurRadius: 10,
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'BUSINESS CONTROL  /  SIGNAL LIVE',
-                      style: GoogleFonts.jetBrainsMono(
-                        fontSize: 9,
-                        letterSpacing: 1.05,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.businessPrimary,
-                      ),
-                    ),
-                  ],
+                _BusinessHeroMetric(
+                  value: loading ? '—' : '$activeJobs',
+                  label: 'Open jobs',
                 ),
-                const SizedBox(height: AppSpacing.md),
-                Text(
-                  businessName,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.plusJakartaSans(
-                    fontSize: 27,
-                    height: 1.04,
-                    letterSpacing: -1.2,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
-                  ),
+                _BusinessHeroMetric(
+                  value: loading ? '—' : '$proposals',
+                  label: 'Proposals',
                 ),
-                const SizedBox(height: 5),
-                Text(
-                  'Turn a local need into a student-built solution.',
-                  style: GoogleFonts.inter(
-                    fontSize: 12,
-                    color: AppColors.textSecondary,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                Row(
-                  children: [
-                    _BusinessHeroMetric(
-                      value: loading ? '—' : '$activeJobs',
-                      label: 'OPEN BRIEFS',
-                      color: AppColors.businessPrimary,
-                    ),
-                    _BusinessHeroMetric(
-                      value: loading ? '—' : '$proposals',
-                      label: 'SIGNALS',
-                      color: AppColors.businessAccent,
-                    ),
-                    _BusinessHeroMetric(
-                      value: loading ? '—' : '$hired',
-                      label: 'MATCHES',
-                      color: AppColors.info,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                FilledButton.icon(
-                  onPressed: onPost,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.businessPrimary,
-                    foregroundColor: AppColors.ink,
-                  ),
-                  icon: const Icon(Icons.add_rounded),
-                  label: const Text('Launch a project brief'),
+                _BusinessHeroMetric(
+                  value: loading ? '—' : '$hired',
+                  label: 'Hired',
                 ),
               ],
             ),
-          ),
-        ],
+            const SizedBox(height: AppSpacing.lg),
+            FilledButton.icon(
+              onPressed: onPost,
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('Post a job'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -794,13 +693,8 @@ class _BusinessCommandHero extends StatelessWidget {
 class _BusinessHeroMetric extends StatelessWidget {
   final String value;
   final String label;
-  final Color color;
 
-  const _BusinessHeroMetric({
-    required this.value,
-    required this.label,
-    required this.color,
-  });
+  const _BusinessHeroMetric({required this.value, required this.label});
 
   @override
   Widget build(BuildContext context) => Expanded(
@@ -808,26 +702,25 @@ class _BusinessHeroMetric extends StatelessWidget {
       margin: const EdgeInsets.only(right: 6),
       padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 10),
       decoration: BoxDecoration(
-        color: AppColors.ink.withValues(alpha: 0.30),
-        border: Border(left: BorderSide(color: color, width: 2)),
+        color: AppColors.surfaceHigh,
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             value,
-            style: GoogleFonts.jetBrainsMono(
+            style: GoogleFonts.manrope(
               fontSize: 18,
               fontWeight: FontWeight.w800,
-              color: color,
+              color: AppColors.textPrimary,
             ),
           ),
           Text(
             label,
             maxLines: 1,
-            style: GoogleFonts.jetBrainsMono(
-              fontSize: 7,
-              letterSpacing: 0.5,
+            style: GoogleFonts.manrope(
+              fontSize: 10,
               color: AppColors.textMuted,
             ),
           ),
@@ -878,11 +771,11 @@ class _BizJobsTabState extends State<_BizJobsTab> {
       builder: (_) => AlertDialog(
         title: Text(
           'Delete Job',
-          style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700),
+          style: GoogleFonts.manrope(fontWeight: FontWeight.w700),
         ),
         content: Text(
           'Delete "${job.title}"? This cannot be undone.',
-          style: GoogleFonts.inter(),
+          style: GoogleFonts.manrope(),
         ),
         actions: [
           TextButton(
@@ -933,7 +826,7 @@ class _BizJobsTabState extends State<_BizJobsTab> {
                     ),
                     Text(
                       '${_jobs.length} job(s) posted',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 12,
                         color: AppColors.textMuted,
                       ),
@@ -974,7 +867,7 @@ class _BizJobsTabState extends State<_BizJobsTab> {
                     const SizedBox(height: AppSpacing.md),
                     Text(
                       'No jobs posted yet',
-                      style: GoogleFonts.plusJakartaSans(
+                      style: GoogleFonts.manrope(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                         color: AppColors.textMuted,
@@ -983,7 +876,7 @@ class _BizJobsTabState extends State<_BizJobsTab> {
                     const SizedBox(height: AppSpacing.sm),
                     Text(
                       'Tap "+ Post Job" to create your first listing.',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 13,
                         color: AppColors.textDisabled,
                       ),
@@ -1000,220 +893,213 @@ class _BizJobsTabState extends State<_BizJobsTab> {
                   final job = _jobs[i];
                   return Padding(
                     padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                    child:
-                        AppCard(
-                          child: Column(
+                    child: AppCard(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      job.title,
+                                      style: GoogleFonts.manrope(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppColors.textPrimary,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Row(
                                       children: [
-                                        Text(
-                                          job.title,
-                                          style: GoogleFonts.plusJakartaSans(
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.w700,
-                                            color: AppColors.textPrimary,
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 2,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.businessPrimary
+                                                .withValues(alpha: 0.1),
+                                            borderRadius: BorderRadius.circular(
+                                              AppRadius.full,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            job.category,
+                                            style: GoogleFonts.manrope(
+                                              fontSize: 10,
+                                              color: AppColors.businessPrimary,
+                                              fontWeight: FontWeight.w600,
+                                            ),
                                           ),
                                         ),
-                                        const SizedBox(height: 4),
-                                        Row(
-                                          children: [
-                                            Container(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    horizontal: 8,
-                                                    vertical: 2,
-                                                  ),
-                                              decoration: BoxDecoration(
-                                                color: AppColors.businessPrimary
-                                                    .withValues(alpha: 0.1),
-                                                borderRadius:
-                                                    BorderRadius.circular(
-                                                      AppRadius.full,
-                                                    ),
+                                        const SizedBox(width: 6),
+                                        if (job.urgency == 'Urgent')
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 2,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: AppColors.error.withValues(
+                                                alpha: 0.1,
                                               ),
-                                              child: Text(
-                                                job.category,
-                                                style: GoogleFonts.inter(
-                                                  fontSize: 10,
-                                                  color:
-                                                      AppColors.businessPrimary,
-                                                  fontWeight: FontWeight.w600,
-                                                ),
+                                              borderRadius:
+                                                  BorderRadius.circular(
+                                                    AppRadius.full,
+                                                  ),
+                                            ),
+                                            child: Text(
+                                              'Urgent',
+                                              style: GoogleFonts.manrope(
+                                                fontSize: 10,
+                                                color: AppColors.error,
+                                                fontWeight: FontWeight.w600,
                                               ),
                                             ),
-                                            const SizedBox(width: 6),
-                                            if (job.urgency == 'Urgent')
-                                              Container(
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                      horizontal: 8,
-                                                      vertical: 2,
-                                                    ),
-                                                decoration: BoxDecoration(
-                                                  color: AppColors.error
-                                                      .withValues(alpha: 0.1),
-                                                  borderRadius:
-                                                      BorderRadius.circular(
-                                                        AppRadius.full,
-                                                      ),
-                                                ),
-                                                child: Text(
-                                                  'Urgent',
-                                                  style: GoogleFonts.inter(
-                                                    fontSize: 10,
-                                                    color: AppColors.error,
-                                                    fontWeight: FontWeight.w600,
-                                                  ),
-                                                ),
-                                              ),
-                                          ],
-                                        ),
+                                          ),
                                       ],
                                     ),
-                                  ),
-                                  Text(
-                                    '₱${job.budget}',
-                                    style: GoogleFonts.jetBrainsMono(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppColors.businessPrimary,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              if (job.description.isNotEmpty) ...[
-                                const SizedBox(height: AppSpacing.sm),
-                                Text(
-                                  job.description,
-                                  style: GoogleFonts.inter(
-                                    fontSize: 12,
-                                    color: AppColors.textMuted,
-                                  ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
+                                  ],
                                 ),
-                              ],
-                              const SizedBox(height: AppSpacing.sm),
-                              Row(
-                                children: [
-                                  const Icon(
-                                    Icons.access_time_rounded,
-                                    size: 12,
-                                    color: AppColors.textDisabled,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    job.timeline,
-                                    style: GoogleFonts.inter(
-                                      fontSize: 11,
-                                      color: AppColors.textDisabled,
-                                    ),
-                                  ),
-                                  const Spacer(),
-                                  // UPDATE button
-                                  GestureDetector(
-                                    onTap: () async {
-                                      await context.push(
-                                        '/business/jobs/${job.id}/edit',
-                                        extra: job,
-                                      );
-                                      _loadJobs();
-                                    },
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 10,
-                                        vertical: 5,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.businessPrimary
-                                            .withValues(alpha: 0.08),
-                                        borderRadius: BorderRadius.circular(
-                                          AppRadius.sm,
-                                        ),
-                                        border: Border.all(
-                                          color: AppColors.businessPrimary
-                                              .withValues(alpha: 0.25),
-                                        ),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          const Icon(
-                                            Icons.edit_rounded,
-                                            size: 11,
-                                            color: AppColors.businessPrimary,
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            'Edit',
-                                            style: GoogleFonts.inter(
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.w600,
-                                              color: AppColors.businessPrimary,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: AppSpacing.sm),
-                                  // DELETE button
-                                  GestureDetector(
-                                    onTap: () => _deleteJob(job),
-                                    child: Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 10,
-                                        vertical: 5,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.error.withValues(
-                                          alpha: 0.08,
-                                        ),
-                                        borderRadius: BorderRadius.circular(
-                                          AppRadius.sm,
-                                        ),
-                                        border: Border.all(
-                                          color: AppColors.error.withValues(
-                                            alpha: 0.25,
-                                          ),
-                                        ),
-                                      ),
-                                      child: Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          const Icon(
-                                            Icons.delete_rounded,
-                                            size: 11,
-                                            color: AppColors.error,
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            'Delete',
-                                            style: GoogleFonts.inter(
-                                              fontSize: 11,
-                                              fontWeight: FontWeight.w600,
-                                              color: AppColors.error,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ],
+                              ),
+                              Text(
+                                '₱${job.budget}',
+                                style: GoogleFonts.manrope(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.businessPrimary,
+                                ),
                               ),
                             ],
                           ),
-                        ).animate().fadeIn(
-                          duration: 300.ms,
-                          delay: Duration(milliseconds: i * 80),
-                        ),
+                          if (job.description.isNotEmpty) ...[
+                            const SizedBox(height: AppSpacing.sm),
+                            Text(
+                              job.description,
+                              style: GoogleFonts.manrope(
+                                fontSize: 12,
+                                color: AppColors.textMuted,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                          const SizedBox(height: AppSpacing.sm),
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.access_time_rounded,
+                                size: 12,
+                                color: AppColors.textDisabled,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                job.timeline,
+                                style: GoogleFonts.manrope(
+                                  fontSize: 11,
+                                  color: AppColors.textDisabled,
+                                ),
+                              ),
+                              const Spacer(),
+                              // UPDATE button
+                              GestureDetector(
+                                onTap: () async {
+                                  await context.push(
+                                    '/business/jobs/${job.id}/edit',
+                                    extra: job,
+                                  );
+                                  _loadJobs();
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 5,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.businessPrimary.withValues(
+                                      alpha: 0.08,
+                                    ),
+                                    borderRadius: BorderRadius.circular(
+                                      AppRadius.sm,
+                                    ),
+                                    border: Border.all(
+                                      color: AppColors.businessPrimary
+                                          .withValues(alpha: 0.25),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                        Icons.edit_rounded,
+                                        size: 11,
+                                        color: AppColors.businessPrimary,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'Edit',
+                                        style: GoogleFonts.manrope(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.businessPrimary,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: AppSpacing.sm),
+                              // DELETE button
+                              GestureDetector(
+                                onTap: () => _deleteJob(job),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 5,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.error.withValues(
+                                      alpha: 0.08,
+                                    ),
+                                    borderRadius: BorderRadius.circular(
+                                      AppRadius.sm,
+                                    ),
+                                    border: Border.all(
+                                      color: AppColors.error.withValues(
+                                        alpha: 0.25,
+                                      ),
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(
+                                        Icons.delete_rounded,
+                                        size: 11,
+                                        color: AppColors.error,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'Delete',
+                                        style: GoogleFonts.manrope(
+                                          fontSize: 11,
+                                          fontWeight: FontWeight.w600,
+                                          color: AppColors.error,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
                   );
                 },
               ),
@@ -1389,7 +1275,7 @@ class _BizProfileTabState extends State<_BizProfileTab> {
                 width: 90,
                 height: 90,
                 decoration: BoxDecoration(
-                  gradient: AppTheme.businessGradient(),
+                  color: AppColors.surfaceMuted,
                   borderRadius: BorderRadius.circular(AppRadius.xxl),
                 ),
                 child: const Icon(
@@ -1415,7 +1301,7 @@ class _BizProfileTabState extends State<_BizProfileTab> {
               const SizedBox(height: AppSpacing.sm),
               Text(
                 'Verification: $status',
-                style: GoogleFonts.inter(
+                style: GoogleFonts.manrope(
                   color: status == 'verified'
                       ? AppColors.success
                       : AppColors.warning,
@@ -1470,14 +1356,14 @@ class _BizInfoRow extends StatelessWidget {
             children: [
               Text(
                 label,
-                style: GoogleFonts.jetBrainsMono(
+                style: GoogleFonts.manrope(
                   fontSize: 10,
                   color: AppColors.textMuted,
                 ),
               ),
               Text(
                 value,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.manrope(
                   fontSize: 13,
                   fontWeight: FontWeight.w500,
                   color: AppColors.textPrimary,
@@ -1514,7 +1400,7 @@ class _BizSectionHeader extends StatelessWidget {
           onTap: onAction,
           child: Text(
             action,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.manrope(
               fontSize: 13,
               color: AppColors.businessPrimary,
               fontWeight: FontWeight.w500,
@@ -1543,27 +1429,9 @@ class _PostJobCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.lg),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF173D31), Color(0xFF172230)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(8),
-            topRight: Radius.circular(30),
-            bottomLeft: Radius.circular(30),
-            bottomRight: Radius.circular(8),
-          ),
-          border: Border.all(
-            color: AppColors.businessPrimary.withValues(alpha: 0.35),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.businessPrimary.withValues(alpha: 0.4),
-              blurRadius: 28,
-              offset: const Offset(0, 8),
-            ),
-          ],
+          color: AppColors.surfaceHigh,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          border: Border.all(color: AppColors.border),
         ),
         child: Row(
           children: [
@@ -1573,7 +1441,7 @@ class _PostJobCard extends StatelessWidget {
                 children: [
                   Text(
                     'Post a New Job',
-                    style: GoogleFonts.plusJakartaSans(
+                    style: GoogleFonts.manrope(
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
                       color: AppColors.textPrimary,
@@ -1582,7 +1450,7 @@ class _PostJobCard extends StatelessWidget {
                   const SizedBox(height: AppSpacing.xs),
                   Text(
                     'Connect with student developers\nready to build for your business.',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.manrope(
                       fontSize: 12,
                       color: AppColors.textSecondary,
                       height: 1.45,
@@ -1614,7 +1482,7 @@ class _PostJobCard extends StatelessWidget {
                         const SizedBox(width: 6),
                         Text(
                           'Post Job Now',
-                          style: GoogleFonts.plusJakartaSans(
+                          style: GoogleFonts.manrope(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
                             color: AppColors.textPrimary,
@@ -1680,7 +1548,7 @@ class _JobCard extends StatelessWidget {
                   children: [
                     Text(
                       job.title,
-                      style: GoogleFonts.plusJakartaSans(
+                      style: GoogleFonts.manrope(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
                         color: AppColors.textPrimary,
@@ -1688,7 +1556,7 @@ class _JobCard extends StatelessWidget {
                     ),
                     Text(
                       'Tap to view proposals',
-                      style: GoogleFonts.jetBrainsMono(
+                      style: GoogleFonts.manrope(
                         fontSize: 10,
                         color: AppColors.textMuted,
                       ),
@@ -1711,7 +1579,7 @@ class _JobCard extends StatelessWidget {
                 ),
                 child: Text(
                   job.budget,
-                  style: GoogleFonts.jetBrainsMono(
+                  style: GoogleFonts.manrope(
                     fontSize: 11,
                     color: AppColors.businessPrimary,
                     fontWeight: FontWeight.w600,
@@ -1757,11 +1625,7 @@ class _IncomingProposalCard extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [AppColors.studentPrimary, AppColors.studentAccent],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+              color: AppColors.surfaceMuted,
               borderRadius: BorderRadius.circular(AppRadius.md),
             ),
             child: Center(
@@ -1769,7 +1633,7 @@ class _IncomingProposalCard extends StatelessWidget {
                 proposal.studentName != null && proposal.studentName!.isNotEmpty
                     ? proposal.studentName![0]
                     : 'S',
-                style: GoogleFonts.plusJakartaSans(
+                style: GoogleFonts.manrope(
                   fontSize: 14,
                   fontWeight: FontWeight.w800,
                   color: AppColors.textPrimary,
@@ -1787,7 +1651,7 @@ class _IncomingProposalCard extends StatelessWidget {
                     Flexible(
                       child: Text(
                         proposal.studentName ?? 'Student',
-                        style: GoogleFonts.plusJakartaSans(
+                        style: GoogleFonts.manrope(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                           color: AppColors.textPrimary,
@@ -1800,7 +1664,7 @@ class _IncomingProposalCard extends StatelessWidget {
                 ),
                 Text(
                   '${proposal.jobTitle ?? 'Job'} • ₱${proposal.proposedBudget}',
-                  style: GoogleFonts.jetBrainsMono(
+                  style: GoogleFonts.manrope(
                     fontSize: 10,
                     color: AppColors.textMuted,
                   ),
@@ -1815,7 +1679,7 @@ class _IncomingProposalCard extends StatelessWidget {
               const SizedBox(height: 4),
               Text(
                 _timeAgo(proposal.createdAt),
-                style: GoogleFonts.inter(
+                style: GoogleFonts.manrope(
                   fontSize: 10,
                   color: AppColors.textMuted,
                 ),

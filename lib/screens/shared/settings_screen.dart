@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -10,6 +9,7 @@ import '../../widgets/app_button.dart';
 import '../../widgets/confirm_sign_out.dart';
 import '../../services/location_service.dart';
 import '../../services/notification_service.dart';
+import '../../services/auth_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   final UserRole role;
@@ -30,9 +30,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool get _isStudent => widget.role == UserRole.student;
   Color get _primary =>
       _isStudent ? AppColors.studentPrimary : AppColors.businessPrimary;
-  Color get _accent =>
-      _isStudent ? AppColors.studentAccent : AppColors.businessAccent;
-
   String get _preferencePrefix =>
       'settings_${Supabase.instance.client.auth.currentUser?.id ?? 'guest'}';
 
@@ -108,6 +105,54 @@ class _SettingsScreenState extends State<SettingsScreen> {
           SnackBar(
             content: Text('Could not sync notification setting: $error'),
           ),
+        );
+      }
+    }
+  }
+
+  Future<void> _deleteAccount() async {
+    final controller = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Permanently delete account?'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'This permanently removes your account and linked LaunchPad data. Type DELETE to continue.',
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: controller,
+              decoration: const InputDecoration(labelText: 'Type DELETE'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Keep account'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(
+              dialogContext,
+              controller.text.trim() == 'DELETE',
+            ),
+            child: const Text('Delete forever'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    if (confirmed != true) return;
+    try {
+      await AuthService().deleteAccount();
+      if (mounted) context.go('/onboarding');
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('$error'), backgroundColor: AppColors.error),
         );
       }
     }
@@ -571,6 +616,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         onTap: _editProfile,
                       ),
                       _buildTile(
+                        icon: Icons.verified_user_outlined,
+                        label: 'Identity Verification',
+                        color: AppColors.success,
+                        onTap: () => context.push(
+                          '/verification?role=${_isStudent ? 'student' : 'business'}',
+                        ),
+                      ),
+                      _buildTile(
                         icon: Icons.lock_outline_rounded,
                         label: 'Change Password',
                         color: _primary,
@@ -589,15 +642,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                       _buildTile(
                         icon: Icons.privacy_tip_outlined,
-                        label: 'Privacy Summary',
+                        label: 'Privacy Policy',
                         color: AppColors.textMuted,
-                        onTap: () => _showInformation(
-                          title: 'Privacy Summary',
-                          body:
-                              'LaunchPad stores account, profile, job, proposal, contract, and chat data in Supabase. '
-                              'Profile information is visible to signed-in users. Never place passwords or sensitive personal documents in public profile fields. '
-                              'A formal reviewed privacy policy is required before store publication.',
-                        ),
+                        onTap: () => context.push('/legal/privacy'),
+                      ),
+                      _buildTile(
+                        icon: Icons.description_outlined,
+                        label: 'Terms of Use',
+                        color: AppColors.textMuted,
+                        onTap: () => context.push('/legal/terms'),
+                      ),
+                      _buildTile(
+                        icon: Icons.delete_forever_outlined,
+                        label: 'Delete Account',
+                        color: AppColors.error,
+                        onTap: _deleteAccount,
                       ),
                       const SizedBox(height: AppSpacing.xl),
                       AppButton(
@@ -611,7 +670,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       Center(
                         child: Text(
                           'LaunchPad v1.0.0',
-                          style: GoogleFonts.jetBrainsMono(
+                          style: GoogleFonts.manrope(
                             fontSize: 10,
                             color: AppColors.textDisabled,
                           ),
@@ -658,7 +717,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 Text(
                   _isStudent ? 'STUDENT SYSTEM' : 'BUSINESS SYSTEM',
-                  style: GoogleFonts.jetBrainsMono(
+                  style: GoogleFonts.manrope(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 1.2,
@@ -668,7 +727,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 3),
                 Text(
                   'Manage identity, alerts, security, and location.',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 11,
                     color: AppColors.textSecondary,
                   ),
@@ -716,17 +775,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Control Panel',
+                'Settings',
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               Text(
-                '// identity • signals • access',
-                style: GoogleFonts.jetBrainsMono(fontSize: 10, color: _primary),
+                'Profile, notifications, privacy, and account access',
+                style: GoogleFonts.manrope(fontSize: 10, color: _primary),
               ),
             ],
           ),
         ],
-      ).animate().fadeIn(duration: 400.ms),
+      ),
     );
   }
 
@@ -750,14 +809,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            _primary.withValues(alpha: 0.15),
-            _accent.withValues(alpha: 0.05),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(AppRadius.xl),
-        border: Border.all(color: _primary.withValues(alpha: 0.25)),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: AppColors.border),
       ),
       child: Row(
         children: [
@@ -765,18 +819,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
             width: 56,
             height: 56,
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [_primary, _accent],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+              color: AppColors.surfaceMuted,
               shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: _primary.withValues(alpha: 0.4),
-                  blurRadius: 16,
-                ),
-              ],
             ),
             child: Center(
               child: _loadingProfile
@@ -802,7 +846,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               children: [
                 Text(
                   _loadingProfile ? 'Loading profile…' : displayName,
-                  style: GoogleFonts.plusJakartaSans(
+                  style: GoogleFonts.manrope(
                     fontSize: 16,
                     fontWeight: FontWeight.w700,
                     color: AppColors.textPrimary,
@@ -812,7 +856,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   subtitle.isEmpty
                       ? (_isStudent ? 'Student developer' : 'Business account')
                       : subtitle,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 12,
                     color: AppColors.textSecondary,
                   ),
@@ -820,7 +864,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 const SizedBox(height: 4),
                 Text(
                   _profile['email']?.toString() ?? '',
-                  style: GoogleFonts.jetBrainsMono(
+                  style: GoogleFonts.manrope(
                     fontSize: 10,
                     color: AppColors.textMuted,
                   ),
@@ -835,7 +879,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
         ],
       ),
-    ).animate().fadeIn(duration: 500.ms, delay: 80.ms);
+    );
   }
 
   Widget _buildSectionLabel(String label) {
@@ -878,7 +922,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 children: [
                   Text(
                     title,
-                    style: GoogleFonts.plusJakartaSans(
+                    style: GoogleFonts.manrope(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: AppColors.textPrimary,
@@ -886,7 +930,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                   Text(
                     subtitle,
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.manrope(
                       fontSize: 11,
                       color: AppColors.textMuted,
                       height: 1.4,
@@ -941,7 +985,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Expanded(
                 child: Text(
                   label,
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                     color: AppColors.textPrimary,

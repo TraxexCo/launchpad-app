@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants.dart';
@@ -270,11 +269,7 @@ class _ChatScreenState extends State<ChatScreen> {
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [AppColors.businessPrimary, AppColors.businessAccent],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
+              color: AppColors.surfaceMuted,
               shape: BoxShape.circle,
             ),
             child: Center(
@@ -285,7 +280,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     .map((word) => word[0].toUpperCase())
                     .take(2)
                     .join(),
-                style: GoogleFonts.plusJakartaSans(
+                style: GoogleFonts.manrope(
                   fontSize: 14,
                   fontWeight: FontWeight.w800,
                   color: AppColors.textPrimary,
@@ -300,19 +295,16 @@ class _ChatScreenState extends State<ChatScreen> {
               children: [
                 Text(
                   widget.peerName,
-                  style: GoogleFonts.plusJakartaSans(
+                  style: GoogleFonts.manrope(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
                     color: AppColors.textPrimary,
                   ),
                 ),
                 Text(
-                  _contractId == null
-                      ? 'CHANNEL SYNCING'
-                      : 'SECURE PROJECT CHANNEL • LIVE',
-                  style: GoogleFonts.jetBrainsMono(
-                    fontSize: 8,
-                    letterSpacing: .8,
+                  _contractId == null ? 'Connecting…' : 'Project conversation',
+                  style: GoogleFonts.manrope(
+                    fontSize: 11,
                     color: _contractId == null
                         ? AppColors.warning
                         : AppColors.success,
@@ -322,7 +314,7 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ),
         ],
-      ).animate().fadeIn(duration: 400.ms),
+      ),
     );
   }
 
@@ -347,7 +339,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   padding: const EdgeInsets.only(bottom: 4),
                   child: Text(
                     m.time,
-                    style: GoogleFonts.jetBrainsMono(
+                    style: GoogleFonts.manrope(
                       fontSize: 9,
                       color: AppColors.textMuted,
                     ),
@@ -377,45 +369,17 @@ class _ChatScreenState extends State<ChatScreen> {
                         vertical: AppSpacing.sm + 2,
                       ),
                       decoration: BoxDecoration(
-                        gradient: m.fromMe
-                            ? const LinearGradient(
-                                colors: [
-                                  AppColors.studentPrimary,
-                                  AppColors.studentAccent,
-                                ],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              )
-                            : null,
-                        color: m.fromMe ? null : AppColors.surfaceHigh,
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(
-                            m.fromMe ? AppRadius.lg : AppRadius.sm,
-                          ),
-                          topRight: Radius.circular(
-                            m.fromMe ? AppRadius.sm : AppRadius.lg,
-                          ),
-                          bottomLeft: const Radius.circular(AppRadius.lg),
-                          bottomRight: const Radius.circular(AppRadius.lg),
-                        ),
+                        color: m.fromMe
+                            ? AppColors.studentPrimary
+                            : AppColors.surfaceHigh,
+                        borderRadius: BorderRadius.circular(AppRadius.md),
                         border: m.fromMe
                             ? null
                             : Border.all(color: AppColors.border),
-                        boxShadow: m.fromMe
-                            ? [
-                                BoxShadow(
-                                  color: AppColors.studentPrimary.withValues(
-                                    alpha: 0.3,
-                                  ),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ]
-                            : null,
                       ),
                       child: Text(
                         m.text,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.manrope(
                           fontSize: 14,
                           color: m.fromMe
                               ? Colors.white
@@ -429,9 +393,6 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
             ],
           ),
-        ).animate().fadeIn(
-          duration: 300.ms,
-          delay: Duration(milliseconds: i * 40),
         );
       },
     );
@@ -462,13 +423,13 @@ class _ChatScreenState extends State<ChatScreen> {
                 controller: _msgCtrl,
                 maxLines: null,
                 textInputAction: TextInputAction.newline,
-                style: GoogleFonts.inter(
+                style: GoogleFonts.manrope(
                   color: AppColors.textPrimary,
                   fontSize: 14,
                 ),
                 decoration: InputDecoration(
                   hintText: 'Type a message…',
-                  hintStyle: GoogleFonts.inter(
+                  hintStyle: GoogleFonts.manrope(
                     color: AppColors.textDisabled,
                     fontSize: 14,
                   ),
@@ -482,32 +443,11 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ),
           const SizedBox(width: AppSpacing.sm),
-          GestureDetector(
-            onTap: _sending ? null : _send,
-            child: Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [AppColors.studentPrimary, AppColors.studentAccent],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(AppRadius.lg),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.studentPrimary.withValues(alpha: 0.35),
-                    blurRadius: 16,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: const Icon(
-                Icons.send_rounded,
-                color: AppColors.textPrimary,
-                size: 20,
-              ),
-            ),
+          IconButton.filled(
+            tooltip: 'Send message',
+            onPressed: _sending ? null : _send,
+            style: IconButton.styleFrom(minimumSize: const Size(48, 48)),
+            icon: const Icon(Icons.send_rounded, size: 20),
           ),
         ],
       ),

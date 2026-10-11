@@ -258,7 +258,7 @@ class _NearbyBusinessRadarState extends State<NearbyBusinessRadar> {
                 padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                 child: Text(
                   '© OpenStreetMap contributors',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 8,
                     color: AppColors.textMuted,
                   ),
@@ -279,7 +279,7 @@ class _NearbyBusinessRadarState extends State<NearbyBusinessRadar> {
           ),
         ],
       ),
-    ).animate().fadeIn(duration: 450.ms).scale(begin: const Offset(0.98, 0.98));
+    );
   }
 
   List<Marker> _markers(LatLng current) => [
@@ -390,7 +390,7 @@ class _NearbyBusinessRadarState extends State<NearbyBusinessRadar> {
                     distance < 1
                         ? '${(distance * 1000).round()} m'
                         : '${distance.toStringAsFixed(1)} km',
-                    style: GoogleFonts.jetBrainsMono(
+                    style: GoogleFonts.manrope(
                       fontSize: 9,
                       fontWeight: FontWeight.w700,
                       color: AppColors.studentPrimary,
@@ -399,7 +399,7 @@ class _NearbyBusinessRadarState extends State<NearbyBusinessRadar> {
                 ),
             ],
           ),
-        ).animate().fadeIn(delay: (index * 45).ms).slideX(begin: 0.04);
+        );
       },
     );
   }

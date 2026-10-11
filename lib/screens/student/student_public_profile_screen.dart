@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -222,7 +221,7 @@ class _StudentPublicProfileScreenState
           const SizedBox(width: AppSpacing.sm),
           Text(
             'DEVELOPER PASSPORT',
-            style: GoogleFonts.jetBrainsMono(
+            style: GoogleFonts.manrope(
               fontSize: 10,
               fontWeight: FontWeight.w700,
               letterSpacing: 1.4,
@@ -232,10 +231,7 @@ class _StudentPublicProfileScreenState
           const Spacer(),
           Text(
             'VERIFIED WORK',
-            style: GoogleFonts.jetBrainsMono(
-              fontSize: 8,
-              color: AppColors.textMuted,
-            ),
+            style: GoogleFonts.manrope(fontSize: 8, color: AppColors.textMuted),
           ),
         ],
       ),
@@ -281,19 +277,9 @@ class _StudentPublicProfileScreenState
               Container(
                 width: 80,
                 height: 80,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AppColors.studentPrimary, AppColors.studentAccent],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                decoration: const BoxDecoration(
+                  color: AppColors.surfaceMuted,
                   shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.studentPrimary.withValues(alpha: 0.4),
-                      blurRadius: 20,
-                    ),
-                  ],
                 ),
                 child: Center(
                   child: Text(
@@ -304,7 +290,7 @@ class _StudentPublicProfileScreenState
                         .map((part) => part[0])
                         .join()
                         .toUpperCase(),
-                    style: GoogleFonts.plusJakartaSans(
+                    style: GoogleFonts.manrope(
                       fontSize: 28,
                       fontWeight: FontWeight.w800,
                       color: AppColors.textPrimary,
@@ -319,7 +305,7 @@ class _StudentPublicProfileScreenState
                   children: [
                     Text(
                       _profile['name'] as String,
-                      style: GoogleFonts.plusJakartaSans(
+                      style: GoogleFonts.manrope(
                         fontSize: 20,
                         fontWeight: FontWeight.w800,
                         color: AppColors.textPrimary,
@@ -330,7 +316,7 @@ class _StudentPublicProfileScreenState
                       (_profile['course'] as String).isEmpty
                           ? 'Student developer'
                           : _profile['course'] as String,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 13,
                         color: AppColors.textSecondary,
                       ),
@@ -350,7 +336,7 @@ class _StudentPublicProfileScreenState
                                     (_profile['year'] as String).isEmpty)
                                 ? 'School details not added'
                                 : '${_profile['year']} · ${_profile['school']}',
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.manrope(
                               fontSize: 11,
                               color: AppColors.textMuted,
                             ),
@@ -366,7 +352,7 @@ class _StudentPublicProfileScreenState
             ],
           ),
         ],
-      ).animate().fadeIn(duration: 500.ms),
+      ),
     );
   }
 
@@ -404,7 +390,7 @@ class _StudentPublicProfileScreenState
             color: AppColors.studentAccent,
           ),
         ],
-      ).animate().fadeIn(duration: 500.ms, delay: 100.ms),
+      ),
     );
   }
 
@@ -445,7 +431,7 @@ class _StudentPublicProfileScreenState
                   const SizedBox(width: 4),
                   Text(
                     _profile['github'] as String,
-                    style: GoogleFonts.jetBrainsMono(
+                    style: GoogleFonts.manrope(
                       fontSize: 12,
                       color: AppColors.studentPrimary,
                       fontWeight: FontWeight.w500,
@@ -461,7 +447,7 @@ class _StudentPublicProfileScreenState
               ),
             ),
         ],
-      ).animate().fadeIn(duration: 500.ms, delay: 180.ms),
+      ),
     );
   }
 
@@ -488,7 +474,7 @@ class _StudentPublicProfileScreenState
                 .toList(),
           ),
         ],
-      ).animate().fadeIn(duration: 500.ms, delay: 260.ms),
+      ),
     );
   }
 
@@ -544,7 +530,7 @@ class _StudentPublicProfileScreenState
                           const SizedBox(width: 4),
                           Text(
                             'LIVE',
-                            style: GoogleFonts.jetBrainsMono(
+                            style: GoogleFonts.manrope(
                               fontSize: 9,
                               fontWeight: FontWeight.w700,
                               color: AppColors.success,
@@ -580,7 +566,10 @@ class _StudentPublicProfileScreenState
                   return Padding(
                     padding: const EdgeInsets.only(right: 8.0),
                     child: ChoiceChip(
-                      label: Text(lang, style: GoogleFonts.inter(fontSize: 11)),
+                      label: Text(
+                        lang,
+                        style: GoogleFonts.manrope(fontSize: 11),
+                      ),
                       selected: isSelected,
                       selectedColor: AppColors.studentPrimary.withValues(
                         alpha: 0.2,
@@ -598,7 +587,7 @@ class _StudentPublicProfileScreenState
           if ((_profile['github'] as String).isEmpty)
             Text(
               'No GitHub account linked.',
-              style: GoogleFonts.inter(color: AppColors.textMuted),
+              style: GoogleFonts.manrope(color: AppColors.textMuted),
             )
           else if (_isLoading)
             const Center(
@@ -625,7 +614,7 @@ class _StudentPublicProfileScreenState
                   Expanded(
                     child: Text(
                       _error!,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         color:
                             _error == 'No repositories found or user not found'
                             ? AppColors.textSecondary
@@ -640,7 +629,7 @@ class _StudentPublicProfileScreenState
           else if (displayedRepos.isEmpty)
             Text(
               'No repositories found.',
-              style: GoogleFonts.inter(color: AppColors.textMuted),
+              style: GoogleFonts.manrope(color: AppColors.textMuted),
             )
           else
             ...displayedRepos
@@ -668,7 +657,7 @@ class _StudentPublicProfileScreenState
                               Expanded(
                                 child: Text(
                                   repo['name'] ?? 'Unknown',
-                                  style: GoogleFonts.plusJakartaSans(
+                                  style: GoogleFonts.manrope(
                                     fontSize: 14,
                                     fontWeight: FontWeight.w700,
                                     color: AppColors.textPrimary,
@@ -687,7 +676,7 @@ class _StudentPublicProfileScreenState
                                   const SizedBox(width: 4),
                                   Text(
                                     '${repo['stargazers_count'] ?? 0}',
-                                    style: GoogleFonts.inter(
+                                    style: GoogleFonts.manrope(
                                       fontSize: 12,
                                       color: AppColors.textSecondary,
                                     ),
@@ -700,7 +689,7 @@ class _StudentPublicProfileScreenState
                             const SizedBox(height: AppSpacing.xs),
                             Text(
                               repo['description'],
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.manrope(
                                 fontSize: 12,
                                 color: AppColors.textMuted,
                               ),
@@ -722,7 +711,7 @@ class _StudentPublicProfileScreenState
                               const SizedBox(width: 6),
                               Text(
                                 repo['language'] ?? 'Unknown',
-                                style: GoogleFonts.jetBrainsMono(
+                                style: GoogleFonts.manrope(
                                   fontSize: 11,
                                   color: AppColors.textSecondary,
                                 ),
@@ -730,7 +719,7 @@ class _StudentPublicProfileScreenState
                               const Spacer(),
                               Text(
                                 'Updated: ${(repo['updated_at'] as String).substring(0, 10)}',
-                                style: GoogleFonts.inter(
+                                style: GoogleFonts.manrope(
                                   fontSize: 10,
                                   color: AppColors.textDisabled,
                                 ),
@@ -743,7 +732,7 @@ class _StudentPublicProfileScreenState
                   ),
                 ),
         ],
-      ).animate().fadeIn(duration: 500.ms, delay: 280.ms),
+      ),
     );
   }
 
@@ -763,67 +752,60 @@ class _StudentPublicProfileScreenState
           if (_portfolioItems.isEmpty)
             Text(
               'No portfolio projects yet.',
-              style: GoogleFonts.inter(color: AppColors.textMuted),
+              style: GoogleFonts.manrope(color: AppColors.textMuted),
             ),
           ..._portfolioItems.asMap().entries.map(
             (e) => Padding(
               padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-              child:
-                  AppCard(
-                    onTap: () =>
-                        context.go('/student/portfolio/${e.value['id']}'),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            color: AppColors.studentPrimary.withValues(
-                              alpha: 0.1,
-                            ),
-                            borderRadius: BorderRadius.circular(AppRadius.md),
-                          ),
-                          child: const Icon(
-                            Icons.folder_outlined,
-                            color: AppColors.studentPrimary,
-                            size: 20,
-                          ),
-                        ),
-                        const SizedBox(width: AppSpacing.md),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                e.value['title'] as String,
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                              Text(
-                                e.value['project_type'] as String? ??
-                                    'Portfolio project',
-                                style: GoogleFonts.jetBrainsMono(
-                                  fontSize: 10,
-                                  color: AppColors.studentPrimary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const Icon(
-                          Icons.arrow_forward_ios_rounded,
-                          color: AppColors.textMuted,
-                          size: 12,
-                        ),
-                      ],
+              child: AppCard(
+                onTap: () => context.go('/student/portfolio/${e.value['id']}'),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: AppColors.studentPrimary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                      ),
+                      child: const Icon(
+                        Icons.folder_outlined,
+                        color: AppColors.studentPrimary,
+                        size: 20,
+                      ),
                     ),
-                  ).animate().fadeIn(
-                    duration: 300.ms,
-                    delay: Duration(milliseconds: 320 + e.key * 80),
-                  ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            e.value['title'] as String,
+                            style: GoogleFonts.manrope(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          Text(
+                            e.value['project_type'] as String? ??
+                                'Portfolio project',
+                            style: GoogleFonts.manrope(
+                              fontSize: 10,
+                              color: AppColors.studentPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Icon(
+                      Icons.arrow_forward_ios_rounded,
+                      color: AppColors.textMuted,
+                      size: 12,
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ],
@@ -844,7 +826,7 @@ class _StudentPublicProfileScreenState
               if (_reviewSummary.totalReviews > 0)
                 Text(
                   '${_reviewSummary.totalReviews} review(s)',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 12,
                     color: AppColors.textMuted,
                   ),
@@ -855,7 +837,7 @@ class _StudentPublicProfileScreenState
           if (_reviewSummary.reviews.isEmpty)
             Text(
               'No reviews yet. Reviews will appear after completed contracts.',
-              style: GoogleFonts.inter(color: AppColors.textMuted),
+              style: GoogleFonts.manrope(color: AppColors.textMuted),
             )
           else
             ..._reviewSummary.reviews.map(
@@ -870,7 +852,7 @@ class _StudentPublicProfileScreenState
                         children: [
                           Text(
                             rev.reviewerName,
-                            style: GoogleFonts.plusJakartaSans(
+                            style: GoogleFonts.manrope(
                               fontSize: 14,
                               fontWeight: FontWeight.w700,
                               color: AppColors.textPrimary,
@@ -893,7 +875,7 @@ class _StudentPublicProfileScreenState
                       const SizedBox(height: 2),
                       Text(
                         rev.jobTitle,
-                        style: GoogleFonts.jetBrainsMono(
+                        style: GoogleFonts.manrope(
                           fontSize: 10,
                           color: AppColors.studentPrimary,
                         ),
@@ -927,7 +909,7 @@ class _StudentPublicProfileScreenState
       child: Text(
         'Messaging is available after a proposal is accepted. Invitations are coming later.',
         textAlign: TextAlign.center,
-        style: GoogleFonts.inter(color: AppColors.textMuted, fontSize: 12),
+        style: GoogleFonts.manrope(color: AppColors.textMuted, fontSize: 12),
       ),
     );
   }
@@ -956,7 +938,7 @@ class _StatTile extends StatelessWidget {
           children: [
             Text(
               value,
-              style: GoogleFonts.plusJakartaSans(
+              style: GoogleFonts.manrope(
                 fontSize: 16,
                 fontWeight: FontWeight.w800,
                 color: color,
@@ -964,7 +946,10 @@ class _StatTile extends StatelessWidget {
             ),
             Text(
               label,
-              style: GoogleFonts.inter(fontSize: 9, color: AppColors.textMuted),
+              style: GoogleFonts.manrope(
+                fontSize: 9,
+                color: AppColors.textMuted,
+              ),
             ),
           ],
         ),

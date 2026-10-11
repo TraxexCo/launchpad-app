@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants.dart';
@@ -78,13 +77,13 @@ class _MyProposalsScreenState extends State<MyProposalsScreen>
               Expanded(
                 child: _loading
                     ? const AppLoadingView(
-                        label: 'Syncing your pitches…',
+                        label: 'Loading proposals…',
                         color: AppColors.studentPrimary,
                       )
                     : _error != null
                     ? AppStateView(
                         icon: Icons.cloud_off_rounded,
-                        title: 'Your pitches are unavailable',
+                        title: 'Your proposals are unavailable',
                         message:
                             'We could not sync your proposal activity. Check your connection, then retry.',
                         accentColor: AppColors.error,
@@ -134,12 +133,12 @@ class _MyProposalsScreenState extends State<MyProposalsScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Transmission Tracker',
+                'Proposal activity',
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               Text(
                 '// every pitch has a flight path',
-                style: GoogleFonts.jetBrainsMono(
+                style: GoogleFonts.manrope(
                   fontSize: 10,
                   color: AppColors.studentPrimary,
                 ),
@@ -147,7 +146,7 @@ class _MyProposalsScreenState extends State<MyProposalsScreen>
             ],
           ),
         ],
-      ).animate().fadeIn(duration: 400.ms),
+      ),
     );
   }
 
@@ -186,7 +185,7 @@ class _MyProposalsScreenState extends State<MyProposalsScreen>
             color: AppColors.error,
           ),
         ],
-      ).animate().fadeIn(duration: 400.ms, delay: 80.ms),
+      ),
     );
   }
 
@@ -205,11 +204,11 @@ class _MyProposalsScreenState extends State<MyProposalsScreen>
         ),
         child: TabBar(
           controller: _tab,
-          labelStyle: GoogleFonts.inter(
+          labelStyle: GoogleFonts.manrope(
             fontSize: 12,
             fontWeight: FontWeight.w600,
           ),
-          unselectedLabelStyle: GoogleFonts.inter(
+          unselectedLabelStyle: GoogleFonts.manrope(
             fontSize: 12,
             fontWeight: FontWeight.w400,
           ),
@@ -229,7 +228,7 @@ class _MyProposalsScreenState extends State<MyProposalsScreen>
           ],
         ),
       ),
-    ).animate().fadeIn(duration: 400.ms, delay: 140.ms);
+    );
   }
 
   Widget _buildTabViews() {
@@ -268,7 +267,7 @@ class _ProposalList extends StatelessWidget {
     if (proposals.isEmpty) {
       return AppStateView(
         icon: Icons.rocket_launch_outlined,
-        title: 'No pitches in this stage',
+        title: 'No proposals in this stage',
         message:
             'Browse opportunities, choose a project that fits your skills, and send a focused proposal.',
         accentColor: AppColors.studentPrimary,
@@ -292,17 +291,7 @@ class _ProposalList extends StatelessWidget {
         separatorBuilder: (context, idx) =>
             const SizedBox(height: AppSpacing.md),
         itemBuilder: (context, i) =>
-            _ProposalCard(proposal: proposals[i], onChanged: onChanged)
-                .animate()
-                .fadeIn(
-                  duration: 350.ms,
-                  delay: Duration(milliseconds: i * 60),
-                )
-                .slideY(
-                  begin: 0.08,
-                  duration: 300.ms,
-                  delay: Duration(milliseconds: i * 60),
-                ),
+            _ProposalCard(proposal: proposals[i], onChanged: onChanged),
       ),
     );
   }
@@ -397,14 +386,14 @@ class _ProposalCard extends StatelessWidget {
                   children: [
                     Text(
                       proposal.businessName ?? 'Business',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 11,
                         color: AppColors.textMuted,
                       ),
                     ),
                     Text(
                       proposal.jobTitle ?? 'Job',
-                      style: GoogleFonts.plusJakartaSans(
+                      style: GoogleFonts.manrope(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
                         color: AppColors.textPrimary,
@@ -442,7 +431,7 @@ class _ProposalCard extends StatelessWidget {
               const Spacer(),
               Text(
                 _timeAgo(proposal.createdAt),
-                style: GoogleFonts.jetBrainsMono(
+                style: GoogleFonts.manrope(
                   fontSize: 10,
                   color: AppColors.textMuted,
                 ),
@@ -470,7 +459,7 @@ class _ProposalCard extends StatelessWidget {
                   const SizedBox(width: AppSpacing.sm),
                   Text(
                     'Active Contract · Open Workspace / Chat',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.manrope(
                       fontSize: 11,
                       color: AppColors.success,
                     ),
@@ -521,7 +510,7 @@ class _Pill extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             value,
-            style: GoogleFonts.jetBrainsMono(
+            style: GoogleFonts.manrope(
               fontSize: 10,
               color: color,
               fontWeight: FontWeight.w600,
@@ -559,7 +548,7 @@ class _StatCard extends StatelessWidget {
           children: [
             Text(
               value,
-              style: GoogleFonts.plusJakartaSans(
+              style: GoogleFonts.manrope(
                 fontSize: 22,
                 fontWeight: FontWeight.w800,
                 color: color,
@@ -567,7 +556,7 @@ class _StatCard extends StatelessWidget {
             ),
             Text(
               label,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.manrope(
                 fontSize: 10,
                 color: AppColors.textMuted,
               ),

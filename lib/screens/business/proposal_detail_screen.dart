@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants.dart';
@@ -193,7 +192,7 @@ class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
               children: [
                 Text(
                   'CANDIDATE DOSSIER',
-                  style: GoogleFonts.jetBrainsMono(
+                  style: GoogleFonts.manrope(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 1.5,
@@ -203,7 +202,7 @@ class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
                 const SizedBox(height: 3),
                 Text(
                   'Evidence, terms, and fit in one review.',
-                  style: GoogleFonts.inter(
+                  style: GoogleFonts.manrope(
                     fontSize: 12,
                     color: AppColors.textSecondary,
                   ),
@@ -237,47 +236,23 @@ class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Container(
-                      width: 96,
-                      height: 96,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: accepted
-                              ? [AppColors.success, const Color(0xFF34D399)]
-                              : [AppColors.error, const Color(0xFFF87171)],
-                        ),
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color:
-                                (accepted ? AppColors.success : AppColors.error)
-                                    .withValues(alpha: 0.4),
-                            blurRadius: 40,
-                          ),
-                        ],
-                      ),
-                      child: Icon(
-                        accepted
-                            ? Icons.handshake_rounded
-                            : Icons.close_rounded,
-                        color: Colors.white,
-                        size: 42,
-                      ),
-                    )
-                    .animate()
-                    .scale(
-                      begin: const Offset(0.4, 0.4),
-                      duration: 700.ms,
-                      curve: Curves.elasticOut,
-                    )
-                    .fadeIn(duration: 400.ms),
+                  width: 96,
+                  height: 96,
+                  decoration: BoxDecoration(
+                    color: accepted ? AppColors.success : AppColors.error,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    accepted ? Icons.handshake_rounded : Icons.close_rounded,
+                    color: Colors.white,
+                    size: 42,
+                  ),
+                ),
                 const SizedBox(height: AppSpacing.xl),
                 Text(
-                      accepted ? 'Proposal Accepted!' : 'Proposal Rejected',
-                      style: Theme.of(context).textTheme.displaySmall,
-                    )
-                    .animate()
-                    .fadeIn(delay: 400.ms)
-                    .slideY(begin: 0.2, delay: 400.ms),
+                  accepted ? 'Proposal Accepted!' : 'Proposal Rejected',
+                  style: Theme.of(context).textTheme.displaySmall,
+                ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
                   accepted
@@ -285,7 +260,7 @@ class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
                       : 'This proposal has been rejected.',
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.bodyMedium,
-                ).animate().fadeIn(delay: 500.ms),
+                ),
                 const SizedBox(height: AppSpacing.xxl),
                 if (accepted)
                   AppButton(
@@ -295,7 +270,7 @@ class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
                     onPressed: () => context.go(
                       '/chat/${_proposal!.id}?name=${_proposal!.studentName ?? "Student"}',
                     ),
-                  ).animate().fadeIn(delay: 650.ms)
+                  )
                 else
                   AppButton(
                     label: 'Back to Proposals',
@@ -304,7 +279,7 @@ class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
                     onPressed: () => context.canPop()
                         ? context.pop()
                         : context.go('/business'),
-                  ).animate().fadeIn(delay: 650.ms),
+                  ),
               ],
             ),
           ),
@@ -365,19 +340,9 @@ class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
             Container(
               width: 64,
               height: 64,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [AppColors.studentPrimary, AppColors.studentAccent],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+              decoration: const BoxDecoration(
+                color: AppColors.surfaceMuted,
                 shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.studentPrimary.withValues(alpha: 0.4),
-                    blurRadius: 20,
-                  ),
-                ],
               ),
               child: Center(
                 child: Text(
@@ -385,7 +350,7 @@ class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
                           _proposal!.studentName!.isNotEmpty)
                       ? _proposal!.studentName![0]
                       : 'S',
-                  style: GoogleFonts.plusJakartaSans(
+                  style: GoogleFonts.manrope(
                     fontSize: 22,
                     fontWeight: FontWeight.w800,
                     color: AppColors.textPrimary,
@@ -403,7 +368,7 @@ class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
                       Flexible(
                         child: Text(
                           _proposal!.studentName ?? "Student",
-                          style: GoogleFonts.plusJakartaSans(
+                          style: GoogleFonts.manrope(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
                             color: AppColors.textPrimary,
@@ -416,7 +381,7 @@ class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
                   ),
                   Text(
                     'Student Profile',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.manrope(
                       fontSize: 12,
                       color: AppColors.textMuted,
                     ),
@@ -441,7 +406,7 @@ class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
                 ),
                 child: Text(
                   'View Profile',
-                  style: GoogleFonts.jetBrainsMono(
+                  style: GoogleFonts.manrope(
                     fontSize: 9,
                     color: AppColors.studentPrimary,
                     fontWeight: FontWeight.w500,
@@ -451,7 +416,7 @@ class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
             ),
           ],
         ),
-      ).animate().fadeIn(duration: 500.ms).slideY(begin: 0.1),
+      ),
     );
   }
 
@@ -475,7 +440,7 @@ class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
             accent: AppColors.businessAccent,
           ),
         ],
-      ).animate().fadeIn(duration: 500.ms, delay: 100.ms),
+      ),
     );
   }
 
@@ -499,7 +464,7 @@ class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
             ).textTheme.bodyMedium?.copyWith(height: 1.75),
           ),
         ],
-      ).animate().fadeIn(duration: 500.ms, delay: 180.ms),
+      ),
     );
   }
 
@@ -542,7 +507,7 @@ class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
                     children: [
                       Text(
                         'View attached project',
-                        style: GoogleFonts.plusJakartaSans(
+                        style: GoogleFonts.manrope(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
                           color: AppColors.textPrimary,
@@ -560,7 +525,7 @@ class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
             ),
           ),
         ],
-      ).animate().fadeIn(duration: 500.ms, delay: 340.ms),
+      ),
     );
   }
 
@@ -634,12 +599,12 @@ class _MetaTile extends StatelessWidget {
             Text(
               value,
               style: mono
-                  ? GoogleFonts.jetBrainsMono(
+                  ? GoogleFonts.manrope(
                       fontSize: 15,
                       fontWeight: FontWeight.w700,
                       color: accent,
                     )
-                  : GoogleFonts.plusJakartaSans(
+                  : GoogleFonts.manrope(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
                       color: AppColors.textPrimary,
@@ -649,7 +614,7 @@ class _MetaTile extends StatelessWidget {
             ),
             Text(
               label,
-              style: GoogleFonts.inter(
+              style: GoogleFonts.manrope(
                 fontSize: 10,
                 color: AppColors.textMuted,
               ),

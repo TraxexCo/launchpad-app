@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants.dart';
@@ -189,11 +188,8 @@ class _PostJobScreenState extends State<PostJobScreen>
                   borderRadius: BorderRadius.circular(AppRadius.full),
                 ),
                 child: Text(
-                  'MISSION BRIEF BUILDER',
-                  style: GoogleFonts.jetBrainsMono(
-                    fontSize: 10,
-                    color: _primary,
-                  ),
+                  'Create a job post',
+                  style: GoogleFonts.manrope(fontSize: 10, color: _primary),
                 ),
               ),
             ],
@@ -201,7 +197,7 @@ class _PostJobScreenState extends State<PostJobScreen>
           const SizedBox(height: AppSpacing.md),
           Text(
             'Define the work. Attract the right builder.',
-            style: GoogleFonts.inter(
+            style: GoogleFonts.manrope(
               fontSize: 12,
               color: AppColors.textSecondary,
             ),
@@ -235,7 +231,7 @@ class _PostJobScreenState extends State<PostJobScreen>
               const Spacer(),
               Text(
                 '${_step + 1} / 3',
-                style: GoogleFonts.jetBrainsMono(
+                style: GoogleFonts.manrope(
                   fontSize: 10,
                   color: AppColors.textMuted,
                 ),
@@ -243,7 +239,7 @@ class _PostJobScreenState extends State<PostJobScreen>
             ],
           ),
         ],
-      ).animate().fadeIn(duration: 400.ms),
+      ),
     );
   }
 
@@ -304,7 +300,7 @@ class _PostJobScreenState extends State<PostJobScreen>
                     ),
                     child: Text(
                       c,
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 12,
                         fontWeight: active ? FontWeight.w600 : FontWeight.w400,
                         color: active ? _primary : AppColors.textSecondary,
@@ -370,7 +366,7 @@ class _PostJobScreenState extends State<PostJobScreen>
                         child: Center(
                           child: Text(
                             u,
-                            style: GoogleFonts.inter(
+                            style: GoogleFonts.manrope(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
                               color: active
@@ -464,7 +460,7 @@ class _PostJobScreenState extends State<PostJobScreen>
                     ),
                     child: Text(
                       s,
-                      style: GoogleFonts.jetBrainsMono(
+                      style: GoogleFonts.manrope(
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
                         color: sel ? _primary : AppColors.textSecondary,
@@ -505,10 +501,7 @@ class _PostJobScreenState extends State<PostJobScreen>
                     ),
                     child: Text(
                       '// job.preview',
-                      style: GoogleFonts.jetBrainsMono(
-                        fontSize: 9,
-                        color: _primary,
-                      ),
+                      style: GoogleFonts.manrope(fontSize: 9, color: _primary),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.md),
@@ -530,7 +523,7 @@ class _PostJobScreenState extends State<PostJobScreen>
                         ),
                         child: Text(
                           _category,
-                          style: GoogleFonts.jetBrainsMono(
+                          style: GoogleFonts.manrope(
                             fontSize: 9,
                             color: _primary,
                           ),
@@ -552,7 +545,7 @@ class _PostJobScreenState extends State<PostJobScreen>
                         ),
                         child: Text(
                           _urgency,
-                          style: GoogleFonts.jetBrainsMono(
+                          style: GoogleFonts.manrope(
                             fontSize: 9,
                             color: _urgency == 'Urgent'
                                 ? AppColors.error
@@ -610,7 +603,7 @@ class _PostJobScreenState extends State<PostJobScreen>
                               ),
                               child: Text(
                                 s,
-                                style: GoogleFonts.jetBrainsMono(
+                                style: GoogleFonts.manrope(
                                   fontSize: 9,
                                   color: _primary,
                                 ),
@@ -622,7 +615,7 @@ class _PostJobScreenState extends State<PostJobScreen>
                   ],
                 ],
               ),
-            ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1),
+            ),
 
             const SizedBox(height: AppSpacing.md),
 
@@ -639,7 +632,7 @@ class _PostJobScreenState extends State<PostJobScreen>
                   Expanded(
                     child: Text(
                       'Once posted, students in your area will be able to see and pitch on your job. You can close the job anytime.',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 12,
                         color: AppColors.textSecondary,
                         height: 1.5,
@@ -648,7 +641,7 @@ class _PostJobScreenState extends State<PostJobScreen>
                   ),
                 ],
               ),
-            ).animate().fadeIn(duration: 400.ms, delay: 150.ms),
+            ),
 
             const SizedBox(height: AppSpacing.xxl),
           ],
@@ -722,12 +715,12 @@ class _ReviewRow extends StatelessWidget {
         const SizedBox(width: AppSpacing.sm),
         Text(
           '$label:',
-          style: GoogleFonts.inter(fontSize: 13, color: AppColors.textMuted),
+          style: GoogleFonts.manrope(fontSize: 13, color: AppColors.textMuted),
         ),
         const Spacer(),
         Text(
           value,
-          style: GoogleFonts.plusJakartaSans(
+          style: GoogleFonts.manrope(
             fontSize: 13,
             fontWeight: FontWeight.w600,
             color: AppColors.textPrimary,

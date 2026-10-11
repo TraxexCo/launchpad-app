@@ -1,177 +1,121 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../core/constants.dart';
 
-/// Launch field: a moving orbital map that gives every page a recognizable
-/// LaunchPad backdrop instead of a generic flat canvas.
-class AppBackground extends StatefulWidget {
+/// LaunchPad's stable graphite canvas and slim wayfinding rail.
+class AppBackground extends StatelessWidget {
   final Widget child;
   final Color? tintColor;
-
   const AppBackground({super.key, required this.child, this.tintColor});
 
   @override
-  State<AppBackground> createState() => _AppBackgroundState();
-}
-
-class _AppBackgroundState extends State<AppBackground>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(vsync: this, duration: AppDurations.orbCycle)
-      ..repeat();
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Stack(
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: const BoxDecoration(
+      gradient: LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [Color(0xFF141316), AppColors.background],
+        stops: [0, .42],
+      ),
+    ),
+    child: Stack(
       children: [
-        Container(color: AppColors.background),
-        const Positioned.fill(
-          child: IgnorePointer(child: CustomPaint(painter: _GridPainter())),
-        ),
-        RepaintBoundary(
-          child: AnimatedBuilder(
-            animation: _ctrl,
-            builder: (context, child) => CustomPaint(
-              painter: _MeshPainter(
-                t: _ctrl.value,
-                tintColor: widget.tintColor,
-              ),
-              size: Size.infinite,
+        if (tintColor != null)
+          const Positioned(
+            left: 0,
+            top: 0,
+            right: 0,
+            height: 230,
+            child: IgnorePointer(
+              child: CustomPaint(painter: _BlueprintPainter()),
             ),
           ),
-        ),
-        widget.child,
+        if (tintColor != null)
+          const Positioned(
+            left: 0,
+            top: 0,
+            bottom: 0,
+            child: _WayfindingRail(),
+          ),
+        Positioned.fill(child: child),
       ],
-    );
-  }
+    ),
+  );
 }
 
-class _GridPainter extends CustomPainter {
-  const _GridPainter();
+class _BlueprintPainter extends CustomPainter {
+  const _BlueprintPainter();
 
   @override
   void paint(Canvas canvas, Size size) {
-    final grid = Paint()
-      ..color = AppColors.info.withValues(alpha: 0.045)
-      ..strokeWidth = 0.65;
-    const gap = 34.0;
-    for (double x = 0; x < size.width; x += gap) {
-      canvas.drawLine(Offset(x, 0), Offset(x, size.height), grid);
+    final fine = Paint()
+      ..color = AppColors.border.withValues(alpha: .28)
+      ..strokeWidth = .5;
+    for (double x = 24; x < size.width; x += 32) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), fine);
     }
-    for (double y = 0; y < size.height; y += gap) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), grid);
+    for (double y = 18; y < size.height; y += 32) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), fine);
     }
-
-    final orbit = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1
-      ..color = AppColors.studentPrimary.withValues(alpha: 0.11);
-    final anchor = Offset(size.width * 0.86, size.height * 0.13);
-    canvas.drawCircle(anchor, 58, orbit);
-    canvas.drawCircle(anchor, 102, orbit);
-    canvas.drawCircle(anchor, 148, orbit);
-
-    final trajectory = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2
-      ..color = AppColors.businessPrimary.withValues(alpha: 0.10);
+    final route = Paint()
+      ..color = AppColors.studentPrimary.withValues(alpha: .22)
+      ..strokeWidth = 1.5
+      ..style = PaintingStyle.stroke;
     final path = Path()
-      ..moveTo(-20, size.height * 0.72)
-      ..cubicTo(
-        size.width * 0.22,
-        size.height * 0.46,
-        size.width * 0.52,
-        size.height * 0.86,
-        size.width + 30,
-        size.height * 0.48,
-      );
-    canvas.drawPath(path, trajectory);
-
-    final node = Paint()
-      ..color = AppColors.signalYellow.withValues(alpha: 0.55);
-    for (final point in [
-      Offset(size.width * 0.14, size.height * 0.66),
-      Offset(size.width * 0.58, size.height * 0.68),
-      anchor,
-    ]) {
-      canvas.drawCircle(point, 2.3, node);
-      canvas.drawCircle(
-        point,
-        7,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..color = node.color.withValues(alpha: 0.28),
-      );
-    }
+      ..moveTo(size.width * .64, 0)
+      ..lineTo(size.width * .64, 52)
+      ..lineTo(size.width * .82, 52)
+      ..lineTo(size.width * .82, 116)
+      ..lineTo(size.width, 116);
+    canvas.drawPath(path, route);
+    canvas.drawCircle(
+      Offset(size.width * .82, 52),
+      3,
+      Paint()..color = AppColors.studentPrimary.withValues(alpha: .55),
+    );
   }
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
-class _MeshPainter extends CustomPainter {
-  final double t;
-  final Color? tintColor;
-
-  const _MeshPainter({required this.t, this.tintColor});
+class _WayfindingRail extends StatelessWidget {
+  const _WayfindingRail();
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final w = size.width;
-    final h = size.height;
-    final tau = math.pi * 2;
+  Widget build(BuildContext context) => SizedBox(
+    width: 3,
+    child: Column(
+      children: [
+        const SizedBox(height: 88),
+        Container(height: 42, color: AppColors.studentPrimary),
+        Expanded(child: Container(color: AppColors.border)),
+      ],
+    ),
+  );
+}
 
-    final x1 = w * (0.15 + 0.28 * math.sin(t * tau));
-    final y1 = h * (0.18 + 0.22 * math.cos(t * tau * 0.7));
-    _drawOrb(canvas, Offset(x1, y1), w * 0.7, tintColor ?? AppColors.meshBlue);
+/// A short route entrance used only for primary page compositions.
+class AppEntrance extends StatelessWidget {
+  final Widget child;
+  const AppEntrance({super.key, required this.child});
 
-    final x2 = w * (0.78 + 0.14 * math.cos(t * tau * 1.1));
-    final y2 = h * (0.75 + 0.16 * math.sin(t * tau * 0.9));
-    _drawOrb(
-      canvas,
-      Offset(x2, y2),
-      w * 0.6,
-      tintColor != null
-          ? tintColor!.withValues(alpha: 0.07)
-          : AppColors.meshAmber,
+  @override
+  Widget build(BuildContext context) {
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: reduceMotion
+          ? Duration.zero
+          : const Duration(milliseconds: 200),
+      curve: Curves.easeOutCubic,
+      child: child,
+      builder: (context, value, child) => Opacity(
+        opacity: value,
+        child: Transform.translate(
+          offset: Offset(0, 8 * (1 - value)),
+          child: child,
+        ),
+      ),
     );
-
-    final x3 = w * (0.52 + 0.22 * math.sin(t * tau * 1.3 + 1.2));
-    final y3 = h * (0.48 + 0.18 * math.cos(t * tau * 0.8 + 2.1));
-    _drawOrb(canvas, Offset(x3, y3), w * 0.45, tintColor ?? AppColors.meshCyan);
-
-    final scanY = h * t;
-    final scan = Paint()
-      ..shader = LinearGradient(
-        colors: [
-          Colors.transparent,
-          AppColors.info.withValues(alpha: 0.11),
-          Colors.transparent,
-        ],
-      ).createShader(Rect.fromLTWH(0, scanY - 1, w, 2));
-    canvas.drawRect(Rect.fromLTWH(0, scanY - 1, w, 2), scan);
   }
-
-  void _drawOrb(Canvas canvas, Offset center, double radius, Color color) {
-    final paint = Paint()
-      ..shader = RadialGradient(
-        colors: [color, Colors.transparent],
-      ).createShader(Rect.fromCircle(center: center, radius: radius));
-    canvas.drawCircle(center, radius, paint);
-  }
-
-  @override
-  bool shouldRepaint(_MeshPainter old) =>
-      old.t != t || old.tintColor != tintColor;
 }

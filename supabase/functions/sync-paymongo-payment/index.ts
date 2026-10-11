@@ -91,7 +91,11 @@ Deno.serve(async (request) => {
       .select()
       .single();
     if (updateError) return json({ error: "Payment status could not be saved." }, 500);
-    if (paid && payment.status !== "paid") await admin.rpc("notify_payment_change", { payment_key: payment.id });
+    if (paid && payment.status !== "paid") {
+      const { error: fundedError } = await admin.rpc("mark_contract_funded", { contract_key: contractId });
+      if (fundedError) return json({ error: "Payment was confirmed but the contract could not be funded." }, 500);
+      await admin.rpc("notify_payment_change", { payment_key: payment.id });
+    }
     return json({ payment: updated });
   } catch (error) {
     return json({ error: error instanceof Error ? error.message : "Unexpected payment error." }, 500);

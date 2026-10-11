@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants.dart';
@@ -89,7 +88,7 @@ class _JobProposalsScreenState extends State<JobProposalsScreen> {
               Expanded(
                 child: _loading
                     ? const AppLoadingView(
-                        label: 'Reviewing incoming pitches…',
+                        label: 'Loading proposals…',
                         color: AppColors.businessPrimary,
                       )
                     : _error != null
@@ -153,13 +152,13 @@ class _JobProposalsScreenState extends State<JobProposalsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Candidate Signals',
+                'Student proposals',
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               if (!_loading)
                 Text(
                   '// ${_proposals.length} dossiers ready for review',
-                  style: GoogleFonts.jetBrainsMono(
+                  style: GoogleFonts.manrope(
                     fontSize: 10,
                     color: AppColors.businessPrimary,
                   ),
@@ -167,7 +166,7 @@ class _JobProposalsScreenState extends State<JobProposalsScreen> {
             ],
           ),
         ],
-      ).animate().fadeIn(duration: 400.ms),
+      ),
     );
   }
 
@@ -184,11 +183,7 @@ class _JobProposalsScreenState extends State<JobProposalsScreen> {
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [AppColors.businessPrimary, AppColors.businessAccent],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+                color: AppColors.surfaceMuted,
                 borderRadius: BorderRadius.circular(AppRadius.md),
               ),
               child: const Icon(
@@ -204,7 +199,7 @@ class _JobProposalsScreenState extends State<JobProposalsScreen> {
                 children: [
                   Text(
                     _job!.title,
-                    style: GoogleFonts.plusJakartaSans(
+                    style: GoogleFonts.manrope(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
                       color: AppColors.textPrimary,
@@ -212,7 +207,7 @@ class _JobProposalsScreenState extends State<JobProposalsScreen> {
                   ),
                   Text(
                     '₱${_job!.budget}',
-                    style: GoogleFonts.jetBrainsMono(
+                    style: GoogleFonts.manrope(
                       fontSize: 12,
                       color: AppColors.businessPrimary,
                       fontWeight: FontWeight.w600,
@@ -229,7 +224,7 @@ class _JobProposalsScreenState extends State<JobProposalsScreen> {
             ),
           ],
         ),
-      ).animate().fadeIn(duration: 400.ms, delay: 80.ms),
+      ),
     );
   }
 
@@ -243,7 +238,10 @@ class _JobProposalsScreenState extends State<JobProposalsScreen> {
         children: [
           Text(
             'Sort by:',
-            style: GoogleFonts.inter(fontSize: 12, color: AppColors.textMuted),
+            style: GoogleFonts.manrope(
+              fontSize: 12,
+              color: AppColors.textMuted,
+            ),
           ),
           const SizedBox(width: AppSpacing.sm),
           DropdownButton<String>(
@@ -251,7 +249,7 @@ class _JobProposalsScreenState extends State<JobProposalsScreen> {
             underline: const SizedBox(),
             isDense: true,
             dropdownColor: AppColors.surface,
-            style: GoogleFonts.inter(
+            style: GoogleFonts.manrope(
               fontSize: 12,
               color: AppColors.textSecondary,
             ),
@@ -269,7 +267,7 @@ class _JobProposalsScreenState extends State<JobProposalsScreen> {
             },
           ),
         ],
-      ).animate().fadeIn(duration: 400.ms, delay: 140.ms),
+      ),
     );
   }
 
@@ -290,17 +288,7 @@ class _JobProposalsScreenState extends State<JobProposalsScreen> {
             const SizedBox(height: AppSpacing.md),
         itemBuilder: (context, i) {
           final p = _proposals[i];
-          return _ProposalCard(proposal: p, job: _job!)
-              .animate()
-              .fadeIn(
-                duration: 350.ms,
-                delay: Duration(milliseconds: i * 70),
-              )
-              .slideY(
-                begin: 0.08,
-                duration: 300.ms,
-                delay: Duration(milliseconds: i * 70),
-              );
+          return _ProposalCard(proposal: p, job: _job!);
         },
       ),
     );
@@ -326,19 +314,9 @@ class _ProposalCard extends StatelessWidget {
               Container(
                 width: 48,
                 height: 48,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AppColors.studentPrimary, AppColors.studentAccent],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                decoration: const BoxDecoration(
+                  color: AppColors.surfaceMuted,
                   shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.studentPrimary.withValues(alpha: 0.3),
-                      blurRadius: 12,
-                    ),
-                  ],
                 ),
                 child: Center(
                   child: Text(
@@ -346,7 +324,7 @@ class _ProposalCard extends StatelessWidget {
                             proposal.studentName!.isNotEmpty)
                         ? proposal.studentName![0]
                         : 'S',
-                    style: GoogleFonts.plusJakartaSans(
+                    style: GoogleFonts.manrope(
                       fontSize: 16,
                       fontWeight: FontWeight.w800,
                       color: AppColors.textPrimary,
@@ -361,7 +339,7 @@ class _ProposalCard extends StatelessWidget {
                   children: [
                     Text(
                       proposal.studentName ?? 'Student',
-                      style: GoogleFonts.plusJakartaSans(
+                      style: GoogleFonts.manrope(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
                         color: AppColors.textPrimary,
@@ -369,7 +347,7 @@ class _ProposalCard extends StatelessWidget {
                     ),
                     Text(
                       'View student details...',
-                      style: GoogleFonts.inter(
+                      style: GoogleFonts.manrope(
                         fontSize: 11,
                         color: AppColors.textMuted,
                       ),
@@ -438,7 +416,7 @@ class _Pill extends StatelessWidget {
           const SizedBox(width: 4),
           Text(
             label,
-            style: GoogleFonts.jetBrainsMono(
+            style: GoogleFonts.manrope(
               fontSize: 10,
               color: color,
               fontWeight: FontWeight.w600,

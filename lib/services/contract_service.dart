@@ -1,4 +1,60 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'dart:typed_data';
+
+class ContractDeliverable {
+  final int id;
+  final int submissionNumber;
+  final String title;
+  final String summary;
+  final String? linkUrl;
+  final String? storagePath;
+  final String? originalFileName;
+  final DateTime createdAt;
+
+  const ContractDeliverable({
+    required this.id,
+    required this.submissionNumber,
+    required this.title,
+    required this.summary,
+    this.linkUrl,
+    this.storagePath,
+    this.originalFileName,
+    required this.createdAt,
+  });
+
+  factory ContractDeliverable.fromJson(Map<String, dynamic> json) =>
+      ContractDeliverable(
+        id: json['id'] as int,
+        submissionNumber: json['submission_number'] as int,
+        title: json['title'] as String,
+        summary: json['summary'] as String,
+        linkUrl: json['link_url'] as String?,
+        storagePath: json['storage_path'] as String?,
+        originalFileName: json['original_file_name'] as String?,
+        createdAt: DateTime.parse(json['created_at'] as String),
+      );
+}
+
+class ContractEvent {
+  final int id;
+  final String type;
+  final String? message;
+  final DateTime createdAt;
+
+  const ContractEvent({
+    required this.id,
+    required this.type,
+    this.message,
+    required this.createdAt,
+  });
+
+  factory ContractEvent.fromJson(Map<String, dynamic> json) => ContractEvent(
+    id: json['id'] as int,
+    type: json['event_type'] as String,
+    message: json['message'] as String?,
+    createdAt: DateTime.parse(json['created_at'] as String),
+  );
+}
 
 class ContractItem {
   final int id;
@@ -17,6 +73,11 @@ class ContractItem {
   final bool reviewedByMe;
   final String paymentStatus;
   final String? paymentReference;
+  final DateTime? fundedAt;
+  final DateTime? startedAt;
+  final String? revisionMessage;
+  final String? cancellationReason;
+  final String? disputeReason;
 
   const ContractItem({
     required this.id,
@@ -35,6 +96,11 @@ class ContractItem {
     this.reviewedByMe = false,
     this.paymentStatus = 'unpaid',
     this.paymentReference,
+    this.fundedAt,
+    this.startedAt,
+    this.revisionMessage,
+    this.cancellationReason,
+    this.disputeReason,
   });
 }
 
@@ -57,6 +123,11 @@ class ContractService {
       status,
       agreed_at,
       completed_at,
+      funded_at,
+      started_at,
+      revision_message,
+      cancellation_reason,
+      dispute_reason,
       payments (
         status,
         reference_number
@@ -161,6 +232,15 @@ class ContractService {
           reviewedByMe: reviewedContractIds.contains(row['id'] as int),
           paymentStatus: _paymentValue(row['payments'], 'status') ?? 'unpaid',
           paymentReference: _paymentValue(row['payments'], 'reference_number'),
+          fundedAt: row['funded_at'] == null
+              ? null
+              : DateTime.tryParse(row['funded_at'] as String),
+          startedAt: row['started_at'] == null
+              ? null
+              : DateTime.tryParse(row['started_at'] as String),
+          revisionMessage: row['revision_message'] as String?,
+          cancellationReason: row['cancellation_reason'] as String?,
+          disputeReason: row['dispute_reason'] as String?,
         ),
       );
     }
@@ -176,20 +256,110 @@ class ContractService {
     return null;
   }
 
-  Future<void> requestCompletion(int contractId) async {
+  Future<ContractItem> getContract(int contractId) async {
+    final items = await getMyContracts();
+    return items.firstWhere(
+      (item) => item.id == contractId,
+      orElse: () =>
+          throw const PostgrestException(message: 'Contract not found'),
+    );
+  }
+
+  Future<List<ContractDeliverable>> getDeliverables(int contractId) async {
+    final rows = await _client
+        .from('contract_deliverables')
+        .select()
+        .eq('contract_id', contractId)
+        .order('submission_number', ascending: false);
+    return rows.map(ContractDeliverable.fromJson).toList();
+  }
+
+  Future<List<ContractEvent>> getEvents(int contractId) async {
+    final rows = await _client
+        .from('contract_events')
+        .select()
+        .eq('contract_id', contractId)
+        .order('created_at', ascending: false);
+    return rows.map(ContractEvent.fromJson).toList();
+  }
+
+  Future<void> startWork(int contractId) async {
     await _client.rpc(
-      'request_contract_completion',
+      'start_contract_work',
       params: {'contract_key': contractId},
+    );
+  }
+
+  Future<String> uploadDeliverable({
+    required int contractId,
+    required String fileName,
+    required Uint8List bytes,
+  }) async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) throw const AuthException('Sign in required');
+    final safeName = fileName.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
+    final path =
+        '$contractId/$userId/${DateTime.now().millisecondsSinceEpoch}_$safeName';
+    await _client.storage
+        .from('contract-deliverables')
+        .uploadBinary(
+          path,
+          bytes,
+          fileOptions: const FileOptions(upsert: false),
+        );
+    return path;
+  }
+
+  Future<void> submitDeliverable({
+    required int contractId,
+    required String title,
+    required String summary,
+    String? linkUrl,
+    String? storagePath,
+    String? fileName,
+  }) async {
+    await _client.rpc(
+      'submit_contract_deliverable',
+      params: {
+        'contract_key': contractId,
+        'deliverable_title': title.trim(),
+        'deliverable_summary': summary.trim(),
+        'deliverable_link': linkUrl?.trim(),
+        'deliverable_storage_path': storagePath,
+        'deliverable_file_name': fileName,
+      },
+    );
+  }
+
+  Future<String> createFileUrl(String path) =>
+      _client.storage.from('contract-deliverables').createSignedUrl(path, 600);
+
+  Future<void> cancelContract(int contractId, String reason) async {
+    await _client.rpc(
+      'cancel_contract',
+      params: {'contract_key': contractId, 'reason_text': reason.trim()},
+    );
+  }
+
+  Future<void> disputeContract(int contractId, String reason) async {
+    await _client.rpc(
+      'open_contract_dispute',
+      params: {'contract_key': contractId, 'reason_text': reason.trim()},
     );
   }
 
   Future<void> respondToCompletion(
     int contractId, {
     required bool approve,
+    String? revisionNote,
   }) async {
     await _client.rpc(
       'respond_contract_completion',
-      params: {'contract_key': contractId, 'approve_completion': approve},
+      params: {
+        'contract_key': contractId,
+        'approve_completion': approve,
+        'revision_note': revisionNote?.trim(),
+      },
     );
   }
 

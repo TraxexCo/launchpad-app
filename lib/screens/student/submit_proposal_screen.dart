@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -106,42 +105,25 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-                  width: 96,
-                  height: 96,
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [AppColors.success, Color(0xFF34D399)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.success.withValues(alpha: 0.4),
-                        blurRadius: 40,
-                      ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.rocket_launch_rounded,
-                    color: Colors.white,
-                    size: 42,
-                  ),
-                )
-                .animate()
-                .scale(
-                  begin: const Offset(0.4, 0.4),
-                  duration: 700.ms,
-                  curve: Curves.elasticOut,
-                )
-                .fadeIn(duration: 400.ms),
+              width: 96,
+              height: 96,
+              decoration: const BoxDecoration(
+                color: AppColors.success,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.check_rounded,
+                color: Colors.white,
+                size: 42,
+              ),
+            ),
 
             const SizedBox(height: AppSpacing.xl),
 
             Text(
               'Pitch Sent!',
               style: Theme.of(context).textTheme.displaySmall,
-            ).animate().fadeIn(delay: 400.ms).slideY(begin: 0.2, delay: 400.ms),
+            ),
 
             const SizedBox(height: AppSpacing.sm),
 
@@ -149,7 +131,7 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
               'Your proposal for\n"${widget.jobTitle}" has been submitted.',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium,
-            ).animate().fadeIn(delay: 500.ms),
+            ),
 
             const SizedBox(height: AppSpacing.xxl),
 
@@ -178,7 +160,7 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
                   ),
                 ],
               ),
-            ).animate().fadeIn(delay: 650.ms).slideY(begin: 0.2, delay: 650.ms),
+            ),
 
             const SizedBox(height: AppSpacing.xl),
 
@@ -186,7 +168,7 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
               label: 'Track My Proposals',
               icon: Icons.track_changes_rounded,
               onPressed: () => context.go('/student/proposals'),
-            ).animate().fadeIn(delay: 800.ms),
+            ),
 
             const SizedBox(height: AppSpacing.md),
 
@@ -194,7 +176,7 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
               label: 'Back to Job',
               outlined: true,
               onPressed: () => context.go('/student/jobs/${widget.jobId}'),
-            ).animate().fadeIn(delay: 880.ms),
+            ),
           ],
         ),
       ),
@@ -262,7 +244,7 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
                     ),
                     Text(
                       '// ${widget.jobTitle}',
-                      style: GoogleFonts.jetBrainsMono(
+                      style: GoogleFonts.manrope(
                         fontSize: 10,
                         color: AppColors.studentPrimary,
                       ),
@@ -305,7 +287,7 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
             ),
           ),
         ],
-      ).animate().fadeIn(duration: 400.ms),
+      ),
     );
   }
 
@@ -324,7 +306,7 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
           ),
           child: Text(
             code,
-            style: GoogleFonts.jetBrainsMono(
+            style: GoogleFonts.manrope(
               fontSize: 8,
               fontWeight: FontWeight.w700,
               color: color,
@@ -334,7 +316,7 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
         const SizedBox(height: 4),
         Text(
           label,
-          style: GoogleFonts.jetBrainsMono(
+          style: GoogleFonts.manrope(
             fontSize: 7,
             letterSpacing: .8,
             color: color,
@@ -372,7 +354,7 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
                 padding: const EdgeInsets.only(top: 4),
                 child: Text(
                   '${_coverCtrl.text.length} chars',
-                  style: GoogleFonts.jetBrainsMono(
+                  style: GoogleFonts.manrope(
                     fontSize: 10,
                     color: AppColors.textMuted,
                   ),
@@ -424,7 +406,7 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
                 const Spacer(),
                 Text(
                   '$_timelineWeeks weeks',
-                  style: GoogleFonts.jetBrainsMono(
+                  style: GoogleFonts.manrope(
                     fontSize: 14,
                     fontWeight: FontWeight.w700,
                     color: AppColors.studentPrimary,
@@ -455,14 +437,14 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
               children: [
                 Text(
                   '1 week',
-                  style: GoogleFonts.jetBrainsMono(
+                  style: GoogleFonts.manrope(
                     fontSize: 10,
                     color: AppColors.textMuted,
                   ),
                 ),
                 Text(
                   '12 weeks',
-                  style: GoogleFonts.jetBrainsMono(
+                  style: GoogleFonts.manrope(
                     fontSize: 10,
                     color: AppColors.textMuted,
                   ),
@@ -500,7 +482,7 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
                   ),
                   child: Text(
                     'Optional',
-                    style: GoogleFonts.jetBrainsMono(
+                    style: GoogleFonts.manrope(
                       fontSize: 9,
                       color: AppColors.textMuted,
                     ),
@@ -573,7 +555,7 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
                       ),
                       child: Text(
                         '// your.pitch',
-                        style: GoogleFonts.jetBrainsMono(
+                        style: GoogleFonts.manrope(
                           fontSize: 9,
                           color: AppColors.studentPrimary,
                         ),
@@ -616,7 +598,7 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
                 ),
               ],
             ),
-          ).animate().fadeIn(duration: 400.ms).slideY(begin: 0.1),
+          ),
 
           const SizedBox(height: AppSpacing.lg),
 
@@ -633,7 +615,7 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
                 Expanded(
                   child: Text(
                     'Once sent, you cannot edit your pitch. The business will review and respond via in-app chat.',
-                    style: GoogleFonts.inter(
+                    style: GoogleFonts.manrope(
                       fontSize: 12,
                       color: AppColors.textSecondary,
                       height: 1.5,
@@ -642,7 +624,7 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
                 ),
               ],
             ),
-          ).animate().fadeIn(duration: 400.ms, delay: 150.ms),
+          ),
         ],
       ),
     );
@@ -698,12 +680,12 @@ class _ConfirmRow extends StatelessWidget {
         const SizedBox(width: AppSpacing.sm),
         Text(
           '$label:',
-          style: GoogleFonts.inter(fontSize: 13, color: AppColors.textMuted),
+          style: GoogleFonts.manrope(fontSize: 13, color: AppColors.textMuted),
         ),
         const Spacer(),
         Text(
           value,
-          style: GoogleFonts.plusJakartaSans(
+          style: GoogleFonts.manrope(
             fontSize: 13,
             fontWeight: FontWeight.w600,
             color: AppColors.textPrimary,

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/constants.dart';
+import '../../core/app_route_policy.dart';
 import '../../widgets/app_background.dart';
 import '../../widgets/app_state_view.dart';
 import '../../widgets/app_card.dart';
@@ -190,8 +190,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                               style: Theme.of(context).textTheme.headlineSmall,
                             ),
                             Text(
-                              '// $unreadCount unread transmissions',
-                              style: GoogleFonts.jetBrainsMono(
+                              '$unreadCount unread notifications',
+                              style: GoogleFonts.manrope(
                                 fontSize: 10,
                                 color: _primary,
                               ),
@@ -210,7 +210,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             tooltip: 'Mark all as read',
                           ),
                       ],
-                    ).animate().fadeIn(duration: 400.ms),
+                    ),
                   ),
                   _buildSignalSummary(unreadCount, notifications.length),
                   Expanded(
@@ -233,7 +233,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                             title: 'You are all caught up',
                             message: _isStudent
                                 ? 'Proposal decisions, messages, contracts, and reviews will appear here.'
-                                : 'New pitches, messages, milestones, and reviews will appear here.',
+                                : 'New proposals, messages, milestones, and reviews will appear here.',
                             accentColor: _primary,
                           )
                         : ListView.separated(
@@ -322,8 +322,10 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                       NotificationService().markAsRead(id);
                                     }
                                     final route = n['route'] as String?;
-                                    if (route != null && route.isNotEmpty) {
-                                      context.push(route);
+                                    if (AppRoutePolicy.isSafeNotificationRoute(
+                                      route,
+                                    )) {
+                                      context.push(route!);
                                     }
                                   },
                                   child: Row(
@@ -356,15 +358,14 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                                 Expanded(
                                                   child: Text(
                                                     title,
-                                                    style:
-                                                        GoogleFonts.plusJakartaSans(
-                                                          fontSize: 14,
-                                                          fontWeight: !isRead
-                                                              ? FontWeight.w700
-                                                              : FontWeight.w600,
-                                                          color: AppColors
-                                                              .textPrimary,
-                                                        ),
+                                                    style: GoogleFonts.manrope(
+                                                      fontSize: 14,
+                                                      fontWeight: !isRead
+                                                          ? FontWeight.w700
+                                                          : FontWeight.w600,
+                                                      color:
+                                                          AppColors.textPrimary,
+                                                    ),
                                                   ),
                                                 ),
                                                 if (!isRead)
@@ -385,7 +386,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                             const SizedBox(height: 2),
                                             Text(
                                               n['body']?.toString() ?? '',
-                                              style: GoogleFonts.inter(
+                                              style: GoogleFonts.manrope(
                                                 fontSize: 12,
                                                 fontWeight: !isRead
                                                     ? FontWeight.w500
@@ -401,7 +402,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                                 n['created_at']?.toString() ??
                                                     '',
                                               ),
-                                              style: GoogleFonts.jetBrainsMono(
+                                              style: GoogleFonts.manrope(
                                                 fontSize: 10,
                                                 color: AppColors.textMuted,
                                               ),
@@ -412,9 +413,6 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                     ],
                                   ),
                                 ),
-                              ).animate().fadeIn(
-                                duration: 400.ms,
-                                delay: (50 * i).ms,
                               );
                             },
                           ),
@@ -438,14 +436,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       ),
       padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [_primary.withValues(alpha: .18), AppColors.surfaceHigh],
-        ),
-        border: Border.all(color: _primary.withValues(alpha: .35)),
-        borderRadius: const BorderRadius.only(
-          topRight: Radius.circular(24),
-          bottomLeft: Radius.circular(24),
-        ),
+        color: AppColors.surfaceHigh,
+        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Row(
         children: [
@@ -461,7 +454,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   color: _primary,
                   backgroundColor: AppColors.border,
                 ),
-                Icon(Icons.sensors_rounded, size: 19, color: _primary),
+                Icon(
+                  Icons.notifications_none_rounded,
+                  size: 19,
+                  color: _primary,
+                ),
               ],
             ),
           ),
@@ -472,9 +469,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               children: [
                 Text(
                   unread == 0
-                      ? 'ALL SIGNALS CLEARED'
-                      : '$unread SIGNAL${unread == 1 ? '' : 'S'} NEED ATTENTION',
-                  style: GoogleFonts.jetBrainsMono(
+                      ? 'You are all caught up'
+                      : '$unread unread notification${unread == 1 ? '' : 's'}',
+                  style: GoogleFonts.manrope(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,
                     color: AppColors.textPrimary,
@@ -482,8 +479,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '$total activity records in this channel',
-                  style: GoogleFonts.inter(
+                  '$total total notifications',
+                  style: GoogleFonts.manrope(
                     fontSize: 11,
                     color: AppColors.textMuted,
                   ),

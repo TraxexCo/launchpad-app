@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
@@ -87,17 +86,12 @@ class _RecoverPasswordScreenState extends State<RecoverPasswordScreen> {
                           width: 52,
                           height: 52,
                           decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [
-                                AppColors.violet,
-                                AppColors.studentPrimary,
-                              ],
-                            ),
+                            color: AppColors.surfaceMuted,
                             borderRadius: BorderRadius.circular(AppRadius.lg),
                           ),
                           child: const Icon(
                             Icons.lock_reset_rounded,
-                            color: Colors.white,
+                            color: AppColors.studentPrimary,
                           ),
                         ),
                       ),
@@ -171,7 +165,7 @@ class _RecoverPasswordScreenState extends State<RecoverPasswordScreen> {
                             const SizedBox(height: AppSpacing.xs),
                             Text(
                               strengthLabels[_strength],
-                              style: GoogleFonts.inter(
+                              style: GoogleFonts.manrope(
                                 fontSize: 11,
                                 color: AppColors.textMuted,
                               ),
@@ -218,13 +212,13 @@ class _RecoverPasswordScreenState extends State<RecoverPasswordScreen> {
                       Text(
                         'You will return to your dashboard after the password is saved.',
                         textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(
+                        style: GoogleFonts.manrope(
                           fontSize: 12,
                           color: AppColors.textMuted,
                         ),
                       ),
                     ],
-                  ).animate().fadeIn(duration: 450.ms).slideY(begin: 0.04),
+                  ),
                 ),
               ),
             ),
