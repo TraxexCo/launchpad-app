@@ -15,18 +15,25 @@ verification, reports, disputes, and payment monitoring.
 - Versioned file or link deliverables with participant-only storage access
 - PayMongo test checkout, return link, status sync, and classroom release state
 - Identity-document upload and an administrator review queue
-- In-app realtime notifications with validated destinations
+- In-app realtime notifications plus Android Firebase push registration,
+  foreground display, and validated destinations
 - Privacy, terms, crash diagnostics, and authenticated account deletion
 
 ## Run
 
 ```powershell
 flutter pub get
-flutter run --dart-define=SUPABASE_URL=YOUR_URL --dart-define=SUPABASE_PUBLISHABLE_KEY=YOUR_KEY
+Copy-Item supabase.local.example.json supabase.local.json
+# Fill in the local values, then run:
+flutter run --dart-define-from-file=supabase.local.json
 ```
 
 The Android application ID is `com.prince.launchpad`. Custom links use
 `launchpad://auth-callback` and `launchpad://payment-return`.
+The tracked `android/app/google-services.json` connects Android to the
+`launchpad-mobile-prince` Firebase project. Mapbox uses the public token from
+the ignored `supabase.local.json`; the map falls back to OpenStreetMap when the
+token is omitted.
 
 See [SUPABASE_SETUP.md](SUPABASE_SETUP.md) for database and Edge Function setup.
 The SQL migrations in `supabase/migrations` are the source of truth and must be

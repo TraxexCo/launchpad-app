@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "735726326861",
+    "project_id": "launchpad-mobile-prince",
+    "storage_bucket": "launchpad-mobile-prince.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:735726326861:android:0cb70aaa74302e0f5ff804",
+        "android_client_info": {
+          "package_name": "com.prince.launchpad"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBWVJr97Cq-p0acPKCW4vhCZ08xWrtNqWY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

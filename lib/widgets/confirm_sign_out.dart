@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../services/auth_service.dart';
+import '../services/push_notification_service.dart';
 
 Future<void> confirmSignOut(BuildContext context) async {
   final confirmed = await showDialog<bool>(
@@ -22,6 +23,7 @@ Future<void> confirmSignOut(BuildContext context) async {
     ),
   );
   if (confirmed != true || !context.mounted) return;
+  await PushNotificationService().unregisterCurrentDevice();
   await AuthService().logout();
   if (context.mounted) context.go('/onboarding');
 }

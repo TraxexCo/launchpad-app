@@ -17,6 +17,7 @@ class NearbyBusinessRadar extends StatefulWidget {
 }
 
 class _NearbyBusinessRadarState extends State<NearbyBusinessRadar> {
+  static const _mapboxToken = String.fromEnvironment('MAPBOX_PUBLIC_TOKEN');
   final _mapController = MapController();
   Position? _position;
   List<Map<String, dynamic>> _businesses = [];
@@ -226,8 +227,11 @@ class _NearbyBusinessRadarState extends State<NearbyBusinessRadar> {
             options: MapOptions(initialCenter: current, initialZoom: 13.5),
             children: [
               TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.traxexco.launchpad',
+                urlTemplate: _mapboxToken.isEmpty
+                    ? 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
+                    : 'https://api.mapbox.com/styles/v1/mapbox/streets-v12/'
+                          'tiles/256/{z}/{x}/{y}@2x?access_token=$_mapboxToken',
+                userAgentPackageName: 'com.prince.launchpad',
               ),
               CircleLayer(
                 circles: [
@@ -257,7 +261,9 @@ class _NearbyBusinessRadarState extends State<NearbyBusinessRadar> {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                 child: Text(
-                  '© OpenStreetMap contributors',
+                  _mapboxToken.isEmpty
+                      ? '© OpenStreetMap contributors'
+                      : '© Mapbox · © OpenStreetMap',
                   style: GoogleFonts.manrope(
                     fontSize: 8,
                     color: AppColors.textMuted,

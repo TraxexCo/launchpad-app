@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'dart:async';
 import 'dart:ui';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/constants.dart';
@@ -7,6 +8,7 @@ import 'core/router.dart';
 import 'core/theme.dart';
 import 'services/auth_service.dart';
 import 'services/crash_reporting_service.dart';
+import 'services/push_notification_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -40,6 +42,9 @@ Future<void> main() async {
     ),
   );
   runApp(const LaunchPadApp());
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    unawaited(PushNotificationService().initialize());
+  });
 }
 
 class LaunchPadApp extends StatelessWidget {
