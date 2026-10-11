@@ -28,24 +28,49 @@ class AuthService extends ChangeNotifier {
       }
       notifyListeners();
     });
+    if (!kIsWeb) {
+      _linkSubscription = _appLinks.uriLinkStream.listen(_handleIncomingLink);
+    }
   }
 
   final SupabaseClient _client = Supabase.instance.client;
+  final AppLinks _appLinks = AppLinks();
   late final StreamSubscription<AuthState> _subscription;
+  StreamSubscription<Uri>? _linkSubscription;
   bool isRecoveringPassword = false;
+  int? _pendingPaymentContractId;
   static const mobileAuthRedirect = 'launchpad://auth-callback/';
   String get authRedirect => kIsWeb ? Uri.base.origin : mobileAuthRedirect;
 
   Future<void> restoreInitialRecoveryState() async {
     if (kIsWeb) return;
-    final uri = await AppLinks().getInitialLink();
+    final uri = await _appLinks.getInitialLink();
     if (uri == null) return;
+    _handleIncomingLink(uri);
+  }
+
+  void _handleIncomingLink(Uri uri) {
     final fragment = Uri.splitQueryString(uri.fragment);
     if (uri.queryParameters['type'] == 'recovery' ||
         fragment['type'] == 'recovery') {
       isRecoveringPassword = true;
-      notifyListeners();
     }
+    if (uri.scheme == 'launchpad' && uri.host == 'payment-return') {
+      final contractId = int.tryParse(
+        uri.queryParameters['contract_id'] ?? '',
+      );
+      if (contractId != null && contractId > 0) {
+        _pendingPaymentContractId = contractId;
+      }
+    }
+    notifyListeners();
+  }
+
+  String? takePendingPaymentPath() {
+    final contractId = _pendingPaymentContractId;
+    if (contractId == null) return null;
+    _pendingPaymentContractId = null;
+    return '/payment/$contractId';
   }
 
   Future<UserSession> login(String email, String password) async {
@@ -149,6 +174,7 @@ class AuthService extends ChangeNotifier {
   @override
   void dispose() {
     _subscription.cancel();
+    _linkSubscription?.cancel();
     super.dispose();
   }
 }

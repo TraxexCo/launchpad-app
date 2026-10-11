@@ -21,6 +21,7 @@ import '../screens/business/edit_job_screen.dart';
 import '../screens/shared/notifications_screen.dart';
 import '../screens/shared/chat_screen.dart';
 import '../screens/shared/settings_screen.dart';
+import '../screens/shared/payment_screen.dart';
 import '../models/job_post.dart';
 import '../models/proposal.dart';
 import '../services/auth_service.dart';
@@ -40,6 +41,10 @@ final appRouter = GoRouter(
         path == '/register';
     final user = await AuthService().getCurrentUser();
     if (user == null) return publicRoute ? null : '/onboarding';
+    final pendingPaymentPath = AuthService().takePendingPaymentPath();
+    if (pendingPaymentPath != null && path != pendingPaymentPath) {
+      return pendingPaymentPath;
+    }
     final home = user.role == 'business' ? '/business' : '/student';
     if (path == '/splash' ||
         path == '/onboarding' ||
@@ -179,6 +184,22 @@ final appRouter = GoRouter(
         final id = state.pathParameters['id'] ?? '0';
         final name = state.uri.queryParameters['name'] ?? 'Chat';
         return ChatScreen(chatId: id, peerName: name);
+      },
+    ),
+    GoRoute(
+      path: '/payment/:id',
+      builder: (context, state) {
+        final contractId = int.tryParse(state.pathParameters['id'] ?? '') ?? 0;
+        final title = state.uri.queryParameters['title'] ?? 'Project Contract';
+        final amount =
+            double.tryParse(state.uri.queryParameters['amount'] ?? '') ?? 0;
+        final studentView = state.uri.queryParameters['student'] == '1';
+        return PaymentScreen(
+          contractId: contractId,
+          projectTitle: title,
+          amount: amount,
+          studentView: studentView,
+        );
       },
     ),
     GoRoute(

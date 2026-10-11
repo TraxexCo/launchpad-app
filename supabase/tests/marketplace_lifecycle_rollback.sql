@@ -1,4 +1,4 @@
--- Disposable lifecycle assertions. Run as project owner after migration 007.
+-- Disposable lifecycle assertions. Run as project owner after migration 010.
 -- All test rows and notifications are rolled back.
 begin;
 do $$
@@ -37,6 +37,16 @@ begin
 
   perform set_config('request.jwt.claim.sub', business_user::text, true);
   select public.accept_proposal(test_proposal) into test_contract;
+
+  -- Migration 010 requires every project to be funded before the student can
+  -- submit completed work. This record is temporary and rolls back with the
+  -- rest of the lifecycle test.
+  insert into public.payments(
+    contract_id, business_id, student_id, amount, status, reference_number, paid_at
+  ) values (
+    test_contract, business_user, student_user, 18000, 'paid',
+    'LP-LIFECYCLE-' || test_contract, now()
+  );
 
   perform set_config('request.jwt.claim.sub', student_user::text, true);
   perform public.request_contract_completion(test_contract);

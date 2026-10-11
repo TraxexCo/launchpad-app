@@ -15,6 +15,8 @@ class ContractItem {
   final String businessId;
   final String businessName;
   final bool reviewedByMe;
+  final String paymentStatus;
+  final String? paymentReference;
 
   const ContractItem({
     required this.id,
@@ -31,6 +33,8 @@ class ContractItem {
     required this.businessId,
     required this.businessName,
     this.reviewedByMe = false,
+    this.paymentStatus = 'unpaid',
+    this.paymentReference,
   });
 }
 
@@ -53,6 +57,10 @@ class ContractService {
       status,
       agreed_at,
       completed_at,
+      payments (
+        status,
+        reference_number
+      ),
       proposals (
         id,
         proposed_budget,
@@ -151,11 +159,21 @@ class ContractService {
           businessId: bId,
           businessName: businessNameMap[bId] ?? 'Business',
           reviewedByMe: reviewedContractIds.contains(row['id'] as int),
+          paymentStatus: _paymentValue(row['payments'], 'status') ?? 'unpaid',
+          paymentReference: _paymentValue(row['payments'], 'reference_number'),
         ),
       );
     }
 
     return items;
+  }
+
+  String? _paymentValue(dynamic relation, String key) {
+    if (relation is Map) return relation[key]?.toString();
+    if (relation is List && relation.isNotEmpty && relation.first is Map) {
+      return (relation.first as Map)[key]?.toString();
+    }
+    return null;
   }
 
   Future<void> requestCompletion(int contractId) async {

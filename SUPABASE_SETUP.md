@@ -17,6 +17,11 @@ Two later migrations were applied in **SQL Editor** on 2 October 2026, in this o
 
 Do not run either migration again in this project. The rollback verification script was run after migration 007 and returned `marketplace lifecycle assertions passed; test rows rolled back`.
 
+Migrations 008, 009, and 010 were applied in **SQL Editor** by 11 October 2026.
+They complete the skill catalog, nearby business and notification preferences,
+protected payment records, and funded-contract lifecycle rules. Do not run them
+again in this project.
+
 To inspect your data, open **Database → Tables**. To inspect user accounts, open **Authentication → Users**. To inspect or change policies, open **Database → Policies**. The database password is for direct database administration; it never belongs in Flutter.
 
 ## Run the Flutter app
@@ -42,6 +47,24 @@ The `launchpad://` scheme is configured in Android and iOS, and the app passes i
 
 Create a **public** Mapbox token with `styles:read` permission in your Mapbox account. Add `MAPBOX_PUBLIC_TOKEN` to the ignored `supabase.local.json` file, or pass it using `--dart-define=MAPBOX_PUBLIC_TOKEN=...`. Never put a secret Mapbox token in the app. The Radar tab uses Mapbox Static Images to show business markers. A business can save its address, latitude, and longitude in **Settings → Business Map Location**. Businesses without coordinates remain in the directory list but cannot have a marker. The map is an image with zoom controls and list selection; it does not support drag gestures or device proximity yet.
 
+## PayMongo classroom payment API
+
+Migration `supabase/migrations/202610110010_paymongo_payments.sql` is already
+active in the hosted project. For a new Supabase project, apply it after
+migration 009. It creates protected contract payments, requires funding before
+a student can submit completion, and marks a paid test transaction as released
+when the business approves the project.
+
+Create a PayMongo account, switch to test mode, and save its `sk_test_...`
+secret in Supabase as `PAYMONGO_SECRET_KEY`. Never place this secret in Flutter,
+`supabase.local.json`, or GitHub.
+
+The `create-paymongo-checkout`, `sync-paymongo-payment`, and `paymongo-return`
+Edge Functions are deployed. Keep JWT verification enabled on the first two and
+disable it on `paymongo-return` so PayMongo's browser redirect can open it.
+The app verifies the Checkout Session directly with PayMongo after returning;
+it does not trust the browser redirect by itself.
+
 ## How signup works
 
 1. A student or business registers in the app.
@@ -61,6 +84,6 @@ The signup form can select only `student` or `business`; a client cannot request
 
 ## Current development state
 
-Supabase backs authentication, jobs, proposals, acceptance, profiles, portfolios, saved jobs, contract chat, notifications, reports, completion approval, and reviews for both contract participants. Migrations 006 and 007 are active in the hosted project. Document verification remains intentionally unavailable until a private Storage bucket and a restricted reviewer workflow exist; accounts are never auto-verified.
+Supabase backs authentication, jobs, proposals, acceptance, profiles, portfolios, saved jobs, contract chat, notifications, reports, completion approval, reviews, business locations, and protected PayMongo payment records. Migrations through 010 are active in the hosted project. Document verification remains intentionally unavailable until a private Storage bucket and a restricted reviewer workflow exist; accounts are never auto-verified.
 
-Email confirmation and password reset have a mobile deep link and reset-password screen, but still need a real device test after the Redirect URL is allowlisted. Before a defense, test signup, email confirmation, roles, job posting, bidding, acceptance, chat, completion, reviews, notifications, and direct route protection on two devices or browsers. After migration 007, `supabase/tests/marketplace_lifecycle_rollback.sql` can verify the database lifecycle without retaining its test rows.
+Email confirmation and password reset have a mobile deep link and reset-password screen, but still need a real device test after the Redirect URL is allowlisted. Before a defense, test signup, email confirmation, roles, job posting, bidding, acceptance, PayMongo checkout, chat, completion, reviews, notifications, and direct route protection on two devices or browsers. After migration 010, `supabase/tests/marketplace_lifecycle_rollback.sql` and `supabase/tests/payment_lifecycle_rollback.sql` verify the database lifecycle without retaining their test rows.

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../core/constants.dart';
@@ -230,25 +231,76 @@ class _ContractActionPanelState extends State<ContractActionPanel> {
     controller.dispose();
   }
 
+  Future<void> _openPayment() async {
+    final contract = widget.contract;
+    final route = Uri(
+      path: '/payment/${contract.id}',
+      queryParameters: {
+        'title': contract.jobTitle,
+        'amount': contract.budget.toStringAsFixed(2),
+        if (widget.studentView) 'student': '1',
+      },
+    ).toString();
+    final changed = await context.push<bool>(route);
+    if (changed == true) await widget.onChanged();
+  }
+
   @override
   Widget build(BuildContext context) {
     final status = widget.contract.status;
+    final paymentStatus = widget.contract.paymentStatus;
+    final funded = paymentStatus == 'paid' || paymentStatus == 'released';
+
+    if (!funded && status != 'completed') {
+      if (widget.studentView) {
+        return InkWell(
+          onTap: _openPayment,
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          child: _message(
+            Icons.hourglass_bottom_rounded,
+            paymentStatus == 'checkout_created'
+                ? 'Business payment awaiting confirmation · View'
+                : 'Waiting for business to fund project · View',
+            AppColors.warning,
+          ),
+        );
+      }
+      return FilledButton.icon(
+        onPressed: _working ? null : _openPayment,
+        icon: const Icon(Icons.account_balance_wallet_outlined, size: 18),
+        label: Text(
+          paymentStatus == 'checkout_created'
+              ? 'Continue PayMongo payment'
+              : 'Fund project with PayMongo',
+        ),
+      );
+    }
     if (status == 'completed') {
-      return Align(
-        alignment: Alignment.centerLeft,
-        child: widget.contract.reviewedByMe
-            ? _message(
-                Icons.verified_rounded,
-                'Review submitted',
-                AppColors.info,
-              )
-            : OutlinedButton.icon(
-                onPressed: _working ? null : _openReview,
-                icon: const Icon(Icons.star_outline_rounded, size: 18),
-                label: Text(
-                  widget.studentView ? 'Review business' : 'Review student',
+      return Wrap(
+        spacing: AppSpacing.sm,
+        runSpacing: AppSpacing.sm,
+        children: [
+          OutlinedButton.icon(
+            onPressed: _openPayment,
+            icon: const Icon(Icons.receipt_long_outlined, size: 18),
+            label: const Text('Payment receipt'),
+          ),
+          widget.contract.reviewedByMe
+              ? _message(
+                  Icons.verified_rounded,
+                  'Review submitted',
+                  AppColors.info,
+                )
+              : OutlinedButton.icon(
+                  onPressed: _working ? null : _openReview,
+                  icon: const Icon(Icons.star_outline_rounded, size: 18),
+                  label: Text(
+                    widget.studentView
+                        ? 'Review business'
+                        : 'Review student',
+                  ),
                 ),
-              ),
+        ],
       );
     }
 
