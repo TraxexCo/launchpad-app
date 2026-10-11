@@ -22,6 +22,11 @@ They complete the skill catalog, nearby business and notification preferences,
 protected payment records, and funded-contract lifecycle rules. Do not run them
 again in this project.
 
+Migrations 011, 012, and 013 were applied through the Supabase Management API
+on 11 October 2026. They add the complete contract workspace and deliverable
+history, private verification uploads, admin moderation, account diagnostics,
+and device push-token storage. Do not run them again in this project.
+
 To inspect your data, open **Database → Tables**. To inspect user accounts, open **Authentication → Users**. To inspect or change policies, open **Database → Policies**. The database password is for direct database administration; it never belongs in Flutter.
 
 ## Run the Flutter app
@@ -59,9 +64,10 @@ Create a PayMongo account, switch to test mode, and save its `sk_test_...`
 secret in Supabase as `PAYMONGO_SECRET_KEY`. Never place this secret in Flutter,
 `supabase.local.json`, or GitHub.
 
-The `create-paymongo-checkout`, `sync-paymongo-payment`, and `paymongo-return`
-Edge Functions are deployed. Keep JWT verification enabled on the first two and
-disable it on `paymongo-return` so PayMongo's browser redirect can open it.
+The `create-paymongo-checkout`, `sync-paymongo-payment`, `paymongo-return`, and
+`delete-account` Edge Functions are deployed. Keep JWT verification enabled on
+the authenticated functions and disabled only on `paymongo-return` so
+PayMongo's browser redirect can open it.
 The app verifies the Checkout Session directly with PayMongo after returning;
 it does not trust the browser redirect by itself.
 
@@ -84,6 +90,11 @@ The signup form can select only `student` or `business`; a client cannot request
 
 ## Current development state
 
-Supabase backs authentication, jobs, proposals, acceptance, profiles, portfolios, saved jobs, contract chat, notifications, reports, completion approval, reviews, business locations, and protected PayMongo payment records. Migrations through 010 are active in the hosted project. Document verification remains intentionally unavailable until a private Storage bucket and a restricted reviewer workflow exist; accounts are never auto-verified.
+Supabase backs authentication, jobs, proposals, acceptance, profiles,
+portfolios, saved jobs, contract chat, notifications, reports, reviews,
+business locations, protected PayMongo payment records, contract deliverables,
+verification documents, disputes, moderation, diagnostics, and account deletion.
+Migrations through 013 are active in the hosted project. Verification remains
+manual: an allowlisted administrator must approve every uploaded document.
 
 Email confirmation and password reset have a mobile deep link and reset-password screen, but still need a real device test after the Redirect URL is allowlisted. Before a defense, test signup, email confirmation, roles, job posting, bidding, acceptance, PayMongo checkout, chat, completion, reviews, notifications, and direct route protection on two devices or browsers. After migration 010, `supabase/tests/marketplace_lifecycle_rollback.sql` and `supabase/tests/payment_lifecycle_rollback.sql` verify the database lifecycle without retaining their test rows.
