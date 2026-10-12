@@ -94,7 +94,13 @@ Supabase backs authentication, jobs, proposals, acceptance, profiles,
 portfolios, saved jobs, contract chat, notifications, reports, reviews,
 business locations, protected PayMongo payment records, contract deliverables,
 verification documents, disputes, moderation, diagnostics, and account deletion.
-Migrations through 013 are active in the hosted project. Verification remains
+Migrations through 014 are active in the hosted project. Verification remains
 manual: an allowlisted administrator must approve every uploaded document.
+
+Android push delivery uses the `send-push-notification` Edge Function. Its
+Firebase service-account JSON and shared webhook secret are stored only as
+Supabase secrets. The matching webhook secret is stored in Vault under
+`launchpad_push_webhook_secret`; migration 014 connects every new notification
+row to the sender without exposing either credential to the mobile app.
 
 Email confirmation and password reset have a mobile deep link and reset-password screen, but still need a real device test after the Redirect URL is allowlisted. Before a defense, test signup, email confirmation, roles, job posting, bidding, acceptance, PayMongo checkout, chat, completion, reviews, notifications, and direct route protection on two devices or browsers. After migration 010, `supabase/tests/marketplace_lifecycle_rollback.sql` and `supabase/tests/payment_lifecycle_rollback.sql` verify the database lifecycle without retaining their test rows.
