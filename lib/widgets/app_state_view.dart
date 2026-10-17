@@ -30,51 +30,71 @@ class AppStateView extends StatelessWidget {
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSpacing.xl),
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 360),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 76,
-                height: 76,
-                decoration: BoxDecoration(
-                  color: accentColor.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(AppRadius.xl),
-                  border: Border.all(
-                    color: accentColor.withValues(alpha: 0.22),
+          constraints: const BoxConstraints(maxWidth: 420),
+          child: Container(
+            padding: const EdgeInsets.all(AppSpacing.xl),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(AppRadius.xl),
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 42,
+                  height: 3,
+                  decoration: BoxDecoration(
+                    color: accentColor,
+                    borderRadius: BorderRadius.circular(AppRadius.full),
                   ),
                 ),
-                child: Icon(icon, color: accentColor, size: 34),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              Text(
-                title,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                message,
-                textAlign: TextAlign.center,
-                style: GoogleFonts.manrope(
-                  fontSize: 14,
-                  height: 1.55,
-                  color: AppColors.textSecondary,
-                ),
-              ),
-              if (actionLabel != null && onAction != null) ...[
                 const SizedBox(height: AppSpacing.lg),
-                SizedBox(
-                  width: 220,
-                  child: AppButton(
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 62,
+                      height: 62,
+                      decoration: BoxDecoration(
+                        color: accentColor.withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                        border: Border.all(
+                          color: accentColor.withValues(alpha: 0.24),
+                        ),
+                      ),
+                      child: Icon(icon, color: accentColor, size: 29),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  message,
+                  style: GoogleFonts.manrope(
+                    fontSize: 14,
+                    height: 1.55,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                if (actionLabel != null && onAction != null) ...[
+                  const SizedBox(height: AppSpacing.lg),
+                  AppButton(
                     label: actionLabel!,
                     icon: actionIcon,
                     onPressed: onAction!,
                     backgroundColor: accentColor,
                   ),
-                ),
+                ],
               ],
-            ],
+            ),
           ),
         ),
       ),

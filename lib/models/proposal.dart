@@ -6,6 +6,7 @@ class Proposal {
   final String? businessName;
   final String? studentProfileId;
   final String? studentName;
+  final String? studentAvatarPath;
   final String? githubUrl;
   final String pitchText;
   final String proposedBudget;
@@ -22,6 +23,7 @@ class Proposal {
     this.businessName,
     this.studentProfileId,
     this.studentName,
+    this.studentAvatarPath,
     this.githubUrl,
     required this.pitchText,
     required this.proposedBudget,
@@ -42,6 +44,7 @@ class Proposal {
       businessName: json['business_name'] as String?,
       studentProfileId: json['student_profile_id']?.toString(),
       studentName: json['student_name'] as String?,
+      studentAvatarPath: json['student_avatar_path'] as String?,
       githubUrl: json['github_url'] as String?,
       pitchText: json['pitch_text'] as String,
       proposedBudget: json['proposed_budget'].toString(),
@@ -72,6 +75,7 @@ class Proposal {
       businessName: businessName ?? this.businessName,
       studentProfileId: studentProfileId,
       studentName: studentName,
+      studentAvatarPath: studentAvatarPath,
       githubUrl: githubUrl,
       pitchText: pitchText,
       proposedBudget: proposedBudget,

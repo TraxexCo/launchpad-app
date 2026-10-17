@@ -57,7 +57,7 @@ class ProposalService {
         .inFilter('id', jobIds);
     final profiles = await _client
         .from('profiles')
-        .select('id,full_name')
+        .select('id,full_name,avatar_path')
         .inFilter('id', studentIds);
     final studentProfiles = await _client
         .from('student_profiles')
@@ -90,6 +90,7 @@ class ProposalService {
         'business_name': businessById[job?['business_id']]?['business_name'],
         'student_profile_id': row['student_id'],
         'student_name': profileById[row['student_id']]?['full_name'],
+        'student_avatar_path': profileById[row['student_id']]?['avatar_path'],
         'github_url': username == null || username.isEmpty
             ? null
             : 'https://github.com/$username',

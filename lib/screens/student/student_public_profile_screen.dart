@@ -8,6 +8,7 @@ import '../../widgets/app_background.dart';
 import '../../widgets/app_state_view.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/skill_chip.dart';
+import '../../widgets/profile_avatar.dart';
 
 import '../../services/github_api_service.dart';
 import '../../services/review_service.dart';
@@ -52,7 +53,7 @@ class _StudentPublicProfileScreenState
       final client = Supabase.instance.client;
       final profile = await client
           .from('profiles')
-          .select('full_name')
+          .select('full_name,avatar_path')
           .eq('id', widget.studentId)
           .single();
       final student = await client
@@ -74,6 +75,7 @@ class _StudentPublicProfileScreenState
       setState(() {
         _profile = {
           'name': profile['full_name'] as String? ?? 'Student',
+          'avatarPath': profile['avatar_path'] as String?,
           'school': student?['school'] as String? ?? '',
           'course': student?['course'] as String? ?? '',
           'year': student?['year_level'] as String? ?? '',
@@ -274,29 +276,16 @@ class _StudentPublicProfileScreenState
         children: [
           Row(
             children: [
-              Container(
-                width: 80,
-                height: 80,
-                decoration: const BoxDecoration(
-                  color: AppColors.surfaceMuted,
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Text(
-                    (_profile['name'] as String)
-                        .split(' ')
-                        .where((part) => part.isNotEmpty)
-                        .take(2)
-                        .map((part) => part[0])
-                        .join()
-                        .toUpperCase(),
-                    style: GoogleFonts.manrope(
-                      fontSize: 28,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                ),
+              ProfileAvatar(
+                size: 80,
+                fallbackLabel: (_profile['name'] as String)
+                    .split(' ')
+                    .where((part) => part.isNotEmpty)
+                    .take(2)
+                    .map((part) => part[0])
+                    .join()
+                    .toUpperCase(),
+                storagePath: _profile['avatarPath'] as String?,
               ),
               const SizedBox(width: AppSpacing.md),
               Expanded(

@@ -7,6 +7,7 @@ import '../../models/job_post.dart';
 import '../../widgets/app_background.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/app_state_view.dart';
+import '../../widgets/profile_avatar.dart';
 
 class BrowseJobsScreen extends StatefulWidget {
   const BrowseJobsScreen({super.key});
@@ -506,18 +507,12 @@ class _JobCard extends StatelessWidget {
           // ── Header row
           Row(
             children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceMuted,
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                ),
-                child: const Icon(
-                  Icons.storefront_rounded,
-                  color: AppColors.businessPrimary,
-                  size: 22,
-                ),
+              ProfileAvatar(
+                size: 44,
+                fallbackLabel: '',
+                fallbackIcon: Icons.storefront_rounded,
+                storagePath: job.businessAvatarPath,
+                square: true,
               ),
               const SizedBox(width: AppSpacing.sm + 2),
               Expanded(

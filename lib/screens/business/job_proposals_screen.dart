@@ -6,6 +6,7 @@ import '../../widgets/app_background.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/status_badge.dart';
 import '../../widgets/app_state_view.dart';
+import '../../widgets/profile_avatar.dart';
 
 import '../../models/job_post.dart';
 import '../../models/proposal.dart';
@@ -311,26 +312,14 @@ class _ProposalCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: const BoxDecoration(
-                  color: AppColors.surfaceMuted,
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Text(
+              ProfileAvatar(
+                size: 48,
+                fallbackLabel:
                     (proposal.studentName != null &&
-                            proposal.studentName!.isNotEmpty)
-                        ? proposal.studentName![0]
-                        : 'S',
-                    style: GoogleFonts.manrope(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                ),
+                        proposal.studentName!.isNotEmpty)
+                    ? proposal.studentName![0].toUpperCase()
+                    : 'S',
+                storagePath: proposal.studentAvatarPath,
               ),
               const SizedBox(width: AppSpacing.md),
               Expanded(

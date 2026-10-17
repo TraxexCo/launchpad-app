@@ -41,7 +41,11 @@ class LegalScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _SectionTag(label: showTerms ? '// terms.of.service' : '// privacy.policy'),
+                      _SectionTag(
+                        label: showTerms
+                            ? '// terms.of.service'
+                            : '// privacy.policy',
+                      ),
                       const SizedBox(height: AppSpacing.sm),
                       Text(
                         _title,
@@ -56,7 +60,10 @@ class LegalScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: AppSpacing.xl),
-                      if (showTerms) ..._termsContent(context) else ..._privacyContent(context),
+                      if (showTerms)
+                        ..._termsContent(context)
+                      else
+                        ..._privacyContent(context),
                       const SizedBox(height: AppSpacing.xl),
                       AppButton(
                         label: 'View Full Document Online',

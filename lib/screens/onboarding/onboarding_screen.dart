@@ -32,24 +32,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       Container(
         width: 42,
         height: 42,
+        padding: const EdgeInsets.all(5),
         decoration: BoxDecoration(
-          color: AppColors.studentPrimary,
+          color: AppColors.surfaceHigh,
           borderRadius: BorderRadius.circular(9),
+          border: Border.all(color: AppColors.borderHigh),
         ),
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            const Icon(
-              Icons.north_east_rounded,
-              color: AppColors.ink,
-              size: 23,
-            ),
-            Positioned(
-              left: 9,
-              bottom: 9,
-              child: Container(width: 7, height: 3, color: AppColors.ink),
-            ),
-          ],
+        child: Image.asset(
+          'assets/branding/launchpad_mark.png',
+          semanticLabel: 'LaunchPad logo',
         ),
       ),
       const SizedBox(width: 10),

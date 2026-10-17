@@ -6,6 +6,7 @@ import '../../widgets/app_background.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/report_modal.dart';
+import '../../widgets/profile_avatar.dart';
 import '../../widgets/app_state_view.dart';
 import '../../models/proposal.dart';
 import '../../services/proposal_service.dart';
@@ -337,26 +338,14 @@ class _ProposalDetailScreenState extends State<ProposalDetailScreen> {
       child: AppCard(
         child: Row(
           children: [
-            Container(
-              width: 64,
-              height: 64,
-              decoration: const BoxDecoration(
-                color: AppColors.surfaceMuted,
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Text(
+            ProfileAvatar(
+              size: 64,
+              fallbackLabel:
                   (_proposal!.studentName != null &&
-                          _proposal!.studentName!.isNotEmpty)
-                      ? _proposal!.studentName![0]
-                      : 'S',
-                  style: GoogleFonts.manrope(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-              ),
+                      _proposal!.studentName!.isNotEmpty)
+                  ? _proposal!.studentName![0].toUpperCase()
+                  : 'S',
+              storagePath: _proposal!.studentAvatarPath,
             ),
             const SizedBox(width: AppSpacing.md),
             Expanded(

@@ -118,8 +118,11 @@ class _RecoverPasswordScreenState extends State<RecoverPasswordScreen> {
                         onChanged: (_) => setState(() {}),
                         prefixIcon: const Icon(Icons.password_rounded),
                         suffixIcon: IconButton(
-                          tooltip: _showPassword ? 'Hide password' : 'Show password',
-                          onPressed: () => setState(() => _showPassword = !_showPassword),
+                          tooltip: _showPassword
+                              ? 'Hide password'
+                              : 'Show password',
+                          onPressed: () =>
+                              setState(() => _showPassword = !_showPassword),
                           icon: Icon(
                             _showPassword
                                 ? Icons.visibility_off_rounded
@@ -137,14 +140,18 @@ class _RecoverPasswordScreenState extends State<RecoverPasswordScreen> {
                             child: AnimatedContainer(
                               duration: AppDurations.fast,
                               height: 4,
-                              margin: EdgeInsets.only(right: index == 3 ? 0 : 6),
+                              margin: EdgeInsets.only(
+                                right: index == 3 ? 0 : 6,
+                              ),
                               decoration: BoxDecoration(
                                 color: index < _strength
                                     ? (_strength < 3
                                           ? AppColors.warning
                                           : AppColors.success)
                                     : AppColors.border,
-                                borderRadius: BorderRadius.circular(AppRadius.full),
+                                borderRadius: BorderRadius.circular(
+                                  AppRadius.full,
+                                ),
                               ),
                             ),
                           ),
@@ -166,8 +173,11 @@ class _RecoverPasswordScreenState extends State<RecoverPasswordScreen> {
                         obscureText: !_showConfirm,
                         prefixIcon: const Icon(Icons.verified_user_outlined),
                         suffixIcon: IconButton(
-                          tooltip: _showConfirm ? 'Hide password' : 'Show password',
-                          onPressed: () => setState(() => _showConfirm = !_showConfirm),
+                          tooltip: _showConfirm
+                              ? 'Hide password'
+                              : 'Show password',
+                          onPressed: () =>
+                              setState(() => _showConfirm = !_showConfirm),
                           icon: Icon(
                             _showConfirm
                                 ? Icons.visibility_off_rounded

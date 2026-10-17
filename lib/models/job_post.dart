@@ -14,6 +14,7 @@ class JobPost {
   final DateTime createdAt;
   final String? businessProfileId;
   final String? businessName;
+  final String? businessAvatarPath;
   final String? verificationStatus;
 
   const JobPost({
@@ -30,6 +31,7 @@ class JobPost {
     required this.createdAt,
     this.businessProfileId,
     this.businessName,
+    this.businessAvatarPath,
     this.verificationStatus,
   });
 
@@ -63,6 +65,7 @@ class JobPost {
           DateTime.now(),
       businessProfileId: json['business_profile_id']?.toString(),
       businessName: json['business_name'] as String?,
+      businessAvatarPath: json['business_avatar_path'] as String?,
       verificationStatus: json['verification_status'] as String?,
     );
   }
@@ -81,6 +84,7 @@ class JobPost {
     'created_at': createdAt.toIso8601String(),
     'business_profile_id': businessProfileId,
     'business_name': businessName,
+    'business_avatar_path': businessAvatarPath,
     'verification_status': verificationStatus,
   };
 
@@ -99,6 +103,7 @@ class JobPost {
     createdAt: createdAt,
     businessProfileId: businessProfileId,
     businessName: businessName,
+    businessAvatarPath: businessAvatarPath,
     verificationStatus: verificationStatus,
     title: title ?? this.title,
     description: description ?? this.description,

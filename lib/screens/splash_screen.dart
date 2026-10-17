@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:go_router/go_router.dart';
 import '../core/constants.dart';
 import '../widgets/app_background.dart';
@@ -18,7 +19,13 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _checkAuth() async {
+    final startedAt = DateTime.now();
     final user = await AuthService().getCurrentUser();
+    final elapsed = DateTime.now().difference(startedAt);
+    const minimumDisplay = Duration(milliseconds: 700);
+    if (elapsed < minimumDisplay) {
+      await Future<void>.delayed(minimumDisplay - elapsed);
+    }
     if (!mounted) return;
     context.go(
       user == null
@@ -63,14 +70,30 @@ class _SplashScreenState extends State<SplashScreen> {
 
 class _LaunchMark extends StatelessWidget {
   const _LaunchMark();
+
   @override
-  Widget build(BuildContext context) => Container(
-    width: 68,
-    height: 68,
-    decoration: BoxDecoration(
-      color: AppColors.studentPrimary,
-      borderRadius: BorderRadius.circular(16),
-    ),
-    child: const Icon(Icons.north_east_rounded, color: AppColors.ink, size: 34),
-  );
+  Widget build(BuildContext context) =>
+      Container(
+            width: 92,
+            height: 92,
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: AppColors.borderHigh),
+            ),
+            child: Image.asset(
+              'assets/branding/launchpad_mark.png',
+              fit: BoxFit.contain,
+              semanticLabel: 'LaunchPad logo',
+            ),
+          )
+          .animate()
+          .fadeIn(duration: 420.ms)
+          .scale(
+            begin: const Offset(.88, .88),
+            end: const Offset(1, 1),
+            curve: Curves.easeOutBack,
+            duration: 520.ms,
+          );
 }

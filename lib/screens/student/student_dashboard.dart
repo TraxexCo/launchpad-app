@@ -22,6 +22,8 @@ import '../../widgets/contract_action_panel.dart';
 import '../../widgets/dashboard_load_error.dart';
 import '../../widgets/notification_bell.dart';
 import '../../widgets/nearby_business_radar.dart';
+import '../../widgets/profile_avatar.dart';
+import '../../widgets/app_state_view.dart';
 
 class StudentDashboard extends StatefulWidget {
   const StudentDashboard({super.key});
@@ -33,6 +35,7 @@ class StudentDashboard extends StatefulWidget {
 class _StudentDashboardState extends State<StudentDashboard> {
   int _navIndex = 0;
   String _name = 'Student';
+  String? _avatarPath;
 
   @override
   void initState() {
@@ -49,7 +52,12 @@ class _StudentDashboardState extends State<StudentDashboard> {
       }
     });
     AuthService().getCurrentUser().then((user) {
-      if (mounted && user != null) setState(() => _name = user.name);
+      if (mounted && user != null) {
+        setState(() {
+          _name = user.name;
+          _avatarPath = user.avatarPath;
+        });
+      }
     });
   }
 
@@ -62,7 +70,11 @@ class _StudentDashboardState extends State<StudentDashboard> {
         child: SafeArea(
           child: Column(
             children: [
-              _AppBar(name: _name, onLogout: () => confirmSignOut(context)),
+              _AppBar(
+                name: _name,
+                avatarPath: _avatarPath,
+                onLogout: () => confirmSignOut(context),
+              ),
               Expanded(
                 child: IndexedStack(
                   index: _navIndex,
@@ -94,8 +106,13 @@ class _StudentDashboardState extends State<StudentDashboard> {
 // ─────────────────────────────────────────────────────────────────────────────
 class _AppBar extends StatelessWidget {
   final String name;
+  final String? avatarPath;
   final VoidCallback onLogout;
-  const _AppBar({required this.name, required this.onLogout});
+  const _AppBar({
+    required this.name,
+    required this.avatarPath,
+    required this.onLogout,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -109,29 +126,17 @@ class _AppBar extends StatelessWidget {
       child: Row(
         children: [
           // Avatar
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: AppColors.studentPrimary,
-              borderRadius: BorderRadius.circular(AppRadius.md),
-            ),
-            child: Center(
-              child: Text(
-                name
-                    .split(' ')
-                    .where((part) => part.isNotEmpty)
-                    .take(2)
-                    .map((part) => part[0])
-                    .join()
-                    .toUpperCase(),
-                style: GoogleFonts.manrope(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.ink,
-                ),
-              ),
-            ),
+          ProfileAvatar(
+            size: 42,
+            fallbackLabel: name
+                .split(' ')
+                .where((part) => part.isNotEmpty)
+                .take(2)
+                .map((part) => part[0])
+                .join()
+                .toUpperCase(),
+            storagePath: avatarPath,
+            square: true,
           ),
 
           const SizedBox(width: AppSpacing.sm + 2),
@@ -630,16 +635,39 @@ class _HomeTabState extends State<_HomeTab> {
           onAction: () => context.go('/student/portfolio/add'),
         ),
         const SizedBox(height: AppSpacing.md),
-        Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-            child: Text(
-              'No projects in portfolio yet.',
-              style: GoogleFonts.manrope(
-                color: AppColors.textMuted,
-                fontSize: 13,
+        AppCard(
+          onTap: () => context.go('/student/portfolio/add'),
+          child: const Row(
+            children: [
+              _EmptyStateGlyph(icon: Icons.add_photo_alternate_outlined),
+              SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Show what you can build',
+                      style: TextStyle(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    SizedBox(height: 3),
+                    Text(
+                      'Add a project with your role, process, and outcome.',
+                      style: TextStyle(
+                        color: AppColors.textMuted,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
+              Icon(
+                Icons.arrow_forward_rounded,
+                color: AppColors.studentPrimary,
+              ),
+            ],
           ),
         ),
         const SizedBox(height: AppSpacing.xl),
@@ -1258,12 +1286,17 @@ class _PortfolioTabState extends State<_PortfolioTab> {
             ),
 
           if (_projects.isEmpty && _githubRepos.isEmpty)
-            const Padding(
-              padding: EdgeInsets.only(top: AppSpacing.xxl),
-              child: Center(
-                child: Text(
-                  'No projects yet. Add your first project or link your GitHub.',
-                ),
+            SizedBox(
+              height: 330,
+              child: AppStateView(
+                icon: Icons.dashboard_customize_outlined,
+                title: 'Build your proof of work',
+                message:
+                    'Add a project case study or connect GitHub so businesses can understand how you solve real problems.',
+                accentColor: AppColors.studentPrimary,
+                actionLabel: 'Add first project',
+                actionIcon: Icons.add_rounded,
+                onAction: () => context.go('/student/portfolio/add'),
               ),
             ),
         ],
@@ -1292,7 +1325,7 @@ class _ProfileTabState extends State<_ProfileTab> {
 
     final profile = await client
         .from('profiles')
-        .select('full_name')
+        .select('full_name,avatar_path')
         .eq('id', userId)
         .single();
     final student = await client
@@ -1321,6 +1354,7 @@ class _ProfileTabState extends State<_ProfileTab> {
 
     return {
       'name': profile['full_name'] as String? ?? 'Student',
+      'avatarPath': profile['avatar_path'] as String?,
       'school': student?['school'] as String? ?? '',
       'course': student?['course'] as String? ?? '',
       'year': student?['year_level'] as String? ?? '',
@@ -1366,6 +1400,7 @@ class _ProfileTabState extends State<_ProfileTab> {
         final bio = profile['bio'] as String;
         final skills = profile['skills'] as List<String>;
         final status = profile['status'] as String;
+        final avatarPath = profile['avatarPath'] as String?;
 
         return SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
@@ -1374,23 +1409,11 @@ class _ProfileTabState extends State<_ProfileTab> {
               const SizedBox(height: AppSpacing.md),
               // Avatar hero
               Center(
-                child: Container(
-                  width: 90,
-                  height: 90,
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceMuted,
-                    borderRadius: BorderRadius.circular(AppRadius.xxl),
-                  ),
-                  child: Center(
-                    child: Text(
-                      initials.isNotEmpty ? initials : 'ST',
-                      style: GoogleFonts.manrope(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                  ),
+                child: ProfileAvatar(
+                  size: 90,
+                  fallbackLabel: initials.isNotEmpty ? initials : 'ST',
+                  storagePath: avatarPath,
+                  square: true,
                 ),
               ),
 
@@ -1543,6 +1566,26 @@ class _ProfileTabState extends State<_ProfileTab> {
 // ─────────────────────────────────────────────────────────────────────────────
 // SHARED SUB-WIDGETS
 // ─────────────────────────────────────────────────────────────────────────────
+
+class _EmptyStateGlyph extends StatelessWidget {
+  const _EmptyStateGlyph({required this.icon});
+
+  final IconData icon;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: 46,
+    height: 46,
+    decoration: BoxDecoration(
+      color: AppColors.studentPrimary.withValues(alpha: .10),
+      borderRadius: BorderRadius.circular(AppRadius.md),
+      border: Border.all(
+        color: AppColors.studentPrimary.withValues(alpha: .24),
+      ),
+    ),
+    child: Icon(icon, color: AppColors.studentPrimary, size: 22),
+  );
+}
 
 class _SectionHeader extends StatelessWidget {
   final String title;

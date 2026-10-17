@@ -9,12 +9,14 @@ class UserSession {
   final String role;
   final String name;
   final String email;
+  final String? avatarPath;
 
   const UserSession({
     required this.id,
     required this.role,
     required this.name,
     required this.email,
+    this.avatarPath,
   });
 }
 
@@ -170,7 +172,9 @@ class AuthService extends ChangeNotifier {
     if (user == null || _client.auth.currentSession == null) return null;
     final row = await _client
         .from('profiles')
-        .select('id, role, full_name, suspended_at, suspension_reason')
+        .select(
+          'id, role, full_name, avatar_path, suspended_at, suspension_reason',
+        )
         .eq('id', user.id)
         .single();
     if (row['suspended_at'] != null) {
@@ -184,6 +188,7 @@ class AuthService extends ChangeNotifier {
       role: row['role'] as String,
       name: row['full_name'] as String,
       email: user.email ?? '',
+      avatarPath: row['avatar_path'] as String?,
     );
   }
 

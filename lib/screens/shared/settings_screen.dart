@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -10,6 +11,8 @@ import '../../widgets/confirm_sign_out.dart';
 import '../../services/location_service.dart';
 import '../../services/notification_service.dart';
 import '../../services/auth_service.dart';
+import '../../services/profile_image_service.dart';
+import '../../widgets/profile_avatar.dart';
 
 class SettingsScreen extends StatefulWidget {
   final UserRole role;
@@ -25,6 +28,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _notifMessages = true;
   bool _loadingProfile = true;
   bool _locatingBusiness = false;
+  bool _uploadingPhoto = false;
   Map<String, dynamic> _profile = {};
 
   bool get _isStudent => widget.role == UserRole.student;
@@ -46,7 +50,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     try {
       final base = await client
           .from('profiles')
-          .select('full_name')
+          .select('full_name,avatar_path')
           .eq('id', user.id)
           .single();
       final roleProfile = _isStudent
@@ -91,6 +95,91 @@ class _SettingsScreenState extends State<SettingsScreen> {
           SnackBar(content: Text('Could not load account settings: $error')),
         );
       }
+    }
+  }
+
+  Future<void> _chooseProfilePhoto() async {
+    if (_uploadingPhoto) return;
+    final existing = _profile['avatar_path']?.toString();
+    final action = await showModalBottomSheet<String>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Profile photo',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                _isStudent
+                    ? 'Use a clear, recent photo so businesses recognize who they are working with.'
+                    : 'Use a storefront or brand photo so students recognize your business.',
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: Icon(Icons.photo_library_outlined, color: _primary),
+                title: const Text('Choose from device'),
+                subtitle: const Text('JPG, PNG, or WebP · up to 5 MB'),
+                onTap: () => Navigator.pop(sheetContext, 'choose'),
+              ),
+              if (existing != null && existing.isNotEmpty)
+                ListTile(
+                  leading: const Icon(
+                    Icons.delete_outline_rounded,
+                    color: AppColors.error,
+                  ),
+                  title: const Text('Remove current photo'),
+                  onTap: () => Navigator.pop(sheetContext, 'remove'),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (action == null) return;
+    setState(() => _uploadingPhoto = true);
+    try {
+      if (action == 'remove') {
+        await ProfileImageService().remove();
+        if (mounted) setState(() => _profile['avatar_path'] = null);
+      } else {
+        final file = await FilePicker.pickFile(type: FileType.image);
+        if (file == null) return;
+        final bytes = await file.readAsBytes();
+        final path = await ProfileImageService().upload(
+          bytes: bytes,
+          fileName: file.name,
+        );
+        if (mounted) setState(() => _profile['avatar_path'] = path);
+      }
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              action == 'remove'
+                  ? 'Profile photo removed.'
+                  : 'Profile photo updated.',
+            ),
+          ),
+        );
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Could not update photo: $error'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _uploadingPhoto = false);
     }
   }
 
@@ -815,30 +904,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
       child: Row(
         children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: AppColors.surfaceMuted,
-              shape: BoxShape.circle,
+          if (_loadingProfile || _uploadingPhoto)
+            const SizedBox(
+              width: 56,
+              height: 56,
+              child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+            )
+          else
+            ProfileAvatar(
+              size: 56,
+              fallbackLabel: initials,
+              storagePath: _profile['avatar_path']?.toString(),
+              square: !_isStudent,
+              showEditBadge: true,
+              onTap: _chooseProfilePhoto,
             ),
-            child: Center(
-              child: _loadingProfile
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Text(
-                      initials.isEmpty ? 'LP' : initials,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-            ),
-          ),
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(

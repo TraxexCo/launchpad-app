@@ -276,15 +276,15 @@ class _AdminIntro extends StatelessWidget {
           Container(
             width: 42,
             height: 42,
-            alignment: Alignment.center,
+            padding: const EdgeInsets.all(5),
             decoration: BoxDecoration(
-              color: AppColors.studentPrimary,
+              color: AppColors.surfaceHigh,
               borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: AppColors.borderHigh),
             ),
-            child: const Icon(
-              Icons.north_east_rounded,
-              color: AppColors.ink,
-              size: 23,
+            child: Image.asset(
+              'assets/branding/launchpad_mark.png',
+              semanticLabel: 'LaunchPad logo',
             ),
           ),
           const SizedBox(width: 13),

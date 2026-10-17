@@ -17,6 +17,8 @@ import '../../widgets/confirm_sign_out.dart';
 import '../../widgets/contract_action_panel.dart';
 import '../../widgets/dashboard_load_error.dart';
 import '../../widgets/notification_bell.dart';
+import '../../widgets/profile_avatar.dart';
+import '../../widgets/app_state_view.dart';
 
 class BusinessDashboard extends StatefulWidget {
   const BusinessDashboard({super.key});
@@ -28,6 +30,7 @@ class BusinessDashboard extends StatefulWidget {
 class _BusinessDashboardState extends State<BusinessDashboard> {
   int _navIndex = 0;
   String _businessName = 'Business';
+  String? _avatarPath;
 
   @override
   void initState() {
@@ -49,7 +52,10 @@ class _BusinessDashboardState extends State<BusinessDashboard> {
   Future<void> _loadUser() async {
     final user = await AuthService().getCurrentUser();
     if (user != null && mounted) {
-      setState(() => _businessName = user.name);
+      setState(() {
+        _businessName = user.name;
+        _avatarPath = user.avatarPath;
+      });
     }
   }
 
@@ -64,6 +70,7 @@ class _BusinessDashboardState extends State<BusinessDashboard> {
             children: [
               _BizAppBar(
                 businessName: _businessName,
+                avatarPath: _avatarPath,
                 onLogout: () => confirmSignOut(context),
               ),
               Expanded(
@@ -94,8 +101,13 @@ class _BusinessDashboardState extends State<BusinessDashboard> {
 // ─────────────────────────────────────────────────────────────────────────────
 class _BizAppBar extends StatelessWidget {
   final String businessName;
+  final String? avatarPath;
   final VoidCallback onLogout;
-  const _BizAppBar({required this.businessName, required this.onLogout});
+  const _BizAppBar({
+    required this.businessName,
+    required this.avatarPath,
+    required this.onLogout,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -109,18 +121,12 @@ class _BizAppBar extends StatelessWidget {
       child: Row(
         children: [
           // Business avatar
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: AppColors.studentPrimary,
-              borderRadius: BorderRadius.circular(AppRadius.md),
-            ),
-            child: const Icon(
-              Icons.storefront_rounded,
-              color: AppColors.ink,
-              size: 20,
-            ),
+          ProfileAvatar(
+            size: 42,
+            fallbackLabel: '',
+            fallbackIcon: Icons.storefront_rounded,
+            storagePath: avatarPath,
+            square: true,
           ),
 
           const SizedBox(width: AppSpacing.sm + 2),
@@ -855,34 +861,18 @@ class _BizJobsTabState extends State<_BizJobsTab> {
             )
           else if (_jobs.isEmpty)
             Expanded(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(
-                      Icons.work_off_outlined,
-                      size: 56,
-                      color: AppColors.textDisabled,
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    Text(
-                      'No jobs posted yet',
-                      style: GoogleFonts.manrope(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textMuted,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    Text(
-                      'Tap "+ Post Job" to create your first listing.',
-                      style: GoogleFonts.manrope(
-                        fontSize: 13,
-                        color: AppColors.textDisabled,
-                      ),
-                    ),
-                  ],
-                ),
+              child: AppStateView(
+                icon: Icons.work_outline_rounded,
+                title: 'Your first brief starts here',
+                message:
+                    'Describe the work, set a fair budget, and publish it to verified student talent nearby.',
+                accentColor: AppColors.businessPrimary,
+                actionLabel: 'Create a job post',
+                actionIcon: Icons.add_rounded,
+                onAction: () async {
+                  await context.push('/business/post-job');
+                  _loadJobs();
+                },
               ),
             )
           else
@@ -1204,12 +1194,13 @@ class _BizProposalsTabState extends State<_BizProposalsTab> {
               ),
             )
           else if (_proposals.isEmpty)
-            Expanded(
-              child: Center(
-                child: Text(
-                  'No proposals yet',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
+            const Expanded(
+              child: AppStateView(
+                icon: Icons.inbox_outlined,
+                title: 'No pitches to review yet',
+                message:
+                    'New student proposals will appear here with their photo, budget, timeline, and portfolio context.',
+                accentColor: AppColors.businessPrimary,
               ),
             )
           else
@@ -1242,13 +1233,20 @@ class _BizProfileTabState extends State<_BizProfileTab> {
   late final Future<Map<String, dynamic>> _profile = _loadProfile();
 
   Future<Map<String, dynamic>> _loadProfile() async {
-    final userId = Supabase.instance.client.auth.currentUser?.id;
+    final client = Supabase.instance.client;
+    final userId = client.auth.currentUser?.id;
     if (userId == null) throw StateError('Sign in to view your profile');
-    return Supabase.instance.client
+    final identity = await client
+        .from('profiles')
+        .select('avatar_path')
+        .eq('id', userId)
+        .single();
+    final business = await client
         .from('business_profiles')
         .select()
         .eq('user_id', userId)
         .single();
+    return {...business, ...identity};
   }
 
   @override
@@ -1271,18 +1269,12 @@ class _BizProfileTabState extends State<_BizProfileTab> {
           child: Column(
             children: [
               const SizedBox(height: AppSpacing.md),
-              Container(
-                width: 90,
-                height: 90,
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceMuted,
-                  borderRadius: BorderRadius.circular(AppRadius.xxl),
-                ),
-                child: const Icon(
-                  Icons.storefront_rounded,
-                  color: AppColors.textPrimary,
-                  size: 40,
-                ),
+              ProfileAvatar(
+                size: 90,
+                fallbackLabel: '',
+                fallbackIcon: Icons.storefront_rounded,
+                storagePath: profile['avatar_path'] as String?,
+                square: true,
               ),
               const SizedBox(height: AppSpacing.md),
               Text(
@@ -1620,26 +1612,14 @@ class _IncomingProposalCard extends StatelessWidget {
           context.go('/business/proposals/${proposal.id}', extra: proposal),
       child: Row(
         children: [
-          // Avatar
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: AppColors.surfaceMuted,
-              borderRadius: BorderRadius.circular(AppRadius.md),
-            ),
-            child: Center(
-              child: Text(
+          ProfileAvatar(
+            size: 44,
+            fallbackLabel:
                 proposal.studentName != null && proposal.studentName!.isNotEmpty
-                    ? proposal.studentName![0]
-                    : 'S',
-                style: GoogleFonts.manrope(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w800,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-            ),
+                ? proposal.studentName![0].toUpperCase()
+                : 'S',
+            storagePath: proposal.studentAvatarPath,
+            square: true,
           ),
           const SizedBox(width: AppSpacing.md),
           Expanded(

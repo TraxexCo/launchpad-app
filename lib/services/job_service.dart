@@ -55,6 +55,11 @@ class JobService {
         .select('user_id,business_name,verification_status')
         .inFilter('user_id', owners);
     final businessById = {for (final row in businesses) row['user_id']: row};
+    final identities = await _client
+        .from('profiles')
+        .select('id,avatar_path')
+        .inFilter('id', owners);
+    final identityById = {for (final row in identities) row['id']: row};
     final links = await _client
         .from('job_skills')
         .select('job_id,skills(name)')
@@ -71,6 +76,8 @@ class JobService {
         ...row,
         'business_profile_id': row['business_id'],
         'business_name': business?['business_name'],
+        'business_avatar_path':
+            identityById[row['business_id']]?['avatar_path'],
         'verification_status': business?['verification_status'],
         'skills': skillNames[row['id']] ?? <String>[],
       });

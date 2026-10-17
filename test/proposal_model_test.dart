@@ -8,6 +8,7 @@ void main() {
       'job_id': 9,
       'job_title': 'Ordering app',
       'business_name': 'Sample Café',
+      'student_avatar_path': 'student-id/avatar_1.webp',
       'pitch_text': 'I can deliver this project.',
       'proposed_budget': 12000,
       'estimated_timeline_weeks': 4,
@@ -16,9 +17,14 @@ void main() {
     });
 
     expect(proposal.businessName, 'Sample Café');
+    expect(proposal.studentAvatarPath, 'student-id/avatar_1.webp');
     expect(
       proposal.copyWith(jobTitle: 'Updated title').businessName,
       'Sample Café',
+    );
+    expect(
+      proposal.copyWith(jobTitle: 'Updated title').studentAvatarPath,
+      'student-id/avatar_1.webp',
     );
   });
 }

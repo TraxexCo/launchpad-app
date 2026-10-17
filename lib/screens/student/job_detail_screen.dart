@@ -11,6 +11,7 @@ import '../../widgets/app_button.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/skill_chip.dart';
 import '../../widgets/report_modal.dart';
+import '../../widgets/profile_avatar.dart';
 import '../../services/saved_job_service.dart';
 
 class JobDetailScreen extends StatefulWidget {
@@ -283,18 +284,12 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
       child: AppCard(
         child: Row(
           children: [
-            Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                color: AppColors.surfaceMuted,
-                borderRadius: BorderRadius.circular(AppRadius.lg),
-              ),
-              child: const Icon(
-                Icons.storefront_rounded,
-                color: Colors.white,
-                size: 28,
-              ),
+            ProfileAvatar(
+              size: 60,
+              fallbackLabel: '',
+              fallbackIcon: Icons.storefront_rounded,
+              storagePath: _job!.businessAvatarPath,
+              square: true,
             ),
             const SizedBox(width: AppSpacing.md),
             Expanded(
