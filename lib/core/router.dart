@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:go_router/go_router.dart';
 import 'app_route_policy.dart';
 import 'constants.dart';
@@ -26,10 +27,12 @@ import '../screens/shared/settings_screen.dart';
 import '../screens/shared/payment_screen.dart';
 import '../screens/shared/contract_workspace_screen.dart';
 import '../screens/admin/admin_portal_screen.dart';
+import '../screens/admin/admin_login_screen.dart';
 import '../screens/shared/legal_screen.dart';
 import '../models/job_post.dart';
 import '../models/proposal.dart';
 import '../services/auth_service.dart';
+import '../services/admin_service.dart';
 
 final appRouter = GoRouter(
   initialLocation: '/splash',
@@ -46,6 +49,35 @@ final appRouter = GoRouter(
         path == '/register' ||
         path.startsWith('/legal/');
     final user = await AuthService().getCurrentUser();
+
+    if (kIsWeb) {
+      final webPublicRoute =
+          path == '/admin/login' ||
+          path == '/recover-password' ||
+          path.startsWith('/legal/');
+      if (user == null) return webPublicRoute ? null : '/admin/login';
+
+      final admin = await AdminService().isAdmin();
+      if (!AppRoutePolicy.canUseAdminConsole(
+        isWeb: kIsWeb,
+        allowlisted: admin,
+      )) {
+        await AuthService().logout();
+        return '/admin/login?unauthorized=1';
+      }
+      if (path == '/admin/login' ||
+          path == '/splash' ||
+          path == '/onboarding' ||
+          path == '/login' ||
+          path == '/register') {
+        return '/admin';
+      }
+      if (path.startsWith('/legal/') || path == '/recover-password') {
+        return null;
+      }
+      return path == '/admin' ? null : '/admin';
+    }
+
     if (user == null) return publicRoute ? null : '/onboarding';
     final pendingPaymentPath = AuthService().takePendingPaymentPath();
     if (pendingPaymentPath != null && path != pendingPaymentPath) {
@@ -215,6 +247,12 @@ final appRouter = GoRouter(
     GoRoute(
       path: '/legal/terms',
       builder: (context, state) => const LegalScreen(showTerms: true),
+    ),
+    GoRoute(
+      path: '/admin/login',
+      builder: (context, state) => AdminLoginScreen(
+        unauthorized: state.uri.queryParameters['unauthorized'] == '1',
+      ),
     ),
     GoRoute(
       path: '/admin',

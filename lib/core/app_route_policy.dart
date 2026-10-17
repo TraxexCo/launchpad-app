@@ -29,4 +29,9 @@ class AppRoutePolicy {
 
   static bool canOpenPayment(String role) =>
       role == 'student' || role == 'business';
+
+  static bool canUseAdminConsole({
+    required bool isWeb,
+    required bool allowlisted,
+  }) => isWeb && allowlisted;
 }

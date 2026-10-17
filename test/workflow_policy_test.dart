@@ -68,5 +68,20 @@ void main() {
       expect(AppRoutePolicy.canOpenPayment('business'), isTrue);
       expect(AppRoutePolicy.canOpenPayment('admin'), isFalse);
     });
+
+    test('admin console requires both web and allowlist access', () {
+      expect(
+        AppRoutePolicy.canUseAdminConsole(isWeb: true, allowlisted: true),
+        isTrue,
+      );
+      expect(
+        AppRoutePolicy.canUseAdminConsole(isWeb: false, allowlisted: true),
+        isFalse,
+      );
+      expect(
+        AppRoutePolicy.canUseAdminConsole(isWeb: true, allowlisted: false),
+        isFalse,
+      );
+    });
   });
 }

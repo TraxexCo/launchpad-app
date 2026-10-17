@@ -17,6 +17,8 @@ class AppTextField extends StatefulWidget {
   final Widget? suffixIcon;
   final TextInputAction? textInputAction;
   final bool enabled;
+  final Iterable<String>? autofillHints;
+  final ValueChanged<String>? onFieldSubmitted;
 
   const AppTextField({
     super.key,
@@ -33,6 +35,8 @@ class AppTextField extends StatefulWidget {
     this.suffixIcon,
     this.textInputAction,
     this.enabled = true,
+    this.autofillHints,
+    this.onFieldSubmitted,
   });
 
   @override
@@ -87,6 +91,8 @@ class _AppTextFieldState extends State<AppTextField>
       maxLines: widget.obscureText ? 1 : widget.maxLines,
       textInputAction: widget.textInputAction,
       enabled: widget.enabled,
+      autofillHints: widget.autofillHints,
+      onFieldSubmitted: widget.onFieldSubmitted,
       style: GoogleFonts.manrope(color: AppColors.textPrimary, fontSize: 15),
       decoration: InputDecoration(
         labelText: widget.label,

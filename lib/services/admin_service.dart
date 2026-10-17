@@ -39,10 +39,24 @@ class AdminService {
   Future<List<Map<String, dynamic>>> payments() => _client
       .from('payments')
       .select(
-        'id,contract_id,amount,status,reference_number,payment_method,created_at,updated_at',
+        'id,contract_id,amount,status,reference_number,payment_method,provider_payment_id,created_at,updated_at',
       )
       .order('created_at', ascending: false)
       .limit(100);
+
+  Future<List<Map<String, dynamic>>> accounts() => _client
+      .from('profiles')
+      .select('id,role,full_name,created_at,suspended_at,suspension_reason')
+      .order('created_at', ascending: false)
+      .limit(200);
+
+  Future<List<Map<String, dynamic>>> jobs() => _client
+      .from('jobs')
+      .select(
+        'id,business_id,title,budget,status,location,created_at,moderated_at,moderation_note,business_profiles(business_name)',
+      )
+      .order('created_at', ascending: false)
+      .limit(200);
 
   Future<void> reviewVerification(int id, bool approve, String? note) =>
       _client.rpc(
@@ -64,6 +78,28 @@ class AdminService {
         'admin_resolve_dispute',
         params: {'contract_key': id, 'decision': decision, 'note_text': note},
       );
+
+  Future<void> setUserSuspension(
+    String userId, {
+    required bool suspended,
+    String? reason,
+  }) => _client.rpc(
+    'admin_set_user_suspension',
+    params: {
+      'target_user': userId,
+      'suspend_user': suspended,
+      'reason_text': reason,
+    },
+  );
+
+  Future<void> moderateJob(
+    int jobId, {
+    required bool close,
+    required String note,
+  }) => _client.rpc(
+    'admin_moderate_job',
+    params: {'job_key': jobId, 'close_job': close, 'note_text': note},
+  );
 
   Future<String> verificationFileUrl(String ownerId, int documentId) async {
     final row = await _client

@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:go_router/go_router.dart';
 import '../../core/constants.dart';
 import '../../services/admin_service.dart';
+import '../../services/auth_service.dart';
 import '../../widgets/app_background.dart';
 import '../../widgets/app_card.dart';
 
@@ -25,11 +27,13 @@ class _AdminPortalScreenState extends State<AdminPortalScreen>
   List<Map<String, dynamic>> _reports = const [];
   List<Map<String, dynamic>> _disputes = const [];
   List<Map<String, dynamic>> _payments = const [];
+  List<Map<String, dynamic>> _accounts = const [];
+  List<Map<String, dynamic>> _jobs = const [];
 
   @override
   void initState() {
     super.initState();
-    _tabs = TabController(length: 4, vsync: this);
+    _tabs = TabController(length: 6, vsync: this);
     _load();
   }
 
@@ -54,6 +58,8 @@ class _AdminPortalScreenState extends State<AdminPortalScreen>
         _service.reports(),
         _service.disputes(),
         _service.payments(),
+        _service.accounts(),
+        _service.jobs(),
       ]);
       if (!mounted) return;
       setState(() {
@@ -62,6 +68,8 @@ class _AdminPortalScreenState extends State<AdminPortalScreen>
         _reports = data[1];
         _disputes = data[2];
         _payments = data[3];
+        _accounts = data[4];
+        _jobs = data[5];
       });
     } catch (error) {
       if (mounted) {
@@ -74,28 +82,61 @@ class _AdminPortalScreenState extends State<AdminPortalScreen>
     }
   }
 
-  Future<String?> _note(String title, {String action = 'Confirm'}) async {
+  Future<String?> _note(
+    String title, {
+    String action = 'Confirm',
+    String? helper,
+  }) async {
     final controller = TextEditingController();
     final result = await showDialog<String>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        content: TextField(
-          controller: controller,
-          minLines: 3,
-          maxLines: 6,
-          decoration: const InputDecoration(labelText: 'Decision notes'),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(title),
+          content: SizedBox(
+            width: 460,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (helper != null) ...[
+                  Text(
+                    helper,
+                    style: const TextStyle(
+                      color: AppColors.textSecondary,
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                TextField(
+                  controller: controller,
+                  autofocus: true,
+                  minLines: 3,
+                  maxLines: 6,
+                  maxLength: 500,
+                  onChanged: (_) => setDialogState(() {}),
+                  decoration: const InputDecoration(
+                    labelText: 'Decision notes',
+                    helperText: 'At least 10 characters',
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: controller.text.trim().length >= 10
+                  ? () => Navigator.pop(context, controller.text.trim())
+                  : null,
+              child: Text(action),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Back'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, controller.text.trim()),
-            child: Text(action),
-          ),
-        ],
       ),
     );
     controller.dispose();
@@ -123,16 +164,63 @@ class _AdminPortalScreenState extends State<AdminPortalScreen>
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
-      title: const Text('LaunchPad Admin'),
+      toolbarHeight: 72,
+      titleSpacing: 24,
+      title: Row(
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: AppColors.studentPrimary,
+              borderRadius: BorderRadius.circular(9),
+            ),
+            child: const Icon(
+              Icons.north_east_rounded,
+              color: AppColors.ink,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'LAUNCHPAD',
+                style: GoogleFonts.manrope(
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1.5,
+                  fontSize: 15,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const Text(
+                'ADMIN OPERATIONS',
+                style: TextStyle(
+                  color: AppColors.textMuted,
+                  fontSize: 9,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 1.1,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
       bottom: _authorized
           ? TabBar(
               controller: _tabs,
               isScrollable: true,
+              tabAlignment: TabAlignment.start,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
               tabs: const [
-                Tab(text: 'Verification'),
-                Tab(text: 'Reports'),
-                Tab(text: 'Disputes'),
-                Tab(text: 'Payments'),
+                Tab(icon: Icon(Icons.badge_outlined), text: 'Verification'),
+                Tab(icon: Icon(Icons.flag_outlined), text: 'Reports'),
+                Tab(icon: Icon(Icons.gavel_outlined), text: 'Disputes'),
+                Tab(icon: Icon(Icons.people_outline_rounded), text: 'Accounts'),
+                Tab(icon: Icon(Icons.work_outline_rounded), text: 'Jobs'),
+                Tab(icon: Icon(Icons.receipt_long_outlined), text: 'Payments'),
               ],
             )
           : null,
@@ -142,11 +230,22 @@ class _AdminPortalScreenState extends State<AdminPortalScreen>
           onPressed: _load,
           icon: const Icon(Icons.refresh_rounded),
         ),
+        const SizedBox(width: 4),
+        TextButton.icon(
+          onPressed: () async {
+            await AuthService().logout();
+            if (context.mounted) context.go('/admin/login');
+          },
+          icon: const Icon(Icons.logout_rounded, size: 18),
+          label: const Text('Sign out'),
+        ),
+        const SizedBox(width: 16),
       ],
     ),
     body: AppBackground(
+      tintColor: AppColors.studentPrimary,
       child: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? _loadingView()
           : _error != null
           ? _center(_error!, Icons.error_outline_rounded)
           : !_authorized
@@ -162,9 +261,34 @@ class _AdminPortalScreenState extends State<AdminPortalScreen>
                 _verificationTab(),
                 _reportTab(),
                 _disputeTab(),
+                _accountTab(),
+                _jobTab(),
                 _paymentTab(),
               ],
             ),
+    ),
+  );
+
+  Widget _loadingView() => Center(
+    child: ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 1180),
+      child: GridView.count(
+        padding: const EdgeInsets.all(28),
+        crossAxisCount: MediaQuery.sizeOf(context).width > 900 ? 3 : 1,
+        crossAxisSpacing: 14,
+        mainAxisSpacing: 14,
+        childAspectRatio: 2.7,
+        children: List.generate(
+          6,
+          (_) => Container(
+            decoration: BoxDecoration(
+              color: AppColors.surfaceHigh,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: AppColors.border),
+            ),
+          ),
+        ),
+      ),
     ),
   );
 
@@ -311,7 +435,12 @@ class _AdminPortalScreenState extends State<AdminPortalScreen>
           ),
           FilledButton(
             onPressed: () async {
-              final note = await _note('Mark classroom refund');
+              final note = await _note(
+                'Record classroom refund',
+                action: 'Record refund',
+                helper:
+                    'PayMongo test transactions do not move real funds. This records the approved refund for the classroom workflow.',
+              );
               if (note != null) {
                 await _act(
                   () => _service.resolveDispute(
@@ -322,8 +451,120 @@ class _AdminPortalScreenState extends State<AdminPortalScreen>
                 );
               }
             },
-            child: const Text('Refund'),
+            child: const Text('Record test refund'),
           ),
+        ],
+      );
+    },
+  );
+
+  Widget _accountTab() => _queue(
+    _accounts,
+    empty: 'No registered accounts',
+    builder: (item) {
+      final userId = item['id'].toString();
+      final suspended = item['suspended_at'] != null;
+      return _adminCard(
+        title: item['full_name']?.toString() ?? 'Unnamed account',
+        tag: suspended ? 'suspended' : 'active',
+        detail: suspended
+            ? '${item['role']} · ${item['suspension_reason'] ?? 'No suspension reason recorded'}'
+            : '${item['role']} · joined ${_date(item['created_at'])}',
+        actions: [
+          if (suspended)
+            FilledButton.icon(
+              onPressed: () => _act(
+                () => _service.setUserSuspension(userId, suspended: false),
+              ),
+              icon: const Icon(Icons.person_add_alt_rounded, size: 18),
+              label: const Text('Restore account'),
+            )
+          else
+            FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.error,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () async {
+                final note = await _note(
+                  'Suspend account',
+                  action: 'Suspend',
+                  helper:
+                      'Explain the policy violation. The user will be signed out and blocked.',
+                );
+                if (note != null) {
+                  await _act(
+                    () => _service.setUserSuspension(
+                      userId,
+                      suspended: true,
+                      reason: note,
+                    ),
+                  );
+                }
+              },
+              icon: const Icon(Icons.block_rounded, size: 18),
+              label: const Text('Suspend'),
+            ),
+        ],
+      );
+    },
+  );
+
+  Widget _jobTab() => _queue(
+    _jobs,
+    empty: 'No job posts',
+    builder: (item) {
+      final jobId = item['id'] as int;
+      final business = item['business_profiles'] as Map<String, dynamic>?;
+      final open = item['status'] == 'open';
+      final moderated = item['moderated_at'] != null;
+      return _adminCard(
+        title: item['title']?.toString() ?? 'Job #$jobId',
+        tag: item['status'].toString(),
+        detail:
+            '${business?['business_name'] ?? 'Business'} · PHP ${item['budget']} · ${item['location']}\n'
+            '${moderated ? item['moderation_note'] ?? 'Moderated by an administrator' : 'Posted ${_date(item['created_at'])}'}',
+        actions: [
+          if (open)
+            FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.error,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () async {
+                final note = await _note(
+                  'Close job post',
+                  action: 'Close job',
+                  helper:
+                      'Explain why this post must be removed from the marketplace.',
+                );
+                if (note != null) {
+                  await _act(
+                    () => _service.moderateJob(jobId, close: true, note: note),
+                  );
+                }
+              },
+              icon: const Icon(Icons.visibility_off_outlined, size: 18),
+              label: const Text('Close job'),
+            )
+          else if (item['status'] == 'closed' && moderated)
+            OutlinedButton.icon(
+              onPressed: () async {
+                final note = await _note(
+                  'Reopen job post',
+                  action: 'Reopen',
+                  helper:
+                      'Record why this post is safe to return to the marketplace.',
+                );
+                if (note != null) {
+                  await _act(
+                    () => _service.moderateJob(jobId, close: false, note: note),
+                  );
+                }
+              },
+              icon: const Icon(Icons.visibility_outlined, size: 18),
+              label: const Text('Reopen job'),
+            ),
         ],
       );
     },
@@ -341,6 +582,26 @@ class _AdminPortalScreenState extends State<AdminPortalScreen>
     ),
   );
 
+  String _date(dynamic value) {
+    final date = DateTime.tryParse('$value')?.toLocal();
+    if (date == null) return 'unknown date';
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${months[date.month - 1]} ${date.day}, ${date.year}';
+  }
+
   Widget _queue(
     List<Map<String, dynamic>> items, {
     required String empty,
@@ -349,12 +610,17 @@ class _AdminPortalScreenState extends State<AdminPortalScreen>
       ? _center(empty, Icons.inbox_outlined)
       : RefreshIndicator(
           onRefresh: _load,
-          child: ListView.builder(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            itemCount: items.length,
-            itemBuilder: (_, index) => Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: builder(items[index]),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 1180),
+              child: ListView.builder(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                itemCount: items.length,
+                itemBuilder: (_, index) => Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: builder(items[index]),
+                ),
+              ),
             ),
           ),
         );
@@ -365,50 +631,76 @@ class _AdminPortalScreenState extends State<AdminPortalScreen>
     required List<Widget> actions,
   }) => AppCard(
     accentColor: AppColors.businessPrimary,
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                title,
-                style: GoogleFonts.manrope(
-                  fontSize: 17,
-                  fontWeight: FontWeight.w800,
+    padding: const EdgeInsets.all(20),
+    child: LayoutBuilder(
+      builder: (context, constraints) => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Text(
+                  title,
+                  style: GoogleFonts.manrope(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
-            ),
-            _tag(tag),
+              const SizedBox(width: 14),
+              _tag(tag),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            detail,
+            style: const TextStyle(color: AppColors.textSecondary, height: 1.5),
+          ),
+          if (actions.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            const Divider(height: 1),
+            const SizedBox(height: 12),
+            Wrap(spacing: 8, runSpacing: 8, children: actions),
           ],
-        ),
-        const SizedBox(height: 8),
-        Text(
-          detail,
-          style: const TextStyle(color: AppColors.textSecondary, height: 1.4),
-        ),
-        if (actions.isNotEmpty) ...[
-          const SizedBox(height: 12),
-          Wrap(spacing: 8, runSpacing: 8, children: actions),
         ],
-      ],
-    ),
-  );
-  Widget _tag(String text) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-    decoration: BoxDecoration(
-      color: AppColors.info.withValues(alpha: .12),
-      borderRadius: BorderRadius.circular(99),
-    ),
-    child: Text(
-      text.toUpperCase(),
-      style: const TextStyle(
-        fontSize: 10,
-        fontWeight: FontWeight.w800,
-        color: AppColors.info,
       ),
     ),
   );
+
+  Widget _tag(String text) {
+    final tone = switch (text.toLowerCase()) {
+      'active' ||
+      'verified' ||
+      'paid' ||
+      'released' ||
+      'resolved' => AppColors.success,
+      'suspended' || 'rejected' || 'failed' || 'disputed' => AppColors.error,
+      'pending' ||
+      'open' ||
+      'reviewing' ||
+      'checkout_created' => AppColors.warning,
+      _ => AppColors.info,
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      decoration: BoxDecoration(
+        color: tone.withValues(alpha: .10),
+        border: Border.all(color: tone.withValues(alpha: .45)),
+        borderRadius: BorderRadius.circular(7),
+      ),
+      child: Text(
+        text.replaceAll('_', ' ').toUpperCase(),
+        style: TextStyle(
+          fontSize: 9,
+          fontWeight: FontWeight.w900,
+          letterSpacing: .6,
+          color: tone,
+        ),
+      ),
+    );
+  }
+
   Widget _center(String text, IconData icon) => Center(
     child: Padding(
       padding: const EdgeInsets.all(32),

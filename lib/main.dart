@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'dart:async';
-import 'dart:ui';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'core/constants.dart';
 import 'core/router.dart';
@@ -54,13 +54,14 @@ class LaunchPadApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
-      title: 'LaunchPad',
+      title: kIsWeb ? 'LaunchPad Admin' : 'LaunchPad',
       theme: AppTheme.light,
       darkTheme: AppTheme.light,
       themeMode: ThemeMode.dark,
       routerConfig: appRouter,
       debugShowCheckedModeBanner: false,
-      builder: (context, child) => NetworkBanner(child: child ?? const SizedBox.shrink()),
+      builder: (context, child) =>
+          NetworkBanner(child: child ?? const SizedBox.shrink()),
     );
   }
 }

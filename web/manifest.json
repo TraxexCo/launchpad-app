@@ -1,12 +1,11 @@
 {
-    "name": "launchpad_app",
-    "short_name": "launchpad_app",
+    "name": "LaunchPad Admin",
+    "short_name": "LaunchPad",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
-    "orientation": "portrait-primary",
+    "background_color": "#101114",
+    "theme_color": "#101114",
+    "description": "LaunchPad administrator operations console.",
     "prefer_related_applications": false,
     "icons": [
         {
