@@ -65,11 +65,19 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
     }
   }
 
-  String _clean(Object error) => error
-      .toString()
-      .replaceFirst('AuthException(message: ', '')
-      .replaceFirst(RegExp(r', statusCode:.*$'), '')
-      .replaceAll(')', '');
+  String _clean(Object error) {
+    if (error is AuthException) {
+      final message = error.message.toLowerCase();
+      if (message.contains('invalid login credentials')) {
+        return 'Email or password is incorrect.';
+      }
+      if (message.contains('email not confirmed')) {
+        return 'Confirm your email before signing in.';
+      }
+      return error.message;
+    }
+    return 'We could not sign you in. Please try again.';
+  }
 
   @override
   Widget build(BuildContext context) {
