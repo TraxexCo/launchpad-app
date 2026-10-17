@@ -12,6 +12,15 @@ void main() {
       expect(FormValidation.email('usertest.com'), isNotNull);
     });
 
+    test('email rejects embedded whitespace', () {
+      expect(FormValidation.email('user name@test.com'), isNotNull);
+      expect(FormValidation.email('user@test .com'), isNotNull);
+    });
+
+    test('email accepts a normal address', () {
+      expect(FormValidation.email('student@launchpad.ph'), isNull);
+    });
+
     test('password rejects value shorter than 6 chars', () {
       expect(FormValidation.password('12345'), isNotNull);
     });
@@ -35,7 +44,12 @@ void main() {
     });
 
     test('strongPassword accepts 8+ chars', () {
-      expect(FormValidation.strongPassword('longpass'), isNull);
+      expect(FormValidation.strongPassword('launchpad8'), isNull);
+    });
+
+    test('strongPassword requires both letters and numbers', () {
+      expect(FormValidation.strongPassword('onlyletters'), isNotNull);
+      expect(FormValidation.strongPassword('12345678'), isNotNull);
     });
   });
 

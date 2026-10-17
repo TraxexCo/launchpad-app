@@ -6,8 +6,13 @@ class FormValidation {
   const FormValidation._();
 
   /// Ensures the field is not empty.
-  static String? requiredField(String? value, [String fieldName = 'This field']) {
-    return (value == null || value.trim().isEmpty) ? '$fieldName is required' : null;
+  static String? requiredField(
+    String? value, [
+    String fieldName = 'This field',
+  ]) {
+    return (value == null || value.trim().isEmpty)
+        ? '$fieldName is required'
+        : null;
   }
 
   /// Validates an email address format.
@@ -31,6 +36,10 @@ class FormValidation {
   static String? strongPassword(String? value) {
     if (value == null || value.isEmpty) return 'Password is required';
     if (value.length < 8) return 'Use at least 8 characters';
+    if (!RegExp(r'[A-Za-z]').hasMatch(value) ||
+        !RegExp(r'[0-9]').hasMatch(value)) {
+      return 'Include at least one letter and one number';
+    }
     return null;
   }
 

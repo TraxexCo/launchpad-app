@@ -17,8 +17,15 @@ import '../core/constants.dart';
 /// ```
 class NetworkBanner extends StatefulWidget {
   final Widget child;
+  final Future<List<ConnectivityResult>> Function()? checkConnectivity;
+  final Stream<List<ConnectivityResult>>? connectivityChanges;
 
-  const NetworkBanner({super.key, required this.child});
+  const NetworkBanner({
+    super.key,
+    required this.child,
+    this.checkConnectivity,
+    this.connectivityChanges,
+  });
 
   @override
   State<NetworkBanner> createState() => _NetworkBannerState();
@@ -29,7 +36,9 @@ class _NetworkBannerState extends State<NetworkBanner>
   late final AnimationController _ctrl;
   late final Animation<Offset> _slide;
   StreamSubscription<List<ConnectivityResult>>? _sub;
+  Timer? _hideTimer;
   bool _offline = false;
+  bool _showBanner = false;
 
   @override
   void initState() {
@@ -43,24 +52,35 @@ class _NetworkBannerState extends State<NetworkBanner>
       begin: const Offset(0, -1),
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
+    _ctrl.addStatusListener((status) {
+      if (status == AnimationStatus.dismissed && !_offline && mounted) {
+        setState(() => _showBanner = false);
+      }
+    });
 
-    // Check initial connectivity
-    Connectivity().checkConnectivity().then(_handleResult);
+    final connectivity = Connectivity();
+    (widget.checkConnectivity?.call() ?? connectivity.checkConnectivity()).then(
+      _handleResult,
+    );
 
-    // Listen for changes
-    _sub = Connectivity().onConnectivityChanged.listen(_handleResult);
+    _sub = (widget.connectivityChanges ?? connectivity.onConnectivityChanged)
+        .listen(_handleResult);
   }
 
   void _handleResult(List<ConnectivityResult> results) {
     final isOffline = results.every((r) => r == ConnectivityResult.none);
     if (isOffline == _offline) return;
     if (!mounted) return;
-    setState(() => _offline = isOffline);
+    setState(() {
+      _offline = isOffline;
+      _showBanner = true;
+    });
     if (isOffline) {
+      _hideTimer?.cancel();
       _ctrl.forward();
     } else {
-      // Show "back online" briefly, then hide
-      Future.delayed(const Duration(seconds: 2), () {
+      _hideTimer?.cancel();
+      _hideTimer = Timer(const Duration(seconds: 2), () {
         if (mounted) _ctrl.reverse();
       });
     }
@@ -69,6 +89,7 @@ class _NetworkBannerState extends State<NetworkBanner>
   @override
   void dispose() {
     _sub?.cancel();
+    _hideTimer?.cancel();
     _ctrl.dispose();
     super.dispose();
   }
@@ -78,15 +99,16 @@ class _NetworkBannerState extends State<NetworkBanner>
     return Stack(
       children: [
         widget.child,
-        Positioned(
-          top: 0,
-          left: 0,
-          right: 0,
-          child: SlideTransition(
-            position: _slide,
-            child: _offline ? _OfflineBanner() : _OnlineBanner(),
+        if (_showBanner)
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SlideTransition(
+              position: _slide,
+              child: _offline ? _OfflineBanner() : _OnlineBanner(),
+            ),
           ),
-        ),
       ],
     );
   }

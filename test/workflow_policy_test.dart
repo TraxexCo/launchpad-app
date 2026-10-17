@@ -55,4 +55,18 @@ void main() {
       expect(AppRoutePolicy.isSafeNotificationRoute(null), isFalse);
     });
   });
+
+  group('role route policy', () {
+    test('each account type resolves to its own dashboard', () {
+      expect(AppRoutePolicy.homeForRole('student'), '/student');
+      expect(AppRoutePolicy.homeForRole('business'), '/business');
+      expect(AppRoutePolicy.homeForRole('admin'), '/admin');
+    });
+
+    test('only marketplace participants can open payment screens', () {
+      expect(AppRoutePolicy.canOpenPayment('student'), isTrue);
+      expect(AppRoutePolicy.canOpenPayment('business'), isTrue);
+      expect(AppRoutePolicy.canOpenPayment('admin'), isFalse);
+    });
+  });
 }

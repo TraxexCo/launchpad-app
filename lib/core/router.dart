@@ -1,4 +1,5 @@
 import 'package:go_router/go_router.dart';
+import 'app_route_policy.dart';
 import 'constants.dart';
 import '../screens/splash_screen.dart';
 import '../screens/onboarding/onboarding_screen.dart';
@@ -42,14 +43,15 @@ final appRouter = GoRouter(
         path == '/splash' ||
         path == '/onboarding' ||
         path == '/login' ||
-        path == '/register';
+        path == '/register' ||
+        path.startsWith('/legal/');
     final user = await AuthService().getCurrentUser();
     if (user == null) return publicRoute ? null : '/onboarding';
     final pendingPaymentPath = AuthService().takePendingPaymentPath();
     if (pendingPaymentPath != null && path != pendingPaymentPath) {
       return pendingPaymentPath;
     }
-    final home = user.role == 'business' ? '/business' : '/student';
+    final home = AppRoutePolicy.homeForRole(user.role);
     if (path == '/splash' ||
         path == '/onboarding' ||
         path == '/login' ||
@@ -64,6 +66,10 @@ final appRouter = GoRouter(
     }
     // Guard: /admin is only accessible to users with role == 'admin'
     if (path.startsWith('/admin') && user.role != 'admin') {
+      return '$home?unauthorized=1';
+    }
+    if (path.startsWith('/payment/') &&
+        !AppRoutePolicy.canOpenPayment(user.role)) {
       return '$home?unauthorized=1';
     }
     return null;

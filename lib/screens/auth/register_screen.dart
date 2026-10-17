@@ -431,7 +431,7 @@ class _AccountStep extends StatelessWidget {
             color: AppColors.textMuted,
             size: 18,
           ),
-          validator: FormValidation.password,
+          validator: FormValidation.strongPassword,
         ),
       ],
     );

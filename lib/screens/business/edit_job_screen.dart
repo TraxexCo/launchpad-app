@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../core/constants.dart';
+import '../../core/form_validation.dart';
 import '../../widgets/app_background.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_text_field.dart';
@@ -217,9 +218,8 @@ class _EditJobScreenState extends State<EditJobScreen> {
                           controller: _titleCtrl,
                           label: 'Job Title',
                           hint: 'e.g. Online Ordering App for Café',
-                          validator: (v) => v == null || v.isEmpty
-                              ? 'Title is required'
-                              : null,
+                          validator: (v) =>
+                              FormValidation.requiredField(v, 'Title'),
                         ),
                         const SizedBox(height: AppSpacing.md),
                         AppTextField(
@@ -227,9 +227,7 @@ class _EditJobScreenState extends State<EditJobScreen> {
                           label: 'Description',
                           hint: 'Describe what you need built...',
                           maxLines: 4,
-                          validator: (v) => v == null || v.isEmpty
-                              ? 'Description is required'
-                              : null,
+                          validator: FormValidation.jobDescription,
                         ),
                         const SizedBox(height: AppSpacing.md),
                         AppTextField(
@@ -237,24 +235,23 @@ class _EditJobScreenState extends State<EditJobScreen> {
                           label: 'Budget (₱)',
                           hint: 'e.g. 8000',
                           keyboardType: TextInputType.number,
-                          validator: (v) => v == null || v.isEmpty
-                              ? 'Budget is required'
-                              : null,
+                          validator: FormValidation.jobBudget,
                         ),
                         const SizedBox(height: AppSpacing.md),
                         AppTextField(
                           controller: _timelineCtrl,
                           label: 'Timeline',
                           hint: 'e.g. 3 weeks',
-                          validator: (v) => v == null || v.isEmpty
-                              ? 'Timeline is required'
-                              : null,
+                          validator: (v) =>
+                              FormValidation.requiredField(v, 'Timeline'),
                         ),
                         const SizedBox(height: AppSpacing.md),
                         AppTextField(
                           controller: _locationCtrl,
                           label: 'Location',
                           hint: 'e.g. Sta. Mesa, Manila',
+                          validator: (v) =>
+                              FormValidation.requiredField(v, 'Location'),
                         ),
                         const SizedBox(height: AppSpacing.lg),
                         Text(

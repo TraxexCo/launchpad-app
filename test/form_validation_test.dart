@@ -17,10 +17,7 @@ void main() {
     });
 
     test('includes the field name in the error message', () {
-      expect(
-        FormValidation.requiredField('', 'Email'),
-        contains('Email'),
-      );
+      expect(FormValidation.requiredField('', 'Email'), contains('Email'));
     });
 
     test('returns null for a valid non-empty value', () {
@@ -77,7 +74,7 @@ void main() {
     });
 
     test('accepts exactly 8 characters', () {
-      expect(FormValidation.strongPassword('12345678'), isNull);
+      expect(FormValidation.strongPassword('secure123'), isNull);
     });
   });
 

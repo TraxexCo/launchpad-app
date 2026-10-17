@@ -31,7 +31,11 @@ class _ChatScreenState extends State<ChatScreen> {
   String? _error;
 
   /// SharedPreferences key scoped to this chat conversation.
-  String get _pendingKey => 'chat_pending_${widget.chatId}';
+  String get _pendingKey {
+    final userId =
+        Supabase.instance.client.auth.currentUser?.id ?? 'signed-out';
+    return 'chat_pending_${userId}_${widget.chatId}';
+  }
 
   @override
   void initState() {
@@ -47,7 +51,9 @@ class _ChatScreenState extends State<ChatScreen> {
     if (pending.isNotEmpty && mounted) {
       setState(() {
         _failedMessages.addAll(
-          pending.map((t) => _Msg(text: t, fromMe: true, time: 'Not sent', failed: true)),
+          pending.map(
+            (t) => _Msg(text: t, fromMe: true, time: 'Not sent', failed: true),
+          ),
         );
       });
     }

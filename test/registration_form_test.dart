@@ -23,7 +23,7 @@ void main() {
     await tester.tap(find.text('Continue'));
     await tester.pump(const Duration(milliseconds: 600));
 
-    expect(find.text('Password must be at least 6 characters'), findsOneWidget);
+    expect(find.text('Use at least 8 characters'), findsOneWidget);
     expect(find.text('Step 1 of 3'), findsOneWidget);
 
     await tester.enterText(fields.at(2), 'P@ssw0rd123');

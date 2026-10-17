@@ -20,4 +20,13 @@ class AppRoutePolicy {
       '/settings',
     }.contains(route);
   }
+
+  static String homeForRole(String role) => switch (role) {
+    'business' => '/business',
+    'admin' => '/admin',
+    _ => '/student',
+  };
+
+  static bool canOpenPayment(String role) =>
+      role == 'student' || role == 'business';
 }
