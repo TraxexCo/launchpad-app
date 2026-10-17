@@ -4,7 +4,10 @@ class NotificationService {
   final _client = Supabase.instance.client;
 
   /// Fetch all notifications for the current user
-  Future<List<Map<String, dynamic>>> getNotifications() async {
+  Future<List<Map<String, dynamic>>> getNotifications({
+    int page = 0,
+    int pageSize = 50,
+  }) async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) return [];
 
@@ -12,7 +15,8 @@ class NotificationService {
         .from('notifications')
         .select()
         .eq('user_id', userId)
-        .order('created_at', ascending: false);
+        .order('created_at', ascending: false)
+        .range(page * pageSize, (page + 1) * pageSize - 1);
   }
 
   /// Mark a notification as read

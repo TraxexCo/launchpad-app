@@ -37,7 +37,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
           .from('notifications')
           .stream(primaryKey: ['id'])
           .eq('user_id', userId)
-          .order('created_at', ascending: false);
+          .order('created_at', ascending: false)
+          .limit(100);
     } else {
       _notifsStream = Stream.value([]);
     }

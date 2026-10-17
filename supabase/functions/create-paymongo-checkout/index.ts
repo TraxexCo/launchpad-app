@@ -1,14 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
-
-const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
-  status,
-  headers: { ...corsHeaders, "Content-Type": "application/json" },
-});
+import { consumeRateLimit, corsHeaders } from "../_shared/security.ts";
 type ContractRow = {
   id: number;
   business_id: string;
@@ -19,7 +10,13 @@ type ContractRow = {
 };
 
 Deno.serve(async (request) => {
-  if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  const cors = corsHeaders(request);
+  const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
+    status,
+    headers: { ...(cors ?? {}), "Content-Type": "application/json" },
+  });
+  if (!cors) return json({ error: "Origin not allowed." }, 403);
+  if (request.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
 
   try {
@@ -45,6 +42,9 @@ Deno.serve(async (request) => {
     }
 
     const admin = createClient(supabaseUrl, serviceKey);
+    if (!(await consumeRateLimit(admin, "payment-create", authData.user.id, 8, 60))) {
+      return json({ error: "Too many checkout attempts. Try again in a minute." }, 429);
+    }
     const { data, error: contractError } = await admin
       .from("contracts")
       .select("id,business_id,student_id,agreed_budget,status,jobs(title)")
@@ -59,24 +59,35 @@ Deno.serve(async (request) => {
       return json({ error: "This contract is already complete." }, 409);
     }
 
-    const { data: existing } = await admin
-      .from("payments")
-      .select("id,status,checkout_url,checkout_session_id,reference_number")
-      .eq("contract_id", contractId)
-      .maybeSingle();
-    if (existing?.status === "paid" || existing?.status === "released") {
-      return json({ payment: existing, already_paid: true });
-    }
-    if (existing?.status === "checkout_created" && existing.checkout_url) {
-      return json({ payment: existing, checkout_url: existing.checkout_url });
-    }
-
     const amountCentavos = Math.round(Number(contract.agreed_budget) * 100);
     if (!Number.isSafeInteger(amountCentavos) || amountCentavos < 100) {
       return json({ error: "The contract amount is invalid." }, 400);
     }
-    const reference = existing?.reference_number ??
+    const proposedReference =
       `LP-${contractId}-${crypto.randomUUID().slice(0, 8).toUpperCase()}`;
+    const { data: claimRows, error: claimError } = await admin.rpc(
+      "claim_payment_checkout",
+      {
+        contract_key: contractId,
+        business_key: contract.business_id,
+        student_key: contract.student_id,
+        amount_value: Number(contract.agreed_budget),
+        reference_value: proposedReference,
+      },
+    );
+    if (claimError) return json({ error: "Checkout could not be reserved." }, 500);
+    const claim = Array.isArray(claimRows) ? claimRows[0] : claimRows;
+    if (!claim?.claimed) {
+      if (["paid", "released"].includes(claim?.payment_status)) {
+        return json({ payment: claim, already_paid: true });
+      }
+      if (claim?.payment_status === "checkout_created" && claim.checkout_url) {
+        return json({ payment: claim, checkout_url: claim.checkout_url });
+      }
+      return json({ error: "A checkout is already being created. Try again shortly." }, 409);
+    }
+    const paymentId = Number(claim.payment_id);
+    const reference = String(claim.reference_number);
     const returnBase = `${supabaseUrl}/functions/v1/paymongo-return`;
     const title = contract.jobs?.title ?? `LaunchPad Project ${contractId}`;
     const paymongoResponse = await fetch("https://api.paymongo.com/v1/checkout_sessions", {
@@ -110,6 +121,10 @@ Deno.serve(async (request) => {
     });
     const providerBody = await paymongoResponse.json();
     if (!paymongoResponse.ok) {
+      await admin.from("payments").update({
+        status: "failed",
+        updated_at: new Date().toISOString(),
+      }).eq("id", paymentId);
       const detail = providerBody?.errors?.[0]?.detail ?? "PayMongo could not create checkout.";
       return json({ error: detail }, paymongoResponse.status);
     }
@@ -117,19 +132,16 @@ Deno.serve(async (request) => {
     const session = providerBody.data;
     const checkoutUrl = session.attributes.checkout_url as string;
     const paymentValues = {
-      contract_id: contractId,
-      business_id: contract.business_id,
-      student_id: contract.student_id,
-      amount: Number(contract.agreed_budget),
       status: "checkout_created",
       checkout_session_id: session.id,
       checkout_url: checkoutUrl,
-      reference_number: reference,
       updated_at: new Date().toISOString(),
     };
     const { data: payment, error: saveError } = await admin
       .from("payments")
-      .upsert(paymentValues, { onConflict: "contract_id" })
+      .update(paymentValues)
+      .eq("id", paymentId)
+      .eq("status", "creating")
       .select()
       .single();
     if (saveError) return json({ error: "Checkout opened but its record could not be saved." }, 500);

@@ -13,23 +13,32 @@ class ProposalService {
 
   SupabaseClient get _client => Supabase.instance.client;
 
-  Future<List<Proposal>> getMyProposals() async {
+  Future<List<Proposal>> getMyProposals({
+    int page = 0,
+    int pageSize = 30,
+  }) async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) return [];
     final rows = await _client
         .from('proposals')
         .select()
         .eq('student_id', userId)
-        .order('created_at', ascending: false);
+        .order('created_at', ascending: false)
+        .range(page * pageSize, (page + 1) * pageSize - 1);
     return _decorate(rows);
   }
 
-  Future<List<Proposal>> getProposalsByJob(int jobId) async {
+  Future<List<Proposal>> getProposalsByJob(
+    int jobId, {
+    int page = 0,
+    int pageSize = 30,
+  }) async {
     final rows = await _client
         .from('proposals')
         .select()
         .eq('job_id', jobId)
-        .order('created_at', ascending: false);
+        .order('created_at', ascending: false)
+        .range(page * pageSize, (page + 1) * pageSize - 1);
     return _decorate(rows);
   }
 

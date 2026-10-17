@@ -14,49 +14,54 @@ class AdminService {
     return row != null;
   }
 
-  Future<List<Map<String, dynamic>>> verificationQueue() => _client
+  Future<List<Map<String, dynamic>>> verificationQueue({
+    int page = 0,
+  }) => _client
       .from('verification_documents')
       .select(
         'id,owner_id,document_type,status,submitted_at,review_note,profiles(full_name,role)',
       )
-      .order('submitted_at', ascending: false);
+      .order('submitted_at', ascending: false)
+      .range(page * 50, (page + 1) * 50 - 1);
 
-  Future<List<Map<String, dynamic>>> reports() => _client
+  Future<List<Map<String, dynamic>>> reports({int page = 0}) => _client
       .from('reports')
       .select(
         'id,reporter_id,target_type,target_label,reason,details,status,created_at,resolution_note',
       )
-      .order('created_at', ascending: false);
+      .order('created_at', ascending: false)
+      .range(page * 50, (page + 1) * 50 - 1);
 
-  Future<List<Map<String, dynamic>>> disputes() => _client
+  Future<List<Map<String, dynamic>>> disputes({int page = 0}) => _client
       .from('contracts')
       .select(
         'id,status,dispute_reason,disputed_at,student_id,business_id,jobs(title),payments(status,amount,reference_number)',
       )
       .eq('status', 'disputed')
-      .order('disputed_at', ascending: false);
+      .order('disputed_at', ascending: false)
+      .range(page * 50, (page + 1) * 50 - 1);
 
-  Future<List<Map<String, dynamic>>> payments() => _client
+  Future<List<Map<String, dynamic>>> payments({int page = 0}) => _client
       .from('payments')
       .select(
         'id,contract_id,amount,status,reference_number,payment_method,provider_payment_id,created_at,updated_at',
       )
       .order('created_at', ascending: false)
-      .limit(100);
+      .range(page * 50, (page + 1) * 50 - 1);
 
-  Future<List<Map<String, dynamic>>> accounts() => _client
+  Future<List<Map<String, dynamic>>> accounts({int page = 0}) => _client
       .from('profiles')
       .select('id,role,full_name,created_at,suspended_at,suspension_reason')
       .order('created_at', ascending: false)
-      .limit(200);
+      .range(page * 50, (page + 1) * 50 - 1);
 
-  Future<List<Map<String, dynamic>>> jobs() => _client
+  Future<List<Map<String, dynamic>>> jobs({int page = 0}) => _client
       .from('jobs')
       .select(
         'id,business_id,title,budget,status,location,created_at,moderated_at,moderation_note,business_profiles(business_name)',
       )
       .order('created_at', ascending: false)
-      .limit(200);
+      .range(page * 50, (page + 1) * 50 - 1);
 
   Future<void> reviewVerification(int id, bool approve, String? note) =>
       _client.rpc(

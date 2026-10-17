@@ -35,34 +35,47 @@ class PushNotificationService {
   StreamSubscription<RemoteMessage>? _openedMessages;
   StreamSubscription<AuthState>? _authChanges;
   String? _deviceToken;
-  bool _initialized = false;
+  bool _platformConfigured = false;
+  bool _listenersAttached = false;
 
-  Future<void> initialize() async {
-    if (_initialized || kIsWeb || !Platform.isAndroid) return;
-    _initialized = true;
+  /// Configures push delivery without prompting unless [requestPermission] is
+  /// explicitly true after a user action.
+  Future<bool> initialize({bool requestPermission = false}) async {
+    if (kIsWeb || !Platform.isAndroid) return false;
     try {
-      if (Firebase.apps.isEmpty) await Firebase.initializeApp();
-      FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-      await _local.initialize(
-        settings: const InitializationSettings(
-          android: AndroidInitializationSettings('@mipmap/ic_launcher'),
-        ),
-        onDidReceiveNotificationResponse: (response) =>
-            _openRoute(response.payload),
-      );
-      await _local
-          .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin
-          >()
-          ?.createNotificationChannel(_channel);
+      if (!_platformConfigured) {
+        if (Firebase.apps.isEmpty) await Firebase.initializeApp();
+        FirebaseMessaging.onBackgroundMessage(
+          firebaseMessagingBackgroundHandler,
+        );
+        await _local.initialize(
+          settings: const InitializationSettings(
+            android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+          ),
+          onDidReceiveNotificationResponse: (response) =>
+              _openRoute(response.payload),
+        );
+        await _local
+            .resolvePlatformSpecificImplementation<
+              AndroidFlutterLocalNotificationsPlugin
+            >()
+            ?.createNotificationChannel(_channel);
+        _platformConfigured = true;
+      }
 
       final messaging = FirebaseMessaging.instance;
-      final permission = await messaging.requestPermission(
-        alert: true,
-        badge: true,
-        sound: true,
-      );
-      if (permission.authorizationStatus == AuthorizationStatus.denied) return;
+      final permission = requestPermission
+          ? await messaging.requestPermission(
+              alert: true,
+              badge: true,
+              sound: true,
+            )
+          : await messaging.getNotificationSettings();
+      final authorized =
+          permission.authorizationStatus == AuthorizationStatus.authorized ||
+          permission.authorizationStatus == AuthorizationStatus.provisional;
+      if (!authorized) return false;
+      if (_listenersAttached) return true;
       _deviceToken = await messaging.getToken();
       await _registerToken();
       _tokenRefresh = messaging.onTokenRefresh.listen((token) async {
@@ -87,9 +100,24 @@ class PushNotificationService {
       );
       final initial = await messaging.getInitialMessage();
       if (initial != null) _openRoute(initial.data['route']?.toString());
+      _listenersAttached = true;
+      return true;
     } catch (error, stack) {
       debugPrint('Push notifications are unavailable: $error\n$stack');
-      _initialized = false;
+      return false;
+    }
+  }
+
+  Future<bool> isAuthorized() async {
+    if (kIsWeb || !Platform.isAndroid) return false;
+    try {
+      if (Firebase.apps.isEmpty) await Firebase.initializeApp();
+      final settings = await FirebaseMessaging.instance
+          .getNotificationSettings();
+      return settings.authorizationStatus == AuthorizationStatus.authorized ||
+          settings.authorizationStatus == AuthorizationStatus.provisional;
+    } catch (_) {
+      return false;
     }
   }
 
@@ -175,5 +203,6 @@ class PushNotificationService {
     await _foregroundMessages?.cancel();
     await _openedMessages?.cancel();
     await _authChanges?.cancel();
+    _listenersAttached = false;
   }
 }

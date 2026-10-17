@@ -12,6 +12,7 @@ import '../../services/location_service.dart';
 import '../../services/notification_service.dart';
 import '../../services/auth_service.dart';
 import '../../services/profile_image_service.dart';
+import '../../services/push_notification_service.dart';
 import '../../widgets/profile_avatar.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -29,6 +30,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _loadingProfile = true;
   bool _locatingBusiness = false;
   bool _uploadingPhoto = false;
+  bool _pushAuthorized = false;
+  bool _requestingPush = false;
   Map<String, dynamic> _profile = {};
 
   bool get _isStudent => widget.role == UserRole.student;
@@ -65,6 +68,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 .eq('user_id', user.id)
                 .single();
       final prefs = await SharedPreferences.getInstance();
+      final pushAuthorized = await PushNotificationService().isAuthorized();
       Map<String, bool>? cloudPreferences;
       try {
         cloudPreferences = await NotificationService().getPreferences();
@@ -74,6 +78,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       if (!mounted) return;
       setState(() {
         _profile = {...base, ...roleProfile, 'email': user.email ?? ''};
+        _pushAuthorized = pushAuthorized;
         _notifJobs =
             cloudPreferences?['jobs'] ??
             prefs.getBool('${_preferencePrefix}_jobs') ??
@@ -197,6 +202,28 @@ class _SettingsScreenState extends State<SettingsScreen> {
         );
       }
     }
+  }
+
+  Future<void> _enableDeviceAlerts() async {
+    if (_requestingPush) return;
+    setState(() => _requestingPush = true);
+    final enabled = await PushNotificationService().initialize(
+      requestPermission: true,
+    );
+    if (!mounted) return;
+    setState(() {
+      _requestingPush = false;
+      _pushAuthorized = enabled;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          enabled
+              ? 'Device alerts are enabled.'
+              : 'Notifications are still blocked. You can enable them in system settings.',
+        ),
+      ),
+    );
   }
 
   Future<void> _deleteAccount() async {
@@ -650,6 +677,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       const SizedBox(height: AppSpacing.xl),
                       _buildSectionLabel('Notifications'),
                       const SizedBox(height: AppSpacing.md),
+                      _buildPushPermissionCard(),
+                      const SizedBox(height: AppSpacing.sm),
                       _buildToggle(
                         'Job notifications',
                         'Show job-related items in your notification inbox',
@@ -1032,6 +1061,60 @@ class _SettingsScreenState extends State<SettingsScreen> {
       ),
     );
   }
+
+  Widget _buildPushPermissionCard() => Container(
+    padding: const EdgeInsets.all(AppSpacing.md),
+    decoration: BoxDecoration(
+      color: AppColors.surfaceHigh,
+      borderRadius: BorderRadius.circular(AppRadius.lg),
+      border: Border.all(
+        color: _pushAuthorized
+            ? AppColors.success.withValues(alpha: .45)
+            : AppColors.border,
+      ),
+    ),
+    child: Row(
+      children: [
+        Icon(
+          _pushAuthorized
+              ? Icons.notifications_active_rounded
+              : Icons.notifications_none_rounded,
+          color: _pushAuthorized ? AppColors.success : _primary,
+        ),
+        const SizedBox(width: AppSpacing.md),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                _pushAuthorized
+                    ? 'Device alerts enabled'
+                    : 'Enable device alerts',
+                style: Theme.of(context).textTheme.titleSmall,
+              ),
+              const SizedBox(height: 3),
+              Text(
+                _pushAuthorized
+                    ? 'LaunchPad can notify this phone when the app is closed.'
+                    : 'Permission is requested only when you choose to enable it.',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+          ),
+        ),
+        if (!_pushAuthorized)
+          TextButton(
+            onPressed: _requestingPush ? null : _enableDeviceAlerts,
+            child: _requestingPush
+                ? const SizedBox.square(
+                    dimension: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('Enable'),
+          ),
+      ],
+    ),
+  );
 
   Widget _buildTile({
     required IconData icon,

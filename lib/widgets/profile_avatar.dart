@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../core/constants.dart';
@@ -28,6 +29,9 @@ class ProfileAvatar extends StatelessWidget {
     final path = storagePath?.trim() ?? '';
     final url = path.isEmpty ? '' : ProfileImageService().publicUrl(path);
     final radius = square ? size * .24 : size / 2;
+    final decodeSize = (size * MediaQuery.devicePixelRatioOf(context))
+        .round()
+        .clamp(48, 512);
     final avatar = Container(
       width: size,
       height: size,
@@ -39,10 +43,16 @@ class ProfileAvatar extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: url.isEmpty
           ? _fallback()
-          : Image.network(
-              url,
+          : CachedNetworkImage(
+              imageUrl: url,
               fit: BoxFit.cover,
-              errorBuilder: (_, _, _) => _fallback(),
+              memCacheWidth: decodeSize,
+              memCacheHeight: decodeSize,
+              maxWidthDiskCache: decodeSize,
+              maxHeightDiskCache: decodeSize,
+              fadeInDuration: const Duration(milliseconds: 140),
+              placeholder: (_, _) => _fallback(),
+              errorWidget: (_, _, _) => _fallback(),
             ),
     );
 

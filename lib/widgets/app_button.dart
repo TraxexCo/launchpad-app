@@ -72,6 +72,7 @@ class _AppButtonState extends State<AppButton>
     with SingleTickerProviderStateMixin {
   late final AnimationController _ctrl;
   late final Animation<double> _scale;
+  bool _focused = false;
 
   @override
   void initState() {
@@ -96,91 +97,105 @@ class _AppButtonState extends State<AppButton>
 
   @override
   Widget build(BuildContext context) {
-    Widget button = GestureDetector(
-      onTapDown: _enabled
-          ? (_) {
-              HapticFeedback.lightImpact();
-              _ctrl.forward();
-            }
-          : null,
-      onTapUp: _enabled
-          ? (_) {
-              _ctrl.reverse();
-              widget.onPressed!();
-            }
-          : null,
-      onTapCancel: _enabled ? () => _ctrl.reverse() : null,
-      child: AnimatedBuilder(
-        animation: _scale,
-        builder: (_, child) =>
-            Transform.scale(scale: _scale.value, child: child),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          height: widget.height,
-          decoration: BoxDecoration(
-            color: widget.outlined
-                ? Colors.transparent
-                : (_enabled ? widget.backgroundColor : AppColors.surfaceMuted),
-            borderRadius: BorderRadius.circular(10),
-            border: widget.outlined
-                ? Border.all(color: widget.backgroundColor, width: 1.5)
-                : null,
-            boxShadow: widget.outlined || !_enabled
-                ? null
-                : const [
-                    BoxShadow(
-                      color: Color(0x3D000000),
-                      blurRadius: 0,
-                      offset: Offset(0, 3),
-                    ),
-                  ],
-          ),
-          child: Semantics(
-            button: true,
-            enabled: _enabled,
-            label: widget.label,
-            child: Center(
-              child: widget.isLoading
-                  ? SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.5,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          widget.foregroundColor,
-                        ),
-                      ),
-                    )
-                  : Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        if (widget.icon != null) ...[
-                          Icon(
-                            widget.icon,
-                            color: widget.outlined
-                                ? widget.backgroundColor
-                                : (!_enabled
-                                      ? AppColors.textMuted
-                                      : widget.foregroundColor),
-                            size: 18,
-                          ),
-                          const SizedBox(width: AppSpacing.sm),
-                        ],
-                        Text(
-                          widget.label,
-                          style: GoogleFonts.manrope(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w700,
-                            color: widget.outlined
-                                ? widget.backgroundColor
-                                : (_enabled
-                                      ? widget.foregroundColor
-                                      : AppColors.textMuted),
-                            letterSpacing: 0.1,
-                          ),
+    final radius = BorderRadius.circular(10);
+    Widget button = Semantics(
+      button: true,
+      enabled: _enabled,
+      label: widget.label,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: radius,
+        child: InkWell(
+          onTap: _enabled
+              ? () {
+                  HapticFeedback.lightImpact();
+                  widget.onPressed!();
+                }
+              : null,
+          onHighlightChanged: _enabled
+              ? (pressed) => pressed ? _ctrl.forward() : _ctrl.reverse()
+              : null,
+          onFocusChange: (focused) {
+            if (_focused != focused) setState(() => _focused = focused);
+          },
+          borderRadius: radius,
+          focusColor: widget.backgroundColor.withValues(alpha: .20),
+          hoverColor: widget.backgroundColor.withValues(alpha: .10),
+          child: AnimatedBuilder(
+            animation: _scale,
+            builder: (_, child) =>
+                Transform.scale(scale: _scale.value, child: child),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 160),
+              height: widget.height,
+              decoration: BoxDecoration(
+                color: widget.outlined
+                    ? Colors.transparent
+                    : (_enabled
+                          ? widget.backgroundColor
+                          : AppColors.surfaceMuted),
+                borderRadius: radius,
+                border: Border.all(
+                  color: _focused
+                      ? AppColors.textPrimary
+                      : widget.outlined
+                      ? widget.backgroundColor
+                      : Colors.transparent,
+                  width: _focused ? 2 : 1.5,
+                ),
+                boxShadow: widget.outlined || !_enabled
+                    ? null
+                    : const [
+                        BoxShadow(
+                          color: Color(0x3D000000),
+                          blurRadius: 0,
+                          offset: Offset(0, 3),
                         ),
                       ],
-                    ),
+              ),
+              child: Center(
+                child: widget.isLoading
+                    ? SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            widget.foregroundColor,
+                          ),
+                        ),
+                      )
+                    : Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (widget.icon != null) ...[
+                            Icon(
+                              widget.icon,
+                              color: widget.outlined
+                                  ? widget.backgroundColor
+                                  : (!_enabled
+                                        ? AppColors.textMuted
+                                        : widget.foregroundColor),
+                              size: 18,
+                            ),
+                            const SizedBox(width: AppSpacing.sm),
+                          ],
+                          Text(
+                            widget.label,
+                            style: GoogleFonts.manrope(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700,
+                              color: widget.outlined
+                                  ? widget.backgroundColor
+                                  : (_enabled
+                                        ? widget.foregroundColor
+                                        : AppColors.textMuted),
+                              letterSpacing: 0.1,
+                            ),
+                          ),
+                        ],
+                      ),
+              ),
             ),
           ),
         ),

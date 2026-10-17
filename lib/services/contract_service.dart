@@ -111,7 +111,10 @@ class ContractService {
 
   SupabaseClient get _client => Supabase.instance.client;
 
-  Future<List<ContractItem>> getMyContracts() async {
+  Future<List<ContractItem>> getMyContracts({
+    int page = 0,
+    int pageSize = 30,
+  }) async {
     final userId = _client.auth.currentUser?.id;
     if (userId == null) return [];
 
@@ -145,7 +148,8 @@ class ContractService {
         )
       )
     ''')
-        .order('agreed_at', ascending: false);
+        .order('agreed_at', ascending: false)
+        .range(page * pageSize, (page + 1) * pageSize - 1);
 
     if (rows.isEmpty) return [];
 
@@ -270,7 +274,8 @@ class ContractService {
         .from('contract_deliverables')
         .select()
         .eq('contract_id', contractId)
-        .order('submission_number', ascending: false);
+        .order('submission_number', ascending: false)
+        .range(0, 49);
     return rows.map(ContractDeliverable.fromJson).toList();
   }
 
@@ -279,7 +284,8 @@ class ContractService {
         .from('contract_events')
         .select()
         .eq('contract_id', contractId)
-        .order('created_at', ascending: false);
+        .order('created_at', ascending: false)
+        .range(0, 99);
     return rows.map(ContractEvent.fromJson).toList();
   }
 

@@ -1,16 +1,13 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
-
-const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
-  status,
-  headers: { ...corsHeaders, "Content-Type": "application/json" },
-});
+import { consumeRateLimit, corsHeaders } from "../_shared/security.ts";
 Deno.serve(async (request) => {
-  if (request.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+  const cors = corsHeaders(request);
+  const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
+    status,
+    headers: { ...(cors ?? {}), "Content-Type": "application/json" },
+  });
+  if (!cors) return json({ error: "Origin not allowed." }, 403);
+  if (request.method === "OPTIONS") return new Response("ok", { headers: cors });
   if (request.method !== "POST") return json({ error: "Method not allowed" }, 405);
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
@@ -30,6 +27,9 @@ Deno.serve(async (request) => {
     if (!Number.isInteger(contractId) || contractId <= 0) return json({ error: "A valid contract is required." }, 400);
 
     const admin = createClient(supabaseUrl, serviceKey);
+    if (!(await consumeRateLimit(admin, "payment-sync", authData.user.id, 30, 60))) {
+      return json({ error: "Too many status checks. Try again in a minute." }, 429);
+    }
     const { data: payment, error: readError } = await admin
       .from("payments")
       .select("*")

@@ -8,7 +8,9 @@ import 'core/router.dart';
 import 'core/theme.dart';
 import 'services/auth_service.dart';
 import 'services/crash_reporting_service.dart';
+import 'services/legacy_storage_cleanup.dart';
 import 'services/push_notification_service.dart';
+import 'services/secure_storage_service.dart';
 import 'widgets/network_banner.dart';
 
 Future<void> main() async {
@@ -20,7 +22,17 @@ Future<void> main() async {
       'Set SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY with --dart-define.',
     );
   }
-  await Supabase.initialize(url: url, publishableKey: publishableKey);
+  await clearLegacyPlaintextStorage(url);
+  await Supabase.initialize(
+    url: url,
+    publishableKey: publishableKey,
+    authOptions: kIsWeb
+        ? const FlutterAuthClientOptions(persistSession: false)
+        : const FlutterAuthClientOptions(
+            localStorage: SecureSupabaseLocalStorage(),
+            pkceAsyncStorage: SecurePkceStorage(),
+          ),
+  );
   FlutterError.onError = (details) {
     FlutterError.presentError(details);
     CrashReportingService.record(

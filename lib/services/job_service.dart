@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/job_post.dart';
+import 'offline_cache.dart';
 
 /// Service responsible for all CRUD operations on job posts.
 ///
@@ -13,15 +14,40 @@ class JobService {
   JobService._internal();
 
   SupabaseClient get _client => Supabase.instance.client;
+  static const defaultPageSize = 20;
 
   /// Returns all published jobs ordered by newest first, decorated with
   /// business name and required skill tags.
-  Future<List<JobPost>> getAllJobs() async {
-    final rows = await _client
-        .from('jobs')
-        .select()
-        .order('created_at', ascending: false);
-    return _decorate(rows);
+  Future<List<JobPost>> getAllJobs() => getJobsPage();
+
+  Future<List<JobPost>> getJobsPage({
+    int page = 0,
+    int pageSize = defaultPageSize,
+  }) async {
+    if (page < 0 || pageSize < 1 || pageSize > 50) {
+      throw ArgumentError('Invalid jobs page.');
+    }
+    try {
+      final from = page * pageSize;
+      final rows = await _client
+          .from('jobs')
+          .select()
+          .order('created_at', ascending: false)
+          .range(from, from + pageSize - 1);
+      final jobs = await _decorate(rows);
+      if (page == 0) {
+        await OfflineCache.writeJsonList(
+          'public_jobs_v1',
+          jobs.map((job) => job.toJson()).toList(),
+        );
+      }
+      return jobs;
+    } catch (_) {
+      if (page != 0) rethrow;
+      final cached = await OfflineCache.readJsonList('public_jobs_v1');
+      if (cached.isEmpty) rethrow;
+      return cached.map(JobPost.fromJson).toList();
+    }
   }
 
   /// Fetches a single [JobPost] by its primary key.

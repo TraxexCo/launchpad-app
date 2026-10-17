@@ -1,12 +1,13 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/constants.dart';
+import '../../services/secure_storage_service.dart';
 import '../../widgets/app_background.dart';
 import '../../widgets/app_state_view.dart';
 
@@ -30,7 +31,7 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _sending = false;
   String? _error;
 
-  /// SharedPreferences key scoped to this chat conversation.
+  /// Encrypted storage key scoped to this chat conversation.
   String get _pendingKey {
     final userId =
         Supabase.instance.client.auth.currentUser?.id ?? 'signed-out';
@@ -46,8 +47,10 @@ class _ChatScreenState extends State<ChatScreen> {
 
   /// Restores any unsent messages that were persisted across restarts.
   Future<void> _loadPendingMessages() async {
-    final prefs = await SharedPreferences.getInstance();
-    final pending = prefs.getStringList(_pendingKey) ?? [];
+    final encoded = await SecureStorageService.instance.read(key: _pendingKey);
+    final pending = encoded == null
+        ? <String>[]
+        : (jsonDecode(encoded) as List<dynamic>).cast<String>();
     if (pending.isNotEmpty && mounted) {
       setState(() {
         _failedMessages.addAll(
@@ -59,19 +62,17 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  /// Persists the current failed message queue to SharedPreferences.
+  /// Persists the failed queue in Keystore/Keychain-backed storage.
   Future<void> _savePendingMessages() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setStringList(
-      _pendingKey,
-      _failedMessages.map((m) => m.text).toList(),
+    await SecureStorageService.instance.write(
+      key: _pendingKey,
+      value: jsonEncode(_failedMessages.map((m) => m.text).toList()),
     );
   }
 
   /// Clears the persisted queue (called when all retries succeed).
   Future<void> _clearPendingMessages() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_pendingKey);
+    await SecureStorageService.instance.delete(key: _pendingKey);
   }
 
   Future<void> _loadConversation() async {

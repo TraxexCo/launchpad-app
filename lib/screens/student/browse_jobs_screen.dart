@@ -18,11 +18,15 @@ class BrowseJobsScreen extends StatefulWidget {
 
 class _BrowseJobsScreenState extends State<BrowseJobsScreen> {
   final _searchCtrl = TextEditingController();
+  final _scrollCtrl = ScrollController();
   String _activeFilter = 'All';
   String _sortBy = 'Newest';
 
   List<JobPost> _allJobs = [];
   bool _loading = true;
+  bool _loadingMore = false;
+  bool _hasMore = true;
+  int _page = 0;
   String? _error;
 
   static const _filters = [
@@ -40,7 +44,12 @@ class _BrowseJobsScreenState extends State<BrowseJobsScreen> {
   @override
   void initState() {
     super.initState();
+    _scrollCtrl.addListener(_onScroll);
     _loadJobs();
+  }
+
+  void _onScroll() {
+    if (_scrollCtrl.position.extentAfter < 420) _loadMore();
   }
 
   Future<void> _loadJobs() async {
@@ -49,10 +58,12 @@ class _BrowseJobsScreenState extends State<BrowseJobsScreen> {
       _error = null;
     });
     try {
-      final jobs = await JobService().getAllJobs();
+      final jobs = await JobService().getJobsPage();
       if (mounted) {
         setState(() {
           _allJobs = jobs;
+          _page = 0;
+          _hasMore = jobs.length == JobService.defaultPageSize;
           _loading = false;
         });
       }
@@ -63,6 +74,24 @@ class _BrowseJobsScreenState extends State<BrowseJobsScreen> {
           _loading = false;
         });
       }
+    }
+  }
+
+  Future<void> _loadMore() async {
+    if (_loading || _loadingMore || !_hasMore) return;
+    setState(() => _loadingMore = true);
+    try {
+      final nextPage = _page + 1;
+      final jobs = await JobService().getJobsPage(page: nextPage);
+      if (!mounted) return;
+      setState(() {
+        final known = _allJobs.map((job) => job.id).toSet();
+        _allJobs.addAll(jobs.where((job) => known.add(job.id)));
+        _page = nextPage;
+        _hasMore = jobs.length == JobService.defaultPageSize;
+      });
+    } finally {
+      if (mounted) setState(() => _loadingMore = false);
     }
   }
 
@@ -105,6 +134,7 @@ class _BrowseJobsScreenState extends State<BrowseJobsScreen> {
   @override
   void dispose() {
     _searchCtrl.dispose();
+    _scrollCtrl.dispose();
     super.dispose();
   }
 
@@ -347,6 +377,7 @@ class _BrowseJobsScreenState extends State<BrowseJobsScreen> {
     return SizedBox(
       height: 40,
       child: ListView.separated(
+        controller: _scrollCtrl,
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
         scrollDirection: Axis.horizontal,
         itemCount: _filters.length,
@@ -473,10 +504,15 @@ class _BrowseJobsScreenState extends State<BrowseJobsScreen> {
           AppSpacing.lg,
           AppSpacing.xl,
         ),
-        itemCount: jobs.length,
+        itemCount: jobs.length + (_loadingMore ? 1 : 0),
         separatorBuilder: (context, idx) =>
             const SizedBox(height: AppSpacing.md),
-        itemBuilder: (context, i) => _JobCard(job: jobs[i]),
+        itemBuilder: (context, i) => i == jobs.length
+            ? const Padding(
+                padding: EdgeInsets.all(AppSpacing.lg),
+                child: Center(child: CircularProgressIndicator()),
+              )
+            : _JobCard(job: jobs[i]),
       ),
     );
   }
