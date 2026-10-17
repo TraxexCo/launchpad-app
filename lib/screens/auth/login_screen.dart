@@ -5,6 +5,7 @@ import '../../widgets/app_background.dart';
 import '../../widgets/app_button.dart';
 import '../../widgets/app_text_field.dart';
 import '../../services/auth_service.dart';
+import '../../core/form_validation.dart';
 
 class LoginScreen extends StatefulWidget {
   final UserRole role;
@@ -171,10 +172,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         Icons.alternate_email_rounded,
                         size: 19,
                       ),
-                      validator: (value) =>
-                          value == null || !value.contains('@')
-                          ? 'Enter a valid email address.'
-                          : null,
+                      validator: FormValidation.email,
                     ),
                     const SizedBox(height: 16),
                     AppTextField(
@@ -186,9 +184,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         Icons.lock_outline_rounded,
                         size: 19,
                       ),
-                      validator: (value) => value == null || value.length < 6
-                          ? 'Enter at least 6 characters.'
-                          : null,
+                      validator: FormValidation.password,
                     ),
                   ],
                 ),

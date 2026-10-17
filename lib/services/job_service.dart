@@ -2,6 +2,11 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/job_post.dart';
 
+/// Service responsible for all CRUD operations on job posts.
+///
+/// This singleton fetches job listings from Supabase, decorates them with
+/// business profile and required skill data, and exposes create/update/close
+/// helpers used by the business-side screens.
 class JobService {
   static final JobService _instance = JobService._internal();
   factory JobService() => _instance;
@@ -9,6 +14,8 @@ class JobService {
 
   SupabaseClient get _client => Supabase.instance.client;
 
+  /// Returns all published jobs ordered by newest first, decorated with
+  /// business name and required skill tags.
   Future<List<JobPost>> getAllJobs() async {
     final rows = await _client
         .from('jobs')
@@ -17,6 +24,9 @@ class JobService {
     return _decorate(rows);
   }
 
+  /// Fetches a single [JobPost] by its primary key.
+  ///
+  /// Throws [StateError] if no job with the given [id] exists.
   Future<JobPost> getJobById(int id) async {
     final rows = await _client.from('jobs').select().eq('id', id);
     final jobs = await _decorate(rows);

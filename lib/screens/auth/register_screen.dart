@@ -402,8 +402,7 @@ class _AccountStep extends StatelessWidget {
             size: 18,
           ),
           textInputAction: TextInputAction.next,
-          validator: (v) =>
-              (v == null || v.isEmpty) ? 'Name is required' : null,
+          validator: (v) => FormValidation.requiredField(v, 'Name'),
         ),
         const SizedBox(height: AppSpacing.md),
         AppTextField(
@@ -418,11 +417,7 @@ class _AccountStep extends StatelessWidget {
             color: AppColors.textMuted,
             size: 18,
           ),
-          validator: (v) {
-            if (v == null || v.isEmpty) return 'Email is required';
-            if (!v.contains('@')) return 'Enter a valid email';
-            return null;
-          },
+          validator: FormValidation.email,
         ),
         const SizedBox(height: AppSpacing.md),
         AppTextField(
@@ -462,16 +457,14 @@ class _StudentProfileStep extends StatelessWidget {
           label: 'School',
           controller: schoolCtrl,
           accentColor: accentColor,
-          validator: (v) =>
-              (v == null || v.trim().isEmpty) ? 'School is required' : null,
+          validator: (v) => FormValidation.requiredField(v, 'School'),
         ),
         const SizedBox(height: AppSpacing.md),
         AppTextField(
           label: 'Course',
           controller: courseCtrl,
           accentColor: accentColor,
-          validator: (v) =>
-              (v == null || v.trim().isEmpty) ? 'Course is required' : null,
+          validator: (v) => FormValidation.requiredField(v, 'Course'),
         ),
         const SizedBox(height: AppSpacing.md),
         AppTextField(
@@ -485,7 +478,7 @@ class _StudentProfileStep extends StatelessWidget {
             color: AppColors.textMuted,
             size: 18,
           ),
-          validator: (v) => (v == null || v.isEmpty) ? 'Bio is required' : null,
+          validator: (v) => FormValidation.requiredField(v, 'Bio'),
         ),
         const SizedBox(height: AppSpacing.md),
         AppTextField(
@@ -554,8 +547,7 @@ class _BusinessProfileStep extends StatelessWidget {
             color: AppColors.textMuted,
             size: 18,
           ),
-          validator: (v) =>
-              (v == null || v.isEmpty) ? 'Business name is required' : null,
+          validator: (v) => FormValidation.requiredField(v, 'Business name'),
         ),
         const SizedBox(height: AppSpacing.md),
         AppTextField(
@@ -569,8 +561,7 @@ class _BusinessProfileStep extends StatelessWidget {
             color: AppColors.textMuted,
             size: 18,
           ),
-          validator: (v) =>
-              (v == null || v.isEmpty) ? 'Address is required' : null,
+          validator: (v) => FormValidation.requiredField(v, 'Address'),
         ),
         const SizedBox(height: AppSpacing.lg),
         Container(

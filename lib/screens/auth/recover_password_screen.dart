@@ -3,11 +3,14 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/constants.dart';
+import '../../core/form_validation.dart';
 import '../../services/auth_service.dart';
 import '../../widgets/app_background.dart';
 import '../../widgets/app_button.dart';
-import '../../widgets/app_card.dart';
+import '../../widgets/app_text_field.dart';
 
+/// Password-recovery screen. Lets the user choose a new password after
+/// opening a Supabase email recovery link.
 class RecoverPasswordScreen extends StatefulWidget {
   const RecoverPasswordScreen({super.key});
 
@@ -23,6 +26,7 @@ class _RecoverPasswordScreenState extends State<RecoverPasswordScreen> {
   bool _showPassword = false;
   bool _showConfirm = false;
 
+  /// Zxcvbn-style 0-4 strength score based on simple heuristics.
   int get _strength {
     final value = _password.text;
     var score = 0;
@@ -48,9 +52,9 @@ class _RecoverPasswordScreenState extends State<RecoverPasswordScreen> {
       final user = await AuthService().getCurrentUser();
       if (!mounted) return;
       context.go(user?.role == 'business' ? '/business' : '/student');
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Password updated.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Password updated successfully.')),
+      );
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -106,107 +110,80 @@ class _RecoverPasswordScreenState extends State<RecoverPasswordScreen> {
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                       const SizedBox(height: AppSpacing.xl),
-                      AppCard(
-                        padding: const EdgeInsets.all(AppSpacing.lg),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            TextFormField(
-                              controller: _password,
-                              obscureText: !_showPassword,
-                              onChanged: (_) => setState(() {}),
-                              autofillHints: const [AutofillHints.newPassword],
-                              decoration: InputDecoration(
-                                labelText: 'New password',
-                                prefixIcon: const Icon(Icons.password_rounded),
-                                suffixIcon: IconButton(
-                                  tooltip: _showPassword
-                                      ? 'Hide password'
-                                      : 'Show password',
-                                  onPressed: () => setState(
-                                    () => _showPassword = !_showPassword,
-                                  ),
-                                  icon: Icon(
-                                    _showPassword
-                                        ? Icons.visibility_off_rounded
-                                        : Icons.visibility_rounded,
-                                  ),
-                                ),
-                              ),
-                              validator: (value) => (value?.length ?? 0) < 8
-                                  ? 'Use at least 8 characters.'
-                                  : null,
-                            ),
-                            const SizedBox(height: AppSpacing.sm),
-                            Row(
-                              children: List.generate(
-                                4,
-                                (index) => Expanded(
-                                  child: AnimatedContainer(
-                                    duration: AppDurations.fast,
-                                    height: 4,
-                                    margin: EdgeInsets.only(
-                                      right: index == 3 ? 0 : 6,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      color: index < _strength
-                                          ? (_strength < 3
-                                                ? AppColors.warning
-                                                : AppColors.success)
-                                          : AppColors.border,
-                                      borderRadius: BorderRadius.circular(
-                                        AppRadius.full,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: AppSpacing.xs),
-                            Text(
-                              strengthLabels[_strength],
-                              style: GoogleFonts.manrope(
-                                fontSize: 11,
-                                color: AppColors.textMuted,
-                              ),
-                            ),
-                            const SizedBox(height: AppSpacing.md),
-                            TextFormField(
-                              controller: _confirm,
-                              obscureText: !_showConfirm,
-                              autofillHints: const [AutofillHints.newPassword],
-                              decoration: InputDecoration(
-                                labelText: 'Confirm password',
-                                prefixIcon: const Icon(
-                                  Icons.verified_user_outlined,
-                                ),
-                                suffixIcon: IconButton(
-                                  tooltip: _showConfirm
-                                      ? 'Hide password'
-                                      : 'Show password',
-                                  onPressed: () => setState(
-                                    () => _showConfirm = !_showConfirm,
-                                  ),
-                                  icon: Icon(
-                                    _showConfirm
-                                        ? Icons.visibility_off_rounded
-                                        : Icons.visibility_rounded,
-                                  ),
-                                ),
-                              ),
-                              validator: (value) => value != _password.text
-                                  ? 'Passwords do not match.'
-                                  : null,
-                            ),
-                            const SizedBox(height: AppSpacing.lg),
-                            AppButton(
-                              label: 'Update password',
-                              icon: Icons.shield_outlined,
-                              isLoading: _busy,
-                              onPressed: _save,
-                            ),
-                          ],
+                      // ── Password field ─────────────────────────────
+                      AppTextField(
+                        label: 'New password',
+                        controller: _password,
+                        obscureText: !_showPassword,
+                        onChanged: (_) => setState(() {}),
+                        prefixIcon: const Icon(Icons.password_rounded),
+                        suffixIcon: IconButton(
+                          tooltip: _showPassword ? 'Hide password' : 'Show password',
+                          onPressed: () => setState(() => _showPassword = !_showPassword),
+                          icon: Icon(
+                            _showPassword
+                                ? Icons.visibility_off_rounded
+                                : Icons.visibility_rounded,
+                          ),
                         ),
+                        validator: FormValidation.strongPassword,
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      // ── Strength meter ─────────────────────────────
+                      Row(
+                        children: List.generate(
+                          4,
+                          (index) => Expanded(
+                            child: AnimatedContainer(
+                              duration: AppDurations.fast,
+                              height: 4,
+                              margin: EdgeInsets.only(right: index == 3 ? 0 : 6),
+                              decoration: BoxDecoration(
+                                color: index < _strength
+                                    ? (_strength < 3
+                                          ? AppColors.warning
+                                          : AppColors.success)
+                                    : AppColors.border,
+                                borderRadius: BorderRadius.circular(AppRadius.full),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        strengthLabels[_strength],
+                        style: GoogleFonts.manrope(
+                          fontSize: 11,
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      // ── Confirm password ───────────────────────────
+                      AppTextField(
+                        label: 'Confirm password',
+                        controller: _confirm,
+                        obscureText: !_showConfirm,
+                        prefixIcon: const Icon(Icons.verified_user_outlined),
+                        suffixIcon: IconButton(
+                          tooltip: _showConfirm ? 'Hide password' : 'Show password',
+                          onPressed: () => setState(() => _showConfirm = !_showConfirm),
+                          icon: Icon(
+                            _showConfirm
+                                ? Icons.visibility_off_rounded
+                                : Icons.visibility_rounded,
+                          ),
+                        ),
+                        validator: (value) => value != _password.text
+                            ? 'Passwords do not match.'
+                            : null,
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                      AppButton(
+                        label: 'Update password',
+                        icon: Icons.shield_outlined,
+                        isLoading: _busy,
+                        onPressed: _save,
                       ),
                       const SizedBox(height: AppSpacing.md),
                       Text(

@@ -9,6 +9,7 @@ import 'core/theme.dart';
 import 'services/auth_service.dart';
 import 'services/crash_reporting_service.dart';
 import 'services/push_notification_service.dart';
+import 'widgets/network_banner.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -59,6 +60,7 @@ class LaunchPadApp extends StatelessWidget {
       themeMode: ThemeMode.dark,
       routerConfig: appRouter,
       debugShowCheckedModeBanner: false,
+      builder: (context, child) => NetworkBanner(child: child ?? const SizedBox.shrink()),
     );
   }
 }

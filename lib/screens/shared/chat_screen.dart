@@ -3,10 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../../core/constants.dart';
 import '../../widgets/app_background.dart';
 import '../../widgets/app_state_view.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ChatScreen extends StatefulWidget {
   final String chatId;
@@ -28,10 +30,42 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _sending = false;
   String? _error;
 
+  /// SharedPreferences key scoped to this chat conversation.
+  String get _pendingKey => 'chat_pending_${widget.chatId}';
+
   @override
   void initState() {
     super.initState();
+    _loadPendingMessages();
     _loadConversation();
+  }
+
+  /// Restores any unsent messages that were persisted across restarts.
+  Future<void> _loadPendingMessages() async {
+    final prefs = await SharedPreferences.getInstance();
+    final pending = prefs.getStringList(_pendingKey) ?? [];
+    if (pending.isNotEmpty && mounted) {
+      setState(() {
+        _failedMessages.addAll(
+          pending.map((t) => _Msg(text: t, fromMe: true, time: 'Not sent', failed: true)),
+        );
+      });
+    }
+  }
+
+  /// Persists the current failed message queue to SharedPreferences.
+  Future<void> _savePendingMessages() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(
+      _pendingKey,
+      _failedMessages.map((m) => m.text).toList(),
+    );
+  }
+
+  /// Clears the persisted queue (called when all retries succeed).
+  Future<void> _clearPendingMessages() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_pendingKey);
   }
 
   Future<void> _loadConversation() async {
@@ -144,9 +178,11 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
         );
         _msgCtrl.clear();
+        // Persist so messages survive restarts
+        unawaited(_savePendingMessages());
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Network error: unable to send message'),
+            content: Text('Network error – message queued for retry.'),
           ),
         );
       }
@@ -175,12 +211,20 @@ class _ChatScreenState extends State<ChatScreen> {
         'sender_id': userId,
         'body': message.text,
       });
-      if (mounted) setState(() => _failedMessages.remove(message));
+      if (mounted) {
+        setState(() => _failedMessages.remove(message));
+        // Update or clear persisted queue
+        if (_failedMessages.isEmpty) {
+          unawaited(_clearPendingMessages());
+        } else {
+          unawaited(_savePendingMessages());
+        }
+      }
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Network error: unable to send message'),
+            content: Text('Network error: still unable to send message'),
           ),
         );
       }

@@ -258,8 +258,7 @@ class _PostJobScreenState extends State<PostJobScreen>
               controller: _titleCtrl,
               accentColor: _primary,
               textInputAction: TextInputAction.next,
-              validator: (v) =>
-                  (v == null || v.isEmpty) ? 'Title is required' : null,
+              validator: (v) => FormValidation.requiredField(v, 'Title'),
             ),
             const SizedBox(height: AppSpacing.md),
             AppTextField(
@@ -410,8 +409,7 @@ class _PostJobScreenState extends State<PostJobScreen>
                 size: 18,
               ),
               textInputAction: TextInputAction.next,
-              validator: (v) =>
-                  (v == null || v.isEmpty) ? 'Timeline is required' : null,
+              validator: (v) => FormValidation.requiredField(v, 'Timeline'),
             ),
             const SizedBox(height: AppSpacing.md),
             AppTextField(
@@ -424,8 +422,7 @@ class _PostJobScreenState extends State<PostJobScreen>
                 color: AppColors.textMuted,
                 size: 18,
               ),
-              validator: (v) =>
-                  (v == null || v.isEmpty) ? 'Location is required' : null,
+              validator: (v) => FormValidation.requiredField(v, 'Location'),
             ),
             const SizedBox(height: AppSpacing.xl),
             _SectionLabel(label: 'Required Skills', color: _primary),

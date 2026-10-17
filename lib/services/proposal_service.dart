@@ -2,6 +2,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/proposal.dart';
 
+/// Service responsible for reading and writing proposal records.
+///
+/// Decorates raw Supabase rows with job titles, student names, and GitHub
+/// usernames so UI widgets receive fully populated [Proposal] objects.
 class ProposalService {
   static final ProposalService _instance = ProposalService._internal();
   factory ProposalService() => _instance;

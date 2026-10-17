@@ -62,6 +62,10 @@ final appRouter = GoRouter(
     if (path.startsWith('/business') && user.role != 'business') {
       return '$home?unauthorized=1';
     }
+    // Guard: /admin is only accessible to users with role == 'admin'
+    if (path.startsWith('/admin') && user.role != 'admin') {
+      return '$home?unauthorized=1';
+    }
     return null;
   },
   routes: [
