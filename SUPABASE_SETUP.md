@@ -23,9 +23,11 @@ protected payment records, and funded-contract lifecycle rules. Do not run them
 again in this project.
 
 Migrations 011, 012, and 013 were applied through the Supabase Management API
-on 11 October 2026. They add the complete contract workspace and deliverable
-history, private verification uploads, admin moderation, account diagnostics,
-and device push-token storage. Do not run them again in this project.
+on 11 October 2026. Migration 014 activates Firebase push dispatch through a
+protected database webhook. Migration 015 adds administrator job moderation.
+Migration 016 creates the public profile-photo bucket with owner-only writes.
+All migrations through `202610170016_profile_images.sql` are active in the
+hosted project. Do not run them again in this project.
 
 To inspect your data, open **Database → Tables**. To inspect user accounts, open **Authentication → Users**. To inspect or change policies, open **Database → Policies**. The database password is for direct database administration; it never belongs in Flutter.
 
@@ -48,9 +50,17 @@ In **Authentication → URL Configuration → Redirect URLs**, add exactly `laun
 
 The `launchpad://` scheme is configured in Android and iOS, and the app passes it explicitly to Supabase for signup and reset. For a web deployment, add that site's HTTPS origin to Redirect URLs too. A mobile app does not require a hosted web app for its confirmation link to open the installed app.
 
-## Mapbox
+## Map tiles and nearby discovery
 
-Create a **public** Mapbox token with `styles:read` permission in your Mapbox account. Add `MAPBOX_PUBLIC_TOKEN` to the ignored `supabase.local.json` file, or pass it using `--dart-define=MAPBOX_PUBLIC_TOKEN=...`. Never put a secret Mapbox token in the app. The Radar tab uses Mapbox Static Images to show business markers. A business can save its address, latitude, and longitude in **Settings → Business Map Location**. Businesses without coordinates remain in the directory list but cannot have a marker. The map is an image with zoom controls and list selection; it does not support drag gestures or device proximity yet.
+The Radar tab requests device location, calls the `nearby_businesses` database
+function, sorts businesses by distance, and displays markers on an interactive
+Flutter map. It uses OpenStreetMap tiles when no token is supplied. To use
+Mapbox tiles, create a **public** token with `styles:read` permission and add
+`MAPBOX_PUBLIC_TOKEN` to the ignored `supabase.local.json`, or pass it with
+`--dart-define=MAPBOX_PUBLIC_TOKEN=...`. Never place a secret Mapbox token in
+the app. A business publishes its GPS position from **Settings → Business Map
+Location**. Location permission, outdoor accuracy, and radius filtering still
+require a physical-device test.
 
 ## PayMongo classroom payment API
 
@@ -94,7 +104,7 @@ Supabase backs authentication, jobs, proposals, acceptance, profiles,
 portfolios, saved jobs, contract chat, notifications, reports, reviews,
 business locations, protected PayMongo payment records, contract deliverables,
 verification documents, disputes, moderation, diagnostics, and account deletion.
-Migrations through 014 are active in the hosted project. Verification remains
+Migrations through 016 are active in the hosted project. Verification remains
 manual: an allowlisted administrator must approve every uploaded document.
 
 Android push delivery uses the `send-push-notification` Edge Function. Its
@@ -103,4 +113,10 @@ Supabase secrets. The matching webhook secret is stored in Vault under
 `launchpad_push_webhook_secret`; migration 014 connects every new notification
 row to the sender without exposing either credential to the mobile app.
 
-Email confirmation and password reset have a mobile deep link and reset-password screen, but still need a real device test after the Redirect URL is allowlisted. Before a defense, test signup, email confirmation, roles, job posting, bidding, acceptance, PayMongo checkout, chat, completion, reviews, notifications, and direct route protection on two devices or browsers. After migration 010, `supabase/tests/marketplace_lifecycle_rollback.sql` and `supabase/tests/payment_lifecycle_rollback.sql` verify the database lifecycle without retaining their test rows.
+Email confirmation and password reset have configured mobile callbacks and a
+reset-password screen, but still need a new email opened on the installed
+Android app. Before a defense, test signup, role isolation, job CRUD, bidding,
+acceptance, PayMongo checkout, chat, completion, reviews, notifications,
+profile photos, verification upload, and direct-route protection with prepared
+student and business accounts. The SQL rollback suites verify database rules
+without retaining their test rows.

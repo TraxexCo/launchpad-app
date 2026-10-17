@@ -332,7 +332,7 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               Text(
-                '// document the work behind the result',
+                'Show the work behind the result',
                 style: GoogleFonts.manrope(
                   fontSize: 10,
                   color: AppColors.studentPrimary,

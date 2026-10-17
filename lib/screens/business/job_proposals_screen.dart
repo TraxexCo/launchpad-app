@@ -158,7 +158,7 @@ class _JobProposalsScreenState extends State<JobProposalsScreen> {
               ),
               if (!_loading)
                 Text(
-                  '// ${_proposals.length} dossiers ready for review',
+                  '${_proposals.length} proposals ready for review',
                   style: GoogleFonts.manrope(
                     fontSize: 10,
                     color: AppColors.businessPrimary,

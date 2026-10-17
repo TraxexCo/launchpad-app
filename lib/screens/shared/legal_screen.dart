@@ -1,14 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/constants.dart';
 import '../../widgets/app_background.dart';
-import '../../widgets/app_button.dart';
 
-/// Simple legal content screen showing either the Privacy Policy or
-/// Terms of Service. Content is static placeholder text until real
-/// policy documents are supplied.
+/// Classroom privacy notice and terms shown inside the application.
 class LegalScreen extends StatelessWidget {
   /// When [showTerms] is true, Terms of Service is displayed;
   /// otherwise Privacy Policy is shown.
@@ -41,11 +37,7 @@ class LegalScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      _SectionTag(
-                        label: showTerms
-                            ? '// terms.of.service'
-                            : '// privacy.policy',
-                      ),
+                      _SectionTag(label: showTerms ? 'Terms' : 'Privacy'),
                       const SizedBox(height: AppSpacing.sm),
                       Text(
                         _title,
@@ -64,18 +56,7 @@ class LegalScreen extends StatelessWidget {
                         ..._termsContent(context)
                       else
                         ..._privacyContent(context),
-                      const SizedBox(height: AppSpacing.xl),
-                      AppButton(
-                        label: 'View Full Document Online',
-                        icon: Icons.open_in_new_rounded,
-                        outlined: true,
-                        foregroundColor: AppColors.studentPrimary,
-                        onPressed: () => _openUrl(
-                          showTerms
-                              ? 'https://launchpad.example.com/terms'
-                              : 'https://launchpad.example.com/privacy',
-                        ),
-                      ),
+                      const SizedBox(height: AppSpacing.sm),
                     ],
                   ),
                 ),
@@ -85,13 +66,6 @@ class LegalScreen extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  Future<void> _openUrl(String url) async {
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
   }
 
   Widget _buildHeader(BuildContext context) {
@@ -133,31 +107,37 @@ class LegalScreen extends StatelessWidget {
       title: '1. Information We Collect',
       body:
           'We collect the information you provide during registration (name, email, school/business details), '
-          'portfolio projects, proposals, and messages exchanged through the platform. We also collect '
-          'device and usage data to improve the service.',
+          'portfolio projects, proposals, messages, verification documents, profile photos, and project '
+          'deliverables you submit. When you use nearby discovery, your device location is used to calculate '
+          'distance. Android notification tokens and non-sensitive error diagnostics may also be stored.',
     ),
     _LegalSection(
       title: '2. How We Use Your Information',
       body:
           'Your information is used to operate the LaunchPad platform, match students with local businesses, '
-          'facilitate project contracts, process payments, and send important notifications about your account.',
+          'facilitate project contracts, run PayMongo test-mode payments, review verification documents, '
+          'deliver notifications, and diagnose application failures.',
     ),
     _LegalSection(
       title: '3. Data Sharing',
       body:
           'We do not sell your personal data. Profile information visible to other users (name, bio, skills) '
-          'is shared as part of the platform\'s core functionality. We share data with payment processors '
-          '(PayMongo) only to the extent required to complete transactions.',
+          'is shared as part of the platform\'s core functionality. Verification documents and contract '
+          'deliverables use restricted storage. PayMongo receives the information required to create a '
+          'test checkout, and Firebase receives Android push notification delivery data.',
     ),
     _LegalSection(
       title: '4. Data Retention',
       body:
-          'We retain your data for as long as your account is active. You may request account deletion '
-          'at any time from Settings. Deleted accounts are purged within 30 days.',
+          'Data is retained while the classroom project is active. You can permanently delete your account '
+          'from Settings. Deletion removes the authentication account and linked records according to the '
+          'database retention and cascade rules.',
     ),
     _LegalSection(
-      title: '5. Contact',
-      body: 'For privacy questions, reach us at privacy@launchpad.example.com.',
+      title: '5. Classroom scope',
+      body:
+          'LaunchPad is an academic demonstration project. Questions about the demonstration should be '
+          'raised with the project presenter or subject instructor.',
     ),
   ];
 
@@ -165,8 +145,9 @@ class LegalScreen extends StatelessWidget {
     _LegalSection(
       title: '1. Eligibility',
       body:
-          'LaunchPad is available to enrolled students and registered business owners in the Philippines. '
-          'By creating an account you confirm that the information you provide is accurate.',
+          'LaunchPad is designed for student developers and local business representatives participating in '
+          'the classroom demonstration. By creating an account, you confirm that the information you provide '
+          'for the demonstration is accurate and appropriate.',
     ),
     _LegalSection(
       title: '2. Platform Role',
@@ -177,8 +158,8 @@ class LegalScreen extends StatelessWidget {
     _LegalSection(
       title: '3. Payments',
       body:
-          'Payments are processed through PayMongo in test mode during the beta period. No real money '
-          'is transferred until the platform moves to production mode.',
+          'Payments use PayMongo test mode for the classroom demonstration. No real money is charged or '
+          'transferred, and payment and refund states are demonstration records.',
     ),
     _LegalSection(
       title: '4. Prohibited Conduct',
@@ -189,14 +170,14 @@ class LegalScreen extends StatelessWidget {
     _LegalSection(
       title: '5. Termination',
       body:
-          'LaunchPad reserves the right to suspend or terminate accounts that violate these terms or '
-          'harm other users.',
+          'An authorized administrator may suspend demonstration accounts, close inappropriate job posts, '
+          'or resolve reports and disputes to keep the evaluation environment usable.',
     ),
     _LegalSection(
       title: '6. Changes to Terms',
       body:
-          'We may update these terms periodically. Continued use of the platform after changes are posted '
-          'constitutes acceptance of the updated terms.',
+          'These terms may be updated before the final evaluation to match the demonstrated system. The '
+          'effective date shown above identifies the version presented in the application.',
     ),
   ];
 }

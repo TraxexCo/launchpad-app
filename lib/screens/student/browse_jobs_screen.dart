@@ -171,7 +171,7 @@ class _BrowseJobsScreenState extends State<BrowseJobsScreen> {
                       style: Theme.of(context).textTheme.headlineSmall,
                     ),
                     Text(
-                      'LIVE MARKET RADAR',
+                      'LOCAL OPPORTUNITIES',
                       style: GoogleFonts.manrope(
                         fontSize: 9,
                         letterSpacing: 1.8,

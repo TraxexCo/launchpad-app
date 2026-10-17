@@ -105,7 +105,7 @@ class _PostJobScreenState extends State<PostJobScreen>
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('✅ Job posted successfully!'),
+          content: Text('Job posted.'),
           backgroundColor: AppColors.success,
         ),
       );
@@ -497,7 +497,7 @@ class _PostJobScreenState extends State<PostJobScreen>
                       borderRadius: BorderRadius.circular(AppRadius.full),
                     ),
                     child: Text(
-                      '// job.preview',
+                      'Job preview',
                       style: GoogleFonts.manrope(fontSize: 9, color: _primary),
                     ),
                   ),

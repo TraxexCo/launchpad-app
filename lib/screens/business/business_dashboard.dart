@@ -803,7 +803,7 @@ class _BizJobsTabState extends State<_BizJobsTab> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('🗑️ Job deleted.'),
+            content: Text('Job deleted.'),
             backgroundColor: AppColors.error,
           ),
         );

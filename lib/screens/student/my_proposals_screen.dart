@@ -137,7 +137,7 @@ class _MyProposalsScreenState extends State<MyProposalsScreen>
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
               Text(
-                '// every pitch has a flight path',
+                'Track every proposal from submission to decision',
                 style: GoogleFonts.manrope(
                   fontSize: 10,
                   color: AppColors.studentPrimary,

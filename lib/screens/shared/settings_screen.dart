@@ -805,7 +805,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _isStudent ? 'STUDENT SYSTEM' : 'BUSINESS SYSTEM',
+                  _isStudent ? 'STUDENT ACCOUNT' : 'BUSINESS ACCOUNT',
                   style: GoogleFonts.manrope(
                     fontSize: 10,
                     fontWeight: FontWeight.w700,

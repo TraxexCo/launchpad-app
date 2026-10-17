@@ -83,7 +83,7 @@ class _EditJobScreenState extends State<EditJobScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('✅ Job updated successfully!'),
+          content: Text('Job updated.'),
           backgroundColor: AppColors.success,
         ),
       );

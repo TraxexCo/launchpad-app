@@ -75,7 +75,7 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
       setState(() => _loading = false);
       final msg = e is PostgrestException ? e.message : e.toString();
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('❌ $msg'), backgroundColor: AppColors.error),
+        SnackBar(content: Text(msg), backgroundColor: AppColors.error),
       );
     }
   }
@@ -554,7 +554,7 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
                         borderRadius: BorderRadius.circular(AppRadius.full),
                       ),
                       child: Text(
-                        '// your.pitch',
+                        'Proposal review',
                         style: GoogleFonts.manrope(
                           fontSize: 9,
                           color: AppColors.studentPrimary,

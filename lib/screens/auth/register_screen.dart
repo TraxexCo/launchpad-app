@@ -134,7 +134,7 @@ class _RegisterScreenState extends State<RegisterScreen>
           ? 'This email is already registered.'
           : raw;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('❌ $msg'), backgroundColor: AppColors.error),
+        SnackBar(content: Text(msg), backgroundColor: AppColors.error),
       );
     }
   }
@@ -152,8 +152,8 @@ class _RegisterScreenState extends State<RegisterScreen>
                 totalSteps: _totalSteps,
                 accentColor: _primary,
                 roleLabel: _isStudent
-                    ? '// student.register'
-                    : '// business.register',
+                    ? 'Student registration'
+                    : 'Business registration',
                 onBack: _prevStep,
               ),
               Expanded(
