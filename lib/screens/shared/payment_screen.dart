@@ -152,7 +152,9 @@ class _PaymentScreenState extends State<PaymentScreen>
         if (payment.isFunded) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('PayMongo test payment confirmed.'),
+              content: Text(
+                'Payment confirmed. Funds are held until work is approved.',
+              ),
               backgroundColor: AppColors.success,
             ),
           );
@@ -341,8 +343,10 @@ class _PaymentScreenState extends State<PaymentScreen>
   Widget _paymentInstrument(PaymentRecord? payment) {
     final status = payment?.displayStatus ?? 'Not Funded';
     final funded = payment?.isFunded ?? false;
-    final color = funded
+    final color = payment?.isReleased == true
         ? AppColors.success
+        : payment?.isHeld == true
+        ? AppColors.businessAccent
         : payment == null
         ? AppColors.warning
         : AppColors.businessAccent;
@@ -384,11 +388,12 @@ class _PaymentScreenState extends State<PaymentScreen>
           ),
           const SizedBox(height: 4),
           Text(
-            funded
-                ? 'The accepted project is cleared for work.'
+            payment?.protectionMessage ??
+                (funded
+                    ? 'The accepted project is cleared for work.'
                 : _studentView
                 ? 'Funding must be confirmed before submission.'
-                : 'Fund the accepted student proposal securely in test mode.',
+                : 'Fund the accepted student proposal securely in test mode.'),
             style: GoogleFonts.manrope(
               fontSize: 13,
               height: 1.45,

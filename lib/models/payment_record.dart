@@ -37,16 +37,29 @@ class PaymentRecord {
   );
 
   bool get isFunded => status == 'paid' || status == 'released';
+  bool get isHeld => status == 'paid';
+  bool get isReleased => status == 'released';
   bool get canOpenCheckout =>
       status == 'checkout_created' && (checkoutUrl?.isNotEmpty ?? false);
 
   String get displayStatus => switch (status) {
     'checkout_created' => 'Awaiting Payment',
-    'paid' => 'Project Funded',
+    'paid' => 'Funds Held',
     'released' => 'Payment Released',
     'failed' => 'Payment Failed',
     'expired' => 'Checkout Expired',
     'refunded' => 'Payment Refunded',
     _ => 'Not Funded',
+  };
+
+  String get protectionMessage => switch (status) {
+    'paid' =>
+      'Payment is confirmed and held until the business approves the completed work.',
+    'released' =>
+      'The business approved the completed work and released the payment.',
+    'refunded' => 'The held payment was marked for refund after review.',
+    'checkout_created' =>
+      'The payment has not been confirmed. Project work remains locked.',
+    _ => 'Project work stays locked until payment is confirmed.',
   };
 }

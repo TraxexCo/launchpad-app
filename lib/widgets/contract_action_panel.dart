@@ -234,6 +234,31 @@ class _ContractActionPanelState extends State<ContractActionPanel> {
       );
     }
 
+    if (paymentStatus == 'paid') {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _message(
+            Icons.shield_outlined,
+            widget.studentView
+                ? 'Funds are held until the business approves your completed work.'
+                : 'Funds are held. Approve the final submission to release payment.',
+            AppColors.businessAccent,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          FilledButton.icon(
+            onPressed: _working ? null : _requestCompletion,
+            icon: const Icon(Icons.space_dashboard_outlined, size: 18),
+            label: Text(
+              status == 'submitted' && !widget.studentView
+                  ? 'Review deliverable'
+                  : 'Open project workspace',
+            ),
+          ),
+        ],
+      );
+    }
+
     return FilledButton.icon(
       onPressed: _working ? null : _requestCompletion,
       icon: const Icon(Icons.space_dashboard_outlined, size: 18),

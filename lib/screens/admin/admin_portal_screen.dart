@@ -398,10 +398,20 @@ class _AdminPortalScreenState extends State<AdminPortalScreen>
     empty: 'No open disputes',
     builder: (item) {
       final job = item['jobs'] as Map<String, dynamic>?;
+      final paymentRelation = item['payments'];
+      final payment = paymentRelation is List && paymentRelation.isNotEmpty
+          ? paymentRelation.first as Map<String, dynamic>
+          : paymentRelation is Map<String, dynamic>
+          ? paymentRelation
+          : null;
+      final paymentStatus = payment?['status']?.toString();
+      final fundsHeld = paymentStatus == 'paid';
       return _adminCard(
         title: job?['title']?.toString() ?? 'Contract #${item['id']}',
         tag: 'disputed',
-        detail: item['dispute_reason']?.toString() ?? 'No reason supplied',
+        detail:
+            '${item['dispute_reason']?.toString() ?? 'No reason supplied'}\n'
+            '${fundsHeld ? 'Payment is held: resume the project or record a refund.' : 'Payment status: ${paymentStatus ?? 'not funded'}'}',
         actions: [
           TextButton(
             onPressed: () async {
@@ -418,21 +428,22 @@ class _AdminPortalScreenState extends State<AdminPortalScreen>
             },
             child: const Text('Resume'),
           ),
-          TextButton(
-            onPressed: () async {
-              final note = await _note('Cancel contract');
-              if (note != null) {
-                await _act(
-                  () => _service.resolveDispute(
-                    item['id'] as int,
-                    'cancel',
-                    note,
-                  ),
-                );
-              }
-            },
-            child: const Text('Cancel'),
-          ),
+          if (!fundsHeld)
+            TextButton(
+              onPressed: () async {
+                final note = await _note('Cancel contract');
+                if (note != null) {
+                  await _act(
+                    () => _service.resolveDispute(
+                      item['id'] as int,
+                      'cancel',
+                      note,
+                    ),
+                  );
+                }
+              },
+              child: const Text('Cancel'),
+            ),
           FilledButton(
             onPressed: () async {
               final note = await _note(

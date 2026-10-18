@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:launchpad_app/models/payment_record.dart';
 
 void main() {
-  test('paid and released payments unlock project work', () {
+  test('paid payment is held and released only after approval', () {
     final paid = PaymentRecord.fromJson({
       'id': 4,
       'contract_id': 8,
@@ -13,7 +13,10 @@ void main() {
       'paid_at': '2026-10-11T10:00:00Z',
     });
     expect(paid.isFunded, isTrue);
-    expect(paid.displayStatus, 'Project Funded');
+    expect(paid.isHeld, isTrue);
+    expect(paid.isReleased, isFalse);
+    expect(paid.displayStatus, 'Funds Held');
+    expect(paid.protectionMessage, contains('held until'));
     expect(paid.amount, 12500);
 
     final released = PaymentRecord.fromJson({
@@ -24,7 +27,10 @@ void main() {
       'reference_number': 'LP-8-TEST',
     });
     expect(released.isFunded, isTrue);
+    expect(released.isHeld, isFalse);
+    expect(released.isReleased, isTrue);
     expect(released.displayStatus, 'Payment Released');
+    expect(released.protectionMessage, contains('approved'));
   });
 
   test('checkout status remains unpaid but keeps its provider URL', () {
