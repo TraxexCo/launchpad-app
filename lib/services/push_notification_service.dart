@@ -43,8 +43,21 @@ class PushNotificationService {
   Future<bool> initialize({bool requestPermission = false}) async {
     if (kIsWeb || !Platform.isAndroid) return false;
     try {
+      if (Firebase.apps.isEmpty) await Firebase.initializeApp();
+      final messaging = FirebaseMessaging.instance;
+      final permission = requestPermission
+          ? await messaging.requestPermission(
+              alert: true,
+              badge: true,
+              sound: true,
+            )
+          : await messaging.getNotificationSettings();
+      final authorized =
+          permission.authorizationStatus == AuthorizationStatus.authorized ||
+          permission.authorizationStatus == AuthorizationStatus.provisional;
+      if (!authorized) return false;
+
       if (!_platformConfigured) {
-        if (Firebase.apps.isEmpty) await Firebase.initializeApp();
         FirebaseMessaging.onBackgroundMessage(
           firebaseMessagingBackgroundHandler,
         );
@@ -62,19 +75,6 @@ class PushNotificationService {
             ?.createNotificationChannel(_channel);
         _platformConfigured = true;
       }
-
-      final messaging = FirebaseMessaging.instance;
-      final permission = requestPermission
-          ? await messaging.requestPermission(
-              alert: true,
-              badge: true,
-              sound: true,
-            )
-          : await messaging.getNotificationSettings();
-      final authorized =
-          permission.authorizationStatus == AuthorizationStatus.authorized ||
-          permission.authorizationStatus == AuthorizationStatus.provisional;
-      if (!authorized) return false;
       if (_listenersAttached) return true;
       _deviceToken = await messaging.getToken();
       await _registerToken();

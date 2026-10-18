@@ -78,17 +78,35 @@ Deno.serve(async (request) => {
     if (claimError) return json({ error: "Checkout could not be reserved." }, 500);
     const claim = Array.isArray(claimRows) ? claimRows[0] : claimRows;
     if (!claim?.claimed) {
+      const { data: existingPayment, error: existingError } = await admin
+        .from("payments")
+        .select("*")
+        .eq("contract_id", contractId)
+        .single();
+      if (existingError || !existingPayment) {
+        return json({ error: "The existing checkout could not be loaded." }, 500);
+      }
       if (["paid", "released"].includes(claim?.payment_status)) {
-        return json({ payment: claim, already_paid: true });
+        return json({ payment: existingPayment, already_paid: true });
       }
       if (claim?.payment_status === "checkout_created" && claim.checkout_url) {
-        return json({ payment: claim, checkout_url: claim.checkout_url });
+        return json({
+          payment: existingPayment,
+          checkout_url: existingPayment.checkout_url ?? claim.checkout_url,
+        });
       }
       return json({ error: "A checkout is already being created. Try again shortly." }, 409);
     }
     const paymentId = Number(claim.payment_id);
     const reference = String(claim.reference_number);
-    const returnBase = `${supabaseUrl}/functions/v1/paymongo-return`;
+    const returnBase = Deno.env.get("PAYMENT_RETURN_URL")?.trim() ||
+      "https://launchpad-mobile-prince.web.app/payment-return.html";
+    const returnUrl = (result: "success" | "cancel") => {
+      const url = new URL(returnBase);
+      url.searchParams.set("result", result);
+      url.searchParams.set("contract_id", String(contractId));
+      return url.toString();
+    };
     const title = contract.jobs?.title ?? `LaunchPad Project ${contractId}`;
     const paymongoResponse = await fetch("https://api.paymongo.com/v1/checkout_sessions", {
       method: "POST",
@@ -100,8 +118,8 @@ Deno.serve(async (request) => {
       body: JSON.stringify({
         data: {
           attributes: {
-            cancel_url: `${returnBase}?result=cancel&contract_id=${contractId}`,
-            success_url: `${returnBase}?result=success&contract_id=${contractId}`,
+            cancel_url: returnUrl("cancel"),
+            success_url: returnUrl("success"),
             description: `LaunchPad classroom payment for ${title}`,
             reference_number: reference,
             send_email_receipt: false,

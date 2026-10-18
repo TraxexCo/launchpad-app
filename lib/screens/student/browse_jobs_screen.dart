@@ -278,7 +278,7 @@ class _BrowseJobsScreenState extends State<BrowseJobsScreen> {
 
   Widget _buildNotificationButton(BuildContext context) {
     return GestureDetector(
-      onTap: () => context.go('/notifications?role=student'),
+      onTap: () => context.push('/notifications?role=student'),
       child: Container(
         width: 40,
         height: 40,
@@ -536,7 +536,7 @@ class _JobCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppCard(
-      onTap: () => context.go('/student/jobs/${job.id}'),
+      onTap: () => context.push('/student/jobs/${job.id}'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

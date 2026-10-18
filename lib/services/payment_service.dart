@@ -62,6 +62,18 @@ class PaymentService {
     if (data['checkout_url'] != null) {
       payment['checkout_url'] = data['checkout_url'];
     }
+    // The checkout reservation RPC returns a compact row when an existing
+    // idempotent checkout is reused. Reload the complete record before
+    // parsing it so repeat taps and cancelled browser returns stay safe.
+    if (payment['id'] == null || payment['contract_id'] == null) {
+      final stored = await getForContract(contractId);
+      if (stored == null) {
+        throw const FormatException(
+          'The payment record could not be loaded after checkout creation.',
+        );
+      }
+      return stored;
+    }
     return PaymentRecord.fromJson(payment);
   }
 

@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#111214">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Return to LaunchPad</title>
+  <link rel="icon" type="image/png" href="favicon.png">
+  <style>
+    :root {
+      color-scheme: dark;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #111214;
+      color: #f7f3ea;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background:
+        radial-gradient(circle at 12% 8%, rgba(255, 106, 61, .16), transparent 32rem),
+        linear-gradient(rgba(255,255,255,.028) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.028) 1px, transparent 1px),
+        #111214;
+      background-size: auto, 48px 48px, 48px 48px, auto;
+    }
+
+    main {
+      width: min(100%, 540px);
+      padding: clamp(28px, 6vw, 52px);
+      border: 1px solid #404247;
+      border-radius: 24px;
+      background: #181a1e;
+      box-shadow: 0 28px 80px rgba(0, 0, 0, .38);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 44px;
+      color: #f7f3ea;
+      font-size: 14px;
+      font-weight: 800;
+      letter-spacing: .14em;
+      text-transform: uppercase;
+    }
+
+    .brand img { width: 36px; height: 36px; border-radius: 9px; }
+
+    .eyebrow {
+      margin: 0 0 14px;
+      color: #ff6a3d;
+      font: 700 12px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      max-width: 430px;
+      margin: 0;
+      font-size: clamp(32px, 8vw, 48px);
+      line-height: 1.02;
+      letter-spacing: -.045em;
+    }
+
+    p {
+      margin: 20px 0 0;
+      color: #b9bbc1;
+      font-size: 16px;
+      line-height: 1.65;
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 32px;
+      padding: 14px 16px;
+      border: 1px solid #34363b;
+      border-radius: 14px;
+      color: #d8d9dd;
+      background: #141518;
+      font-size: 14px;
+    }
+
+    .pulse {
+      width: 9px;
+      height: 9px;
+      flex: 0 0 auto;
+      border-radius: 50%;
+      background: #ff6a3d;
+      box-shadow: 0 0 0 5px rgba(255, 106, 61, .13);
+    }
+
+    a {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 58px;
+      margin-top: 18px;
+      padding: 0 20px;
+      border-radius: 14px;
+      background: #ff6a3d;
+      color: #141414;
+      font-weight: 800;
+      text-decoration: none;
+      transition: transform 160ms ease, background 160ms ease;
+    }
+
+    a:hover { transform: translateY(-2px); background: #ff7b53; }
+    a:focus-visible { outline: 3px solid #f7f3ea; outline-offset: 4px; }
+    .arrow { font-size: 22px; }
+
+    small {
+      display: block;
+      margin-top: 22px;
+      color: #7f828a;
+      line-height: 1.5;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      a { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="brand"><img src="icons/Icon-192.png" alt="">LaunchPad</div>
+    <p class="eyebrow" id="eyebrow">Payment return</p>
+    <h1 id="title">Opening your project…</h1>
+    <p id="message">Your payment status will be verified securely inside the LaunchPad app.</p>
+    <div class="status"><span class="pulse" aria-hidden="true"></span><span id="status">Connecting to LaunchPad</span></div>
+    <a id="open-app" href="launchpad://payment-return/">
+      <span>Open LaunchPad</span><span class="arrow" aria-hidden="true">→</span>
+    </a>
+    <small>If the app does not open automatically, use the button above. You may close this page afterward.</small>
+  </main>
+  <script src="payment-return.js"></script>
+</body>
+</html>

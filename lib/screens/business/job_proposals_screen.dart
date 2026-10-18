@@ -306,7 +306,7 @@ class _ProposalCard extends StatelessWidget {
     // We don't have skills natively on proposals right now from the backend, so we leave it empty.
     return AppCard(
       onTap: () =>
-          context.go('/business/proposals/${proposal.id}', extra: proposal),
+          context.push('/business/proposals/${proposal.id}', extra: proposal),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

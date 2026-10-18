@@ -46,7 +46,10 @@ class AuthService extends ChangeNotifier {
 
   Future<void> restoreInitialRecoveryState() async {
     if (kIsWeb) return;
-    final uri = await _appLinks.getInitialLink();
+    final uri = await _appLinks.getInitialLink().timeout(
+      const Duration(seconds: 2),
+      onTimeout: () => null,
+    );
     if (uri == null) return;
     _handleIncomingLink(uri);
   }

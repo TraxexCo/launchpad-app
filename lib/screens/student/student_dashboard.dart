@@ -173,7 +173,7 @@ class _AppBar extends StatelessWidget {
           const SizedBox(width: AppSpacing.sm),
           _IconBtn(
             icon: Icons.settings_outlined,
-            onTap: () => context.go('/settings?role=student'),
+            onTap: () => context.push('/settings?role=student'),
           ),
         ],
       ),
@@ -368,7 +368,7 @@ class _HomeTabState extends State<_HomeTab> {
               .where((contract) => contract.status != 'completed')
               .length,
           loading: _loading,
-          onBrowse: () => context.go('/student/jobs'),
+          onBrowse: () => context.push('/student/jobs'),
           onPortfolio: () => widget.onNavigate(2),
         ),
 
@@ -520,7 +520,7 @@ class _HomeTabState extends State<_HomeTab> {
         _SectionHeader(
           title: 'Open Jobs Near You',
           action: 'Browse all',
-          onAction: () => context.go('/student/jobs'),
+          onAction: () => context.push('/student/jobs'),
         ),
         const SizedBox(height: AppSpacing.md),
         if (_loading)
@@ -545,7 +545,7 @@ class _HomeTabState extends State<_HomeTab> {
           return Padding(
             padding: const EdgeInsets.only(bottom: AppSpacing.sm),
             child: AppCard(
-              onTap: () => context.go('/student/jobs/${job.id}'),
+              onTap: () => context.push('/student/jobs/${job.id}'),
               child: Row(
                 children: [
                   Container(
@@ -632,11 +632,11 @@ class _HomeTabState extends State<_HomeTab> {
         _SectionHeader(
           title: 'My Portfolio',
           action: 'Add project',
-          onAction: () => context.go('/student/portfolio/add'),
+          onAction: () => context.push('/student/portfolio/add'),
         ),
         const SizedBox(height: AppSpacing.md),
         AppCard(
-          onTap: () => context.go('/student/portfolio/add'),
+          onTap: () => context.push('/student/portfolio/add'),
           child: const Row(
             children: [
               _EmptyStateGlyph(icon: Icons.add_photo_alternate_outlined),
@@ -676,7 +676,7 @@ class _HomeTabState extends State<_HomeTab> {
         _SectionHeader(
           title: 'Active Proposals',
           action: 'See all',
-          onAction: () => context.go('/student/proposals'),
+          onAction: () => context.push('/student/proposals'),
         ),
 
         if (_loading)
@@ -1002,7 +1002,7 @@ class _PortfolioTabState extends State<_PortfolioTab> {
                 ),
               ),
               FilledButton.icon(
-                onPressed: () => context.go('/student/portfolio/add'),
+                onPressed: () => context.push('/student/portfolio/add'),
                 style: FilledButton.styleFrom(
                   minimumSize: const Size(0, 42),
                   padding: const EdgeInsets.symmetric(horizontal: 14),
@@ -1099,7 +1099,7 @@ class _PortfolioTabState extends State<_PortfolioTab> {
                 accentColor: AppColors.studentPrimary,
                 actionLabel: 'Add first project',
                 actionIcon: Icons.add_rounded,
-                onAction: () => context.go('/student/portfolio/add'),
+                onAction: () => context.push('/student/portfolio/add'),
               ),
             ),
         ],
@@ -1836,7 +1836,7 @@ class _ProposalCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppCard(
-      onTap: () => context.go('/student/proposals'),
+      onTap: () => context.push('/student/proposals'),
       child: Row(
         children: [
           Container(

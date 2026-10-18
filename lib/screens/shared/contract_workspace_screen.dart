@@ -136,6 +136,7 @@ class _ContractWorkspaceScreenState extends State<ContractWorkspaceScreen> {
     PlatformFile? file;
     int? fileSize;
     var submitting = false;
+    String? formError;
     final submitted = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
@@ -167,6 +168,11 @@ class _ContractWorkspaceScreenState extends State<ContractWorkspaceScreen> {
                 const SizedBox(height: AppSpacing.lg),
                 TextField(
                   controller: title,
+                  onChanged: (_) {
+                    if (formError != null) {
+                      setSheetState(() => formError = null);
+                    }
+                  },
                   decoration: const InputDecoration(
                     labelText: 'Deliverable title',
                   ),
@@ -174,6 +180,11 @@ class _ContractWorkspaceScreenState extends State<ContractWorkspaceScreen> {
                 const SizedBox(height: AppSpacing.md),
                 TextField(
                   controller: summary,
+                  onChanged: (_) {
+                    if (formError != null) {
+                      setSheetState(() => formError = null);
+                    }
+                  },
                   minLines: 3,
                   maxLines: 6,
                   decoration: const InputDecoration(
@@ -183,6 +194,11 @@ class _ContractWorkspaceScreenState extends State<ContractWorkspaceScreen> {
                 const SizedBox(height: AppSpacing.md),
                 TextField(
                   controller: link,
+                  onChanged: (_) {
+                    if (formError != null) {
+                      setSheetState(() => formError = null);
+                    }
+                  },
                   keyboardType: TextInputType.url,
                   decoration: const InputDecoration(
                     labelText: 'Project or preview link (optional)',
@@ -216,6 +232,27 @@ class _ContractWorkspaceScreenState extends State<ContractWorkspaceScreen> {
                   icon: const Icon(Icons.attach_file_rounded),
                   label: Text(file?.name ?? 'Attach file (max 10 MB)'),
                 ),
+                if (formError != null) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(AppSpacing.sm),
+                    decoration: BoxDecoration(
+                      color: AppColors.error.withValues(alpha: .1),
+                      border: Border.all(
+                        color: AppColors.error.withValues(alpha: .35),
+                      ),
+                      borderRadius: BorderRadius.circular(AppRadius.sm),
+                    ),
+                    child: Text(
+                      formError!,
+                      style: const TextStyle(
+                        color: AppColors.error,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: AppSpacing.lg),
                 AppButton.student(
                   label: 'Send for review',
@@ -226,24 +263,18 @@ class _ContractWorkspaceScreenState extends State<ContractWorkspaceScreen> {
                     if (title.text.trim().length < 2 ||
                         summary.text.trim().length < 10 ||
                         (file == null && cleanLink.isEmpty)) {
-                      ScaffoldMessenger.of(sheetContext).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Add a title, a clear summary, and a file or link.',
-                          ),
-                        ),
-                      );
+                      setSheetState(() {
+                        formError =
+                            'Add a title, a clear summary, and a file or link.';
+                      });
                       return;
                     }
                     if (file != null &&
                         (fileSize == null || fileSize! > 10 * 1024 * 1024)) {
-                      ScaffoldMessenger.of(sheetContext).showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            'Choose a readable file smaller than 10 MB.',
-                          ),
-                        ),
-                      );
+                      setSheetState(() {
+                        formError =
+                            'Choose a readable file smaller than 10 MB.';
+                      });
                       return;
                     }
                     setSheetState(() => submitting = true);
@@ -270,13 +301,10 @@ class _ContractWorkspaceScreenState extends State<ContractWorkspaceScreen> {
                       }
                     } catch (error) {
                       if (sheetContext.mounted) {
-                        ScaffoldMessenger.of(sheetContext).showSnackBar(
-                          SnackBar(
-                            content: Text(_message(error)),
-                            backgroundColor: AppColors.error,
-                          ),
-                        );
-                        setSheetState(() => submitting = false);
+                        setSheetState(() {
+                          submitting = false;
+                          formError = _message(error);
+                        });
                       }
                     }
                   },

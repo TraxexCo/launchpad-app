@@ -123,6 +123,11 @@ class ContractService {
         .select('''
       id,
       proposal_id,
+      job_id,
+      business_id,
+      student_id,
+      agreed_budget,
+      agreed_timeline_weeks,
       status,
       agreed_at,
       completed_at,
@@ -135,17 +140,14 @@ class ContractService {
         status,
         reference_number
       ),
-      proposals (
+      jobs (
         id,
-        proposed_budget,
-        estimated_timeline_weeks,
-        student_id,
-        jobs (
-          id,
-          title,
-          category,
-          business_id
-        )
+        title,
+        category,
+        business_id
+      ),
+      proposals (
+        id
       )
     ''')
         .order('agreed_at', ascending: false)
@@ -157,15 +159,10 @@ class ContractService {
     final businessIds = <String>{};
 
     for (final row in rows) {
-      final prop = row['proposals'] as Map<String, dynamic>?;
-      if (prop != null) {
-        final sId = prop['student_id'] as String?;
-        if (sId != null) studentIds.add(sId);
-
-        final job = prop['jobs'] as Map<String, dynamic>?;
-        final bId = job?['business_id'] as String?;
-        if (bId != null) businessIds.add(bId);
-      }
+      final sId = row['student_id'] as String?;
+      final bId = row['business_id'] as String?;
+      if (sId != null) studentIds.add(sId);
+      if (bId != null) businessIds.add(bId);
     }
 
     final studentProfiles = studentIds.isNotEmpty
@@ -202,11 +199,9 @@ class ContractService {
 
     final items = <ContractItem>[];
     for (final row in rows) {
-      final prop = row['proposals'] as Map<String, dynamic>?;
-      final job = prop?['jobs'] as Map<String, dynamic>?;
-
-      final sId = prop?['student_id'] as String? ?? '';
-      final bId = job?['business_id'] as String? ?? '';
+      final job = row['jobs'] as Map<String, dynamic>?;
+      final sId = row['student_id'] as String? ?? '';
+      final bId = row['business_id'] as String? ?? '';
 
       items.add(
         ContractItem(
@@ -221,13 +216,9 @@ class ContractService {
               : null,
           jobTitle: job?['title'] as String? ?? 'Project Contract',
           jobCategory: job?['category'] as String? ?? 'Contract',
-          budget:
-              double.tryParse(prop?['proposed_budget']?.toString() ?? '0') ??
-              0.0,
+          budget: double.tryParse(row['agreed_budget']?.toString() ?? '0') ?? 0,
           timelineWeeks:
-              int.tryParse(
-                prop?['estimated_timeline_weeks']?.toString() ?? '1',
-              ) ??
+              int.tryParse(row['agreed_timeline_weeks']?.toString() ?? '1') ??
               1,
           studentId: sId,
           studentName: studentNameMap[sId] ?? 'Student',

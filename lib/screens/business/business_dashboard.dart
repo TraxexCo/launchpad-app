@@ -384,7 +384,7 @@ class _BizHomeTabState extends State<_BizHomeTab> {
           proposals: _proposals.length,
           hired: _contracts.length,
           loading: _loading,
-          onPost: () => context.go('/business/post-job'),
+          onPost: () => context.push('/business/post-job'),
         ),
 
         if (_loadFailed) ...[
@@ -1514,7 +1514,7 @@ class _JobCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppCard(
-      onTap: () => context.go('/business/jobs/${job.id}/proposals'),
+      onTap: () => context.push('/business/jobs/${job.id}/proposals'),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1609,7 +1609,7 @@ class _IncomingProposalCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppCard(
       onTap: () =>
-          context.go('/business/proposals/${proposal.id}', extra: proposal),
+          context.push('/business/proposals/${proposal.id}', extra: proposal),
       child: Row(
         children: [
           ProfileAvatar(

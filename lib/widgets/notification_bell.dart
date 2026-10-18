@@ -34,7 +34,7 @@ class NotificationBell extends StatelessWidget {
             ),
             child: InkWell(
               borderRadius: BorderRadius.circular(AppRadius.md),
-              onTap: () => context.go(
+              onTap: () => context.push(
                 '/notifications?role=${role == UserRole.student ? 'student' : 'business'}',
               ),
               child: SizedBox(

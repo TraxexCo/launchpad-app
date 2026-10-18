@@ -85,7 +85,7 @@ class _AddProjectScreenState extends State<AddProjectScreen> {
         ]);
       }
       if (!mounted) return;
-      context.go('/student/portfolio/${row['id']}');
+      context.pushReplacement('/student/portfolio/${row['id']}');
     } catch (error) {
       if (createdId != null) {
         try {

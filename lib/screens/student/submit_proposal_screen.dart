@@ -53,7 +53,12 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
   }
 
   Future<void> _send() async {
-    if (!_formKey.currentState!.validate()) return;
+    // The review step replaces the Form with a summary, so currentState is
+    // intentionally null when the user presses "Send Pitch". The compose
+    // step already validates before moving to review; only revalidate when
+    // the Form is still mounted.
+    final formState = _formKey.currentState;
+    if (formState != null && !formState.validate()) return;
     setState(() => _loading = true);
 
     try {
