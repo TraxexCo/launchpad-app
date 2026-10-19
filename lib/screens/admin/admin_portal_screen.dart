@@ -179,6 +179,10 @@ class _AdminPortalScreenState extends State<AdminPortalScreen>
             final url = await _service.deliverableFileUrl(path);
             await launchUrl(Uri.parse(url));
           },
+          openDisputeFile: (path) async {
+            final url = await _service.disputeFileUrl(path);
+            await launchUrl(Uri.parse(url));
+          },
         ),
       );
     } catch (error) {
@@ -795,10 +799,15 @@ class _AdminPortalScreenState extends State<AdminPortalScreen>
 }
 
 class _DisputeCaseDialog extends StatelessWidget {
-  const _DisputeCaseDialog({required this.caseFile, required this.openFile});
+  const _DisputeCaseDialog({
+    required this.caseFile,
+    required this.openFile,
+    required this.openDisputeFile,
+  });
 
   final Map<String, dynamic> caseFile;
   final Future<void> Function(String path) openFile;
+  final Future<void> Function(String path) openDisputeFile;
 
   Map<String, dynamic> _map(String key) =>
       Map<String, dynamic>.from((caseFile[key] as Map?) ?? const {});
@@ -825,6 +834,7 @@ class _DisputeCaseDialog extends StatelessWidget {
     final messages = _list('messages');
     final deliverables = _list('deliverables');
     final events = _list('events');
+    final disputeEvidence = _list('dispute_evidence');
     final studentMessages = messages
         .where((m) => m['sender_id'] == student['id'])
         .length;
@@ -868,6 +878,12 @@ class _DisputeCaseDialog extends StatelessWidget {
                     Text(
                       'Complaint: ${contract['dispute_reason'] ?? 'No reason supplied'}',
                     ),
+                    if (contract['dispute_deadline'] != null) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        'Response deadline: ${_when(contract['dispute_deadline'])}',
+                      ),
+                    ],
                     const SizedBox(height: 12),
                     ...checks.map(
                       (check) => Padding(
@@ -891,6 +907,34 @@ class _DisputeCaseDialog extends StatelessWidget {
                     ),
                   ],
                 ),
+              ),
+              _caseSection(
+                'Party statements and evidence',
+                Icons.fact_check_outlined,
+                disputeEvidence.isEmpty
+                    ? const Text('Neither party submitted a formal response.')
+                    : Column(
+                        children: disputeEvidence.map((item) {
+                          final path = item['storage_path']?.toString();
+                          final author = item['submitted_by'] == student['id']
+                              ? 'Student'
+                              : 'Business';
+                          return ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(
+                              '$author statement · ${_when(item['created_at'])}',
+                            ),
+                            subtitle: Text(item['statement']?.toString() ?? ''),
+                            trailing: path == null || path.isEmpty
+                                ? null
+                                : IconButton(
+                                    tooltip: 'Open evidence file',
+                                    onPressed: () => openDisputeFile(path),
+                                    icon: const Icon(Icons.file_open_outlined),
+                                  ),
+                          );
+                        }).toList(),
+                      ),
               ),
               _caseSection(
                 'Agreed project scope',

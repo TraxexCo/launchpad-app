@@ -89,11 +89,31 @@ class AdminService {
       'admin_get_dispute_case',
       params: {'contract_key': contractId},
     );
-    return Map<String, dynamic>.from(result as Map);
+    final caseFile = Map<String, dynamic>.from(result as Map);
+    final extras = await Future.wait([
+      _client
+          .from('dispute_evidence')
+          .select()
+          .eq('contract_id', contractId)
+          .order('created_at'),
+      _client
+          .from('contracts')
+          .select('dispute_deadline')
+          .eq('id', contractId)
+          .single(),
+    ]);
+    caseFile['dispute_evidence'] = extras[0];
+    final contract = Map<String, dynamic>.from(caseFile['contract'] as Map);
+    contract['dispute_deadline'] = (extras[1] as Map)['dispute_deadline'];
+    caseFile['contract'] = contract;
+    return caseFile;
   }
 
   Future<String> deliverableFileUrl(String path) =>
       _client.storage.from('contract-deliverables').createSignedUrl(path, 600);
+
+  Future<String> disputeFileUrl(String path) =>
+      _client.storage.from('dispute-evidence').createSignedUrl(path, 600);
 
   Future<void> setUserSuspension(
     String userId, {

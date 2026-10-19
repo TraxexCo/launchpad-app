@@ -56,6 +56,34 @@ class ContractEvent {
   );
 }
 
+class DisputeEvidence {
+  final int id;
+  final String submittedBy;
+  final String statement;
+  final String? storagePath;
+  final String? originalFileName;
+  final DateTime createdAt;
+
+  const DisputeEvidence({
+    required this.id,
+    required this.submittedBy,
+    required this.statement,
+    this.storagePath,
+    this.originalFileName,
+    required this.createdAt,
+  });
+
+  factory DisputeEvidence.fromJson(Map<String, dynamic> json) =>
+      DisputeEvidence(
+        id: json['id'] as int,
+        submittedBy: json['submitted_by'] as String,
+        statement: json['statement'] as String,
+        storagePath: json['storage_path'] as String?,
+        originalFileName: json['original_file_name'] as String?,
+        createdAt: DateTime.parse(json['created_at'] as String),
+      );
+}
+
 class ContractItem {
   final int id;
   final int proposalId;
@@ -78,6 +106,7 @@ class ContractItem {
   final String? revisionMessage;
   final String? cancellationReason;
   final String? disputeReason;
+  final DateTime? disputeDeadline;
 
   const ContractItem({
     required this.id,
@@ -101,6 +130,7 @@ class ContractItem {
     this.revisionMessage,
     this.cancellationReason,
     this.disputeReason,
+    this.disputeDeadline,
   });
 }
 
@@ -136,6 +166,7 @@ class ContractService {
       revision_message,
       cancellation_reason,
       dispute_reason,
+      dispute_deadline,
       payments (
         status,
         reference_number
@@ -236,6 +267,9 @@ class ContractService {
           revisionMessage: row['revision_message'] as String?,
           cancellationReason: row['cancellation_reason'] as String?,
           disputeReason: row['dispute_reason'] as String?,
+          disputeDeadline: row['dispute_deadline'] == null
+              ? null
+              : DateTime.tryParse(row['dispute_deadline'] as String),
         ),
       );
     }
@@ -279,6 +313,53 @@ class ContractService {
         .range(0, 99);
     return rows.map(ContractEvent.fromJson).toList();
   }
+
+  Future<List<DisputeEvidence>> getDisputeEvidence(int contractId) async {
+    final rows = await _client
+        .from('dispute_evidence')
+        .select()
+        .eq('contract_id', contractId)
+        .order('created_at');
+    return rows.map(DisputeEvidence.fromJson).toList();
+  }
+
+  Future<String> uploadDisputeEvidence({
+    required int contractId,
+    required String fileName,
+    required Uint8List bytes,
+  }) async {
+    final userId = _client.auth.currentUser?.id;
+    if (userId == null) throw const AuthException('Sign in required');
+    final safeName = fileName.replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
+    final path =
+        '$contractId/$userId/${DateTime.now().millisecondsSinceEpoch}_$safeName';
+    await _client.storage
+        .from('dispute-evidence')
+        .uploadBinary(
+          path,
+          bytes,
+          fileOptions: const FileOptions(upsert: false),
+        );
+    return path;
+  }
+
+  Future<void> submitDisputeEvidence({
+    required int contractId,
+    required String statement,
+    String? storagePath,
+    String? fileName,
+  }) => _client.rpc(
+    'submit_dispute_evidence',
+    params: {
+      'contract_key': contractId,
+      'statement_text': statement.trim(),
+      'evidence_storage_path': storagePath,
+      'evidence_file_name': fileName,
+    },
+  );
+
+  Future<String> createDisputeFileUrl(String path) =>
+      _client.storage.from('dispute-evidence').createSignedUrl(path, 600);
 
   Future<void> startWork(int contractId) async {
     await _client.rpc(

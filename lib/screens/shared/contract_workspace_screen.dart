@@ -26,6 +26,7 @@ class _ContractWorkspaceScreenState extends State<ContractWorkspaceScreen> {
   ContractItem? _contract;
   List<ContractDeliverable> _deliverables = const [];
   List<ContractEvent> _events = const [];
+  List<DisputeEvidence> _disputeEvidence = const [];
   bool _loading = true;
   bool _working = false;
   String? _error;
@@ -51,12 +52,14 @@ class _ContractWorkspaceScreenState extends State<ContractWorkspaceScreen> {
         _service.getContract(widget.contractId),
         _service.getDeliverables(widget.contractId),
         _service.getEvents(widget.contractId),
+        _service.getDisputeEvidence(widget.contractId),
       ]);
       if (!mounted) return;
       setState(() {
         _contract = results[0] as ContractItem;
         _deliverables = results[1] as List<ContractDeliverable>;
         _events = results[2] as List<ContractEvent>;
+        _disputeEvidence = results[3] as List<DisputeEvidence>;
       });
     } catch (error) {
       if (mounted) setState(() => _error = _message(error));
@@ -328,6 +331,141 @@ class _ContractWorkspaceScreenState extends State<ContractWorkspaceScreen> {
     if (uri != null) await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
+  Future<void> _submitDisputeResponse() async {
+    final statement = TextEditingController();
+    PlatformFile? file;
+    var submitting = false;
+    String? formError;
+    final submitted = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.surface,
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (sheetContext, setSheetState) => Padding(
+          padding: EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.lg,
+            AppSpacing.lg,
+            MediaQuery.viewInsetsOf(sheetContext).bottom + AppSpacing.lg,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'Add dispute evidence',
+                  style: GoogleFonts.manrope(
+                    fontSize: 23,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Explain your side clearly. You may attach a screenshot, PDF, text file, or ZIP up to 10 MB.',
+                ),
+                const SizedBox(height: 18),
+                TextField(
+                  controller: statement,
+                  minLines: 4,
+                  maxLines: 8,
+                  maxLength: 5000,
+                  decoration: const InputDecoration(
+                    labelText: 'Your statement',
+                    hintText:
+                        'Describe what happened and point to specific messages or submissions.',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: submitting
+                      ? null
+                      : () async {
+                          final picked = await FilePicker.pickFile(
+                            allowedExtensions: const [
+                              'pdf',
+                              'zip',
+                              'jpg',
+                              'jpeg',
+                              'png',
+                              'txt',
+                            ],
+                            type: FileType.custom,
+                          );
+                          if (picked != null) {
+                            setSheetState(() => file = picked);
+                          }
+                        },
+                  icon: const Icon(Icons.attach_file_rounded),
+                  label: Text(
+                    file?.name ?? 'Attach supporting file (optional)',
+                  ),
+                ),
+                if (formError != null) ...[
+                  const SizedBox(height: 12),
+                  Text(
+                    formError!,
+                    style: const TextStyle(color: AppColors.error),
+                  ),
+                ],
+                const SizedBox(height: 18),
+                AppButton.student(
+                  label: 'Submit to case file',
+                  icon: Icons.fact_check_outlined,
+                  isLoading: submitting,
+                  onPressed: () async {
+                    if (statement.text.trim().length < 20) {
+                      setSheetState(
+                        () => formError =
+                            'Write at least 20 characters so the administrator has useful context.',
+                      );
+                      return;
+                    }
+                    setSheetState(() => submitting = true);
+                    try {
+                      String? path;
+                      if (file != null) {
+                        final bytes = await file!.readAsBytes();
+                        if (bytes.length > 10 * 1024 * 1024) {
+                          throw StateError(
+                            'The evidence file must be smaller than 10 MB.',
+                          );
+                        }
+                        path = await _service.uploadDisputeEvidence(
+                          contractId: widget.contractId,
+                          fileName: file!.name,
+                          bytes: bytes,
+                        );
+                      }
+                      await _service.submitDisputeEvidence(
+                        contractId: widget.contractId,
+                        statement: statement.text,
+                        storagePath: path,
+                        fileName: file?.name,
+                      );
+                      if (sheetContext.mounted) {
+                        Navigator.pop(sheetContext, true);
+                      }
+                    } catch (error) {
+                      if (sheetContext.mounted) {
+                        setSheetState(() {
+                          submitting = false;
+                          formError = _message(error);
+                        });
+                      }
+                    }
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+    statement.dispose();
+    if (submitted == true) await _load();
+  }
+
   Future<void> _openFile(String path) async {
     final url = await _service.createFileUrl(path);
     await launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
@@ -429,6 +567,34 @@ class _ContractWorkspaceScreenState extends State<ContractWorkspaceScreen> {
         ),
         const SizedBox(height: AppSpacing.sm),
         _actions(contract),
+        if (contract.status == 'disputed') ...[
+          const SizedBox(height: AppSpacing.md),
+          FilledButton.icon(
+            onPressed: _working ? null : _submitDisputeResponse,
+            icon: const Icon(Icons.add_comment_outlined),
+            label: const Text('Add statement or evidence'),
+          ),
+          if (contract.disputeDeadline != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              'Response deadline: ${_date(contract.disputeDeadline!)}',
+              style: const TextStyle(
+                color: AppColors.textSecondary,
+                fontSize: 12,
+              ),
+            ),
+          ],
+          const SizedBox(height: AppSpacing.xl),
+          _sectionTitle('Dispute case file', Icons.fact_check_outlined),
+          const SizedBox(height: AppSpacing.sm),
+          if (_disputeEvidence.isEmpty)
+            _empty(
+              'No statements yet',
+              'Both parties can add a written response and supporting file.',
+            )
+          else
+            ..._disputeEvidence.map(_disputeEvidenceCard),
+        ],
         const SizedBox(height: AppSpacing.xl),
         _sectionTitle('Deliverables', Icons.inventory_2_outlined),
         const SizedBox(height: AppSpacing.sm),
@@ -729,6 +895,49 @@ class _ContractWorkspaceScreenState extends State<ContractWorkspaceScreen> {
           ),
         ),
       ],
+    ),
+  );
+
+  Widget _disputeEvidenceCard(DisputeEvidence item) => Padding(
+    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+    child: AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            item.submittedBy == _contract?.studentId
+                ? 'STUDENT STATEMENT'
+                : 'BUSINESS STATEMENT',
+            style: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1,
+              color: AppColors.warning,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(item.statement, style: const TextStyle(height: 1.45)),
+          const SizedBox(height: 8),
+          Text(
+            _date(item.createdAt),
+            style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+          ),
+          if (item.storagePath != null)
+            TextButton.icon(
+              onPressed: () async {
+                final url = await _service.createDisputeFileUrl(
+                  item.storagePath!,
+                );
+                await launchUrl(
+                  Uri.parse(url),
+                  mode: LaunchMode.externalApplication,
+                );
+              },
+              icon: const Icon(Icons.file_open_outlined),
+              label: Text(item.originalFileName ?? 'Open evidence file'),
+            ),
+        ],
+      ),
     ),
   );
 
