@@ -161,6 +161,38 @@ class _AdminPortalScreenState extends State<AdminPortalScreen>
     }
   }
 
+  Future<void> _openDisputeCase(int contractId) async {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+    try {
+      final caseFile = await _service.disputeCase(contractId);
+      if (!mounted) return;
+      Navigator.pop(context);
+      await showDialog<void>(
+        context: context,
+        builder: (context) => _DisputeCaseDialog(
+          caseFile: caseFile,
+          openFile: (path) async {
+            final url = await _service.deliverableFileUrl(path);
+            await launchUrl(Uri.parse(url));
+          },
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error is PostgrestException ? error.message : '$error'),
+          backgroundColor: AppColors.error,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
@@ -413,6 +445,11 @@ class _AdminPortalScreenState extends State<AdminPortalScreen>
             '${item['dispute_reason']?.toString() ?? 'No reason supplied'}\n'
             '${fundsHeld ? 'Payment is held: resume the project or record a refund.' : 'Payment status: ${paymentStatus ?? 'not funded'}'}',
         actions: [
+          OutlinedButton.icon(
+            onPressed: () => _openDisputeCase(item['id'] as int),
+            icon: const Icon(Icons.fact_check_outlined, size: 18),
+            label: const Text('Review evidence'),
+          ),
           TextButton(
             onPressed: () async {
               final note = await _note('Resume contract');
@@ -725,6 +762,234 @@ class _AdminPortalScreenState extends State<AdminPortalScreen>
             textAlign: TextAlign.center,
             style: const TextStyle(color: AppColors.textSecondary),
           ),
+        ],
+      ),
+    ),
+  );
+}
+
+class _DisputeCaseDialog extends StatelessWidget {
+  const _DisputeCaseDialog({required this.caseFile, required this.openFile});
+
+  final Map<String, dynamic> caseFile;
+  final Future<void> Function(String path) openFile;
+
+  Map<String, dynamic> _map(String key) =>
+      Map<String, dynamic>.from((caseFile[key] as Map?) ?? const {});
+  List<Map<String, dynamic>> _list(String key) =>
+      ((caseFile[key] as List?) ?? const [])
+          .map((item) => Map<String, dynamic>.from(item as Map))
+          .toList();
+
+  String _when(dynamic value) {
+    final date = DateTime.tryParse('$value')?.toLocal();
+    if (date == null) return 'Unknown time';
+    return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')} '
+        '${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final contract = _map('contract');
+    final job = _map('job');
+    final proposal = _map('proposal');
+    final student = _map('student');
+    final business = _map('business');
+    final payment = _map('payment');
+    final messages = _list('messages');
+    final deliverables = _list('deliverables');
+    final events = _list('events');
+    final studentMessages = messages
+        .where((m) => m['sender_id'] == student['id'])
+        .length;
+    final businessMessages = messages.length - studentMessages;
+    final revisions = events
+        .where((e) => e['event_type'] == 'revision_requested')
+        .length;
+    final checks = <String>[
+      '${deliverables.length} submission${deliverables.length == 1 ? '' : 's'} recorded',
+      '$studentMessages student and $businessMessages business messages retained',
+      '$revisions revision request${revisions == 1 ? '' : 's'} recorded',
+      'Payment status: ${payment['status'] ?? 'not recorded'}',
+    ];
+
+    return Dialog.fullscreen(
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text('Dispute case #${contract['id']}'),
+          leading: IconButton(
+            tooltip: 'Close case file',
+            onPressed: () => Navigator.pop(context),
+            icon: const Icon(Icons.close_rounded),
+          ),
+        ),
+        body: SelectionArea(
+          child: ListView(
+            padding: const EdgeInsets.all(24),
+            children: [
+              _caseSection(
+                'Neutral case brief',
+                Icons.balance_outlined,
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${student['full_name'] ?? 'Student'} disputes with '
+                      '${business['business_name'] ?? business['full_name'] ?? 'Business'} '
+                      'over “${job['title'] ?? 'Project'}”.',
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      'Complaint: ${contract['dispute_reason'] ?? 'No reason supplied'}',
+                    ),
+                    const SizedBox(height: 12),
+                    ...checks.map(
+                      (check) => Padding(
+                        padding: const EdgeInsets.only(bottom: 6),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.check_circle_outline, size: 17),
+                            const SizedBox(width: 8),
+                            Expanded(child: Text(check)),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    const Text(
+                      'Decision support: compare the agreed scope with the actual files and links, then check whether revision requests were specific and whether each party responded. This summary is evidence assistance, not a verdict.',
+                      style: TextStyle(
+                        color: AppColors.textSecondary,
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              _caseSection(
+                'Agreed project scope',
+                Icons.assignment_outlined,
+                Text(
+                  '${job['description'] ?? 'No description'}\n\n'
+                  'Original budget: PHP ${job['budget'] ?? '—'}  ·  '
+                  'Accepted proposal: PHP ${proposal['proposed_budget'] ?? '—'}  ·  '
+                  '${proposal['estimated_timeline_weeks'] ?? '—'} week(s)\n\n'
+                  'Student proposal: ${proposal['pitch_text'] ?? 'No proposal text'}',
+                  style: const TextStyle(height: 1.5),
+                ),
+              ),
+              _caseSection(
+                'Submission evidence',
+                Icons.inventory_2_outlined,
+                deliverables.isEmpty
+                    ? const Text('No deliverables were submitted.')
+                    : Column(
+                        children: deliverables.map((item) {
+                          final path = item['storage_path']?.toString();
+                          final link = item['link_url']?.toString();
+                          return ListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(
+                              'Submission ${item['submission_number']}: ${item['title']}',
+                            ),
+                            subtitle: Text(
+                              '${item['summary']}\n${_when(item['created_at'])}',
+                            ),
+                            isThreeLine: true,
+                            trailing: Wrap(
+                              spacing: 4,
+                              children: [
+                                if (link != null && link.isNotEmpty)
+                                  IconButton(
+                                    tooltip: 'Open submitted link',
+                                    onPressed: () => launchUrl(Uri.parse(link)),
+                                    icon: const Icon(Icons.link_rounded),
+                                  ),
+                                if (path != null && path.isNotEmpty)
+                                  IconButton(
+                                    tooltip: 'Open submitted file',
+                                    onPressed: () => openFile(path),
+                                    icon: const Icon(Icons.file_open_outlined),
+                                  ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      ),
+              ),
+              _caseSection(
+                'Conversation record',
+                Icons.forum_outlined,
+                messages.isEmpty
+                    ? const Text('No project messages were recorded.')
+                    : Column(
+                        children: messages
+                            .map(
+                              (item) => ListTile(
+                                contentPadding: EdgeInsets.zero,
+                                title: Text(
+                                  item['sender_name']?.toString() ?? 'User',
+                                ),
+                                subtitle: Text(item['body']?.toString() ?? ''),
+                                trailing: Text(_when(item['created_at'])),
+                              ),
+                            )
+                            .toList(),
+                      ),
+              ),
+              _caseSection(
+                'Audit timeline',
+                Icons.history_rounded,
+                Column(
+                  children: events
+                      .map(
+                        (item) => ListTile(
+                          contentPadding: EdgeInsets.zero,
+                          leading: const Icon(
+                            Icons.radio_button_checked,
+                            size: 16,
+                          ),
+                          title: Text(
+                            item['event_type'].toString().replaceAll('_', ' '),
+                          ),
+                          subtitle: Text(
+                            item['message']?.toString() ?? 'No note',
+                          ),
+                          trailing: Text(_when(item['created_at'])),
+                        ),
+                      )
+                      .toList(),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _caseSection(String title, IconData icon, Widget child) => Padding(
+    padding: const EdgeInsets.only(bottom: 16),
+    child: AppCard(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 20, color: AppColors.businessPrimary),
+              const SizedBox(width: 9),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          child,
         ],
       ),
     ),

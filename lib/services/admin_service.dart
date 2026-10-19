@@ -84,6 +84,17 @@ class AdminService {
         params: {'contract_key': id, 'decision': decision, 'note_text': note},
       );
 
+  Future<Map<String, dynamic>> disputeCase(int contractId) async {
+    final result = await _client.rpc(
+      'admin_get_dispute_case',
+      params: {'contract_key': contractId},
+    );
+    return Map<String, dynamic>.from(result as Map);
+  }
+
+  Future<String> deliverableFileUrl(String path) =>
+      _client.storage.from('contract-deliverables').createSignedUrl(path, 600);
+
   Future<void> setUserSuspension(
     String userId, {
     required bool suspended,
