@@ -501,6 +501,32 @@ class _AdminPortalScreenState extends State<AdminPortalScreen>
             },
             child: const Text('Record test refund'),
           ),
+          if (fundsHeld)
+            FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.success,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () async {
+                final note = await _note(
+                  'Release held payment to student',
+                  action: 'Release payment',
+                  helper:
+                      'Use this only after reviewing the scope, messages, submissions, and revision history. The decision is recorded in the audit timeline.',
+                );
+                if (note != null) {
+                  await _act(
+                    () => _service.resolveDispute(
+                      item['id'] as int,
+                      'release',
+                      note,
+                    ),
+                  );
+                }
+              },
+              icon: const Icon(Icons.verified_outlined, size: 18),
+              label: const Text('Release to student'),
+            ),
         ],
       );
     },
