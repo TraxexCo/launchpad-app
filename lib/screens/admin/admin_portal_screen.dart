@@ -197,6 +197,208 @@ class _AdminPortalScreenState extends State<AdminPortalScreen>
     }
   }
 
+  Future<void> _openAiBrief(int contractId) async {
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+    try {
+      final brief = await _service.analyzeDispute(contractId);
+      if (!mounted) return;
+      Navigator.pop(context);
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Row(
+            children: [
+              Icon(Icons.auto_awesome_outlined),
+              SizedBox(width: 10),
+              Text('AI case brief'),
+            ],
+          ),
+          content: SizedBox(
+            width: 720,
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Advisory only. Verify every claim against the evidence before deciding.',
+                    style: TextStyle(color: AppColors.warning),
+                  ),
+                  const SizedBox(height: 16),
+                  _briefField('Summary', brief['summary']),
+                  _briefField('Student position', brief['student_position']),
+                  _briefField('Business position', brief['business_position']),
+                  _briefList('Verified facts', brief['verified_facts']),
+                  _briefList('Contradictions', brief['contradictions']),
+                  _briefList('Missing evidence', brief['missing_evidence']),
+                  _briefField('Suggested action', brief['recommended_action']),
+                  _briefField('Rationale', brief['rationale']),
+                  _briefField('Confidence', brief['confidence']),
+                  _briefList(
+                    'Questions for the admin',
+                    brief['admin_questions'],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Return to evidence'),
+            ),
+          ],
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$error'), backgroundColor: AppColors.error),
+      );
+    }
+  }
+
+  Widget _briefField(String label, dynamic value) => Padding(
+    padding: const EdgeInsets.only(bottom: 14),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label.toUpperCase(),
+          style: const TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1,
+            color: AppColors.textMuted,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value?.toString() ?? 'Not provided',
+          style: const TextStyle(height: 1.45),
+        ),
+      ],
+    ),
+  );
+
+  Widget _briefList(String label, dynamic values) {
+    final items = values is List ? values : const [];
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label.toUpperCase(),
+            style: const TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1,
+              color: AppColors.textMuted,
+            ),
+          ),
+          const SizedBox(height: 4),
+          if (items.isEmpty)
+            const Text('None identified')
+          else
+            ...items.map(
+              (item) => Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text('• $item'),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _splitDecision(int contractId, double total) async {
+    final amount = TextEditingController();
+    final note = TextEditingController();
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          final studentAmount = double.tryParse(amount.text);
+          final valid =
+              studentAmount != null &&
+              studentAmount > 0 &&
+              studentAmount < total &&
+              note.text.trim().length >= 10;
+          return AlertDialog(
+            title: const Text('Record partial split'),
+            content: SizedBox(
+              width: 480,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Held payment: PHP ${total.toStringAsFixed(2)}'),
+                  const SizedBox(height: 14),
+                  TextField(
+                    controller: amount,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    onChanged: (_) => setDialogState(() {}),
+                    decoration: const InputDecoration(
+                      labelText: 'Amount released to student',
+                    ),
+                  ),
+                  if (studentAmount != null &&
+                      studentAmount > 0 &&
+                      studentAmount < total)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Text(
+                        'Recorded refund to business: PHP ${(total - studentAmount).toStringAsFixed(2)}',
+                      ),
+                    ),
+                  const SizedBox(height: 14),
+                  TextField(
+                    controller: note,
+                    minLines: 3,
+                    maxLines: 6,
+                    onChanged: (_) => setDialogState(() {}),
+                    decoration: const InputDecoration(
+                      labelText: 'Decision and evidence relied upon',
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: valid ? () => Navigator.pop(context, true) : null,
+                child: const Text('Record split'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+    final studentAmount = double.tryParse(amount.text);
+    if (confirmed == true && studentAmount != null) {
+      await _act(
+        () => _service.splitDispute(
+          contractId,
+          studentAmount: studentAmount,
+          note: note.text.trim(),
+        ),
+      );
+    }
+    amount.dispose();
+    note.dispose();
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
@@ -454,6 +656,11 @@ class _AdminPortalScreenState extends State<AdminPortalScreen>
             icon: const Icon(Icons.fact_check_outlined, size: 18),
             label: const Text('Review evidence'),
           ),
+          OutlinedButton.icon(
+            onPressed: () => _openAiBrief(item['id'] as int),
+            icon: const Icon(Icons.auto_awesome_outlined, size: 18),
+            label: const Text('AI case brief'),
+          ),
           TextButton(
             onPressed: () async {
               final note = await _note('Resume contract');
@@ -530,6 +737,15 @@ class _AdminPortalScreenState extends State<AdminPortalScreen>
               },
               icon: const Icon(Icons.verified_outlined, size: 18),
               label: const Text('Release to student'),
+            ),
+          if (fundsHeld)
+            OutlinedButton.icon(
+              onPressed: () => _splitDecision(
+                item['id'] as int,
+                double.tryParse(payment?['amount']?.toString() ?? '') ?? 0,
+              ),
+              icon: const Icon(Icons.call_split_rounded, size: 18),
+              label: const Text('Partial split'),
             ),
         ],
       );
@@ -655,7 +871,8 @@ class _AdminPortalScreenState extends State<AdminPortalScreen>
       title: item['reference_number']?.toString() ?? 'Payment #${item['id']}',
       tag: item['status'].toString(),
       detail:
-          'Contract ${item['contract_id']} · PHP ${item['amount']} · ${item['payment_method'] ?? 'awaiting payment'}',
+          'Contract ${item['contract_id']} · PHP ${item['amount']} · ${item['payment_method'] ?? 'awaiting payment'}'
+          '${double.tryParse(item['released_amount']?.toString() ?? '0') != 0 ? '\nReleased: PHP ${item['released_amount']} · Refunded: PHP ${item['refunded_amount']}' : ''}',
       actions: const [],
     ),
   );

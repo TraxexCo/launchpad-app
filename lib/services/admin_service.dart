@@ -44,7 +44,7 @@ class AdminService {
   Future<List<Map<String, dynamic>>> payments({int page = 0}) => _client
       .from('payments')
       .select(
-        'id,contract_id,amount,status,reference_number,payment_method,provider_payment_id,created_at,updated_at',
+        'id,contract_id,amount,status,released_amount,refunded_amount,reference_number,payment_method,provider_payment_id,created_at,updated_at',
       )
       .order('created_at', ascending: false)
       .range(page * 50, (page + 1) * 50 - 1);
@@ -83,6 +83,29 @@ class AdminService {
         'admin_resolve_dispute',
         params: {'contract_key': id, 'decision': decision, 'note_text': note},
       );
+
+  Future<void> splitDispute(
+    int id, {
+    required double studentAmount,
+    required String note,
+  }) => _client.rpc(
+    'admin_split_dispute',
+    params: {
+      'contract_key': id,
+      'student_amount': studentAmount,
+      'note_text': note,
+    },
+  );
+
+  Future<Map<String, dynamic>> analyzeDispute(int contractId) async {
+    final response = await _client.functions.invoke(
+      'analyze-dispute',
+      body: {'contract_id': contractId},
+    );
+    final data = Map<String, dynamic>.from(response.data as Map);
+    if (data['error'] != null) throw StateError(data['error'].toString());
+    return Map<String, dynamic>.from(data['brief'] as Map);
+  }
 
   Future<Map<String, dynamic>> disputeCase(int contractId) async {
     final result = await _client.rpc(
